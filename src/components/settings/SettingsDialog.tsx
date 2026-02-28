@@ -47,6 +47,28 @@ function HelpTooltip({ text }: { text: string }) {
   )
 }
 
+function GeneralSettingsPanel() {
+  const checkRecursionLoops = useWorkspaceStore((s) => s.checkRecursionLoops)
+  const setCheckRecursionLoops = useWorkspaceStore((s) => s.setCheckRecursionLoops)
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-xs text-gray-300">
+          Check for recursion loops
+          <HelpTooltip text="Highlights circular references in the graph. SillyTavern breaks loops automatically, so this is off by default." />
+        </div>
+        <input
+          type="checkbox"
+          checked={checkRecursionLoops}
+          onChange={(e) => setCheckRecursionLoops(e.target.checked)}
+          className="accent-indigo-500 w-4 h-4 cursor-pointer"
+        />
+      </div>
+    </div>
+  )
+}
+
 function GraphSettingsPanel() {
   const graphSettings = useWorkspaceStore((s) => s.graphSettings)
   const setGraphSettings = useWorkspaceStore((s) => s.setGraphSettings)
@@ -151,6 +173,7 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
+  const [activeCategory, setActiveCategory] = useState<'general' | 'graph'>('general')
   const [leftWidth, setLeftWidth] = useState(140)
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null)
 
@@ -180,7 +203,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     >
       <div
         className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl flex flex-col"
-        style={{ width: 'min(640px, 80vw)', maxHeight: '75vh' }}
+        style={{ width: 'min(640px, 80vw)', height: 'min(540px, 75vw)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -198,7 +221,24 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         <div className="flex flex-1 overflow-hidden">
           {/* Left: category list */}
           <div className="shrink-0 border-r border-gray-800 p-2 overflow-y-auto" style={{ width: leftWidth }}>
-            <button className="w-full text-left px-2 py-1.5 rounded text-xs text-indigo-400 bg-gray-800 font-medium">
+            <button
+              onClick={() => setActiveCategory('general')}
+              className={`w-full text-left px-2 py-1.5 rounded text-xs font-medium ${
+                activeCategory === 'general'
+                  ? 'text-indigo-400 bg-gray-800'
+                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+              } transition-colors`}
+            >
+              General
+            </button>
+            <button
+              onClick={() => setActiveCategory('graph')}
+              className={`w-full text-left px-2 py-1.5 rounded text-xs font-medium ${
+                activeCategory === 'graph'
+                  ? 'text-indigo-400 bg-gray-800'
+                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+              } transition-colors`}
+            >
               Graph Settings
             </button>
           </div>
@@ -211,7 +251,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
           {/* Right: content */}
           <div className="flex-1 p-4 overflow-y-auto">
-            <GraphSettingsPanel />
+            {activeCategory === 'general' ? <GeneralSettingsPanel /> : <GraphSettingsPanel />}
           </div>
         </div>
       </div>
