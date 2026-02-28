@@ -82,6 +82,22 @@ describe('doesEntryMatchText', () => {
     const entry = makeEntry({ keys: ['/[unclosed/'] })
     expect(() => doesEntryMatchText(entry, 'some text', DEFAULT_OPTS)).not.toThrow()
   })
+
+  it('treats slash-prefixed key with no closing slash as literal match', () => {
+    // Key '/castle' is not a valid regex (no closing '/') — should match literally
+    const entry = makeEntry({ keys: ['/castle'] })
+    const matches = doesEntryMatchText(entry, 'visited /castle today', DEFAULT_OPTS)
+    expect(matches).toHaveLength(1)
+    expect(matches[0].keyword).toBe('/castle')
+    expect(matches[0].isRegex).toBe(false)
+  })
+
+  it('does not produce overlapping matches for repeated characters', () => {
+    const entry = makeEntry({ keys: ['aa'] })
+    // 'aaa' has one non-overlapping match at position 0, not two at 0 and 1
+    const matches = doesEntryMatchText(entry, 'aaa', DEFAULT_OPTS)
+    expect(matches).toHaveLength(1)
+  })
 })
 
 describe('matchKeywordsInText', () => {
