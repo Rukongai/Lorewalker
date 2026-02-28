@@ -6,6 +6,7 @@ import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
 import type { WorkingEntry, SelectiveLogic, EntryPosition } from '@/types'
 import { estimateTokenCount } from '@/lib/token-estimate'
 import { ContentEditor } from './ContentEditor'
+import { KeywordInput } from './KeywordInput'
 
 function FieldGroup({ label, stOnly, defaultCollapsed = false, children }: {
   label: string
@@ -105,20 +106,10 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
       {/* Activation */}
       <FieldGroup label="Activation">
         <Field label="Keys">
-          <input
-            type="text"
-            value={entry.keys.join(', ')}
-            onChange={(e) =>
-              handleChange(
-                'keys',
-                e.target.value
-                  .split(',')
-                  .map((k) => k.trim())
-                  .filter(Boolean)
-              )
-            }
-            className={inputClass}
-            placeholder="keyword1, keyword2"
+          <KeywordInput
+            value={entry.keys}
+            onChange={(v) => handleChange('keys', v)}
+            placeholder="keyword, keyword…"
           />
         </Field>
         <label className="flex items-center gap-2 text-xs text-gray-400">
@@ -142,20 +133,10 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
         {entry.selective && (
           <>
             <Field label="Optional Filter">
-              <input
-                type="text"
-                value={entry.secondaryKeys.join(', ')}
-                onChange={(e) =>
-                  handleChange(
-                    'secondaryKeys',
-                    e.target.value
-                      .split(',')
-                      .map((k) => k.trim())
-                      .filter(Boolean)
-                  )
-                }
-                className={inputClass}
-                placeholder="secondary1, secondary2"
+              <KeywordInput
+                value={entry.secondaryKeys}
+                onChange={(v) => handleChange('secondaryKeys', v)}
+                placeholder="secondary, secondary…"
               />
             </Field>
             <Field label="Selective Logic">
