@@ -1,9 +1,10 @@
-import { getSmoothStepPath, EdgeLabelRenderer } from '@xyflow/react'
+import { getSmoothStepPath, getStraightPath, EdgeLabelRenderer } from '@xyflow/react'
 import type { EdgeProps } from '@xyflow/react'
 
 export interface RecursionEdgeData {
   blocked: boolean
   isCyclic: boolean
+  edgeStyle?: 'smooth' | 'straight'
   [key: string]: unknown
 }
 
@@ -27,14 +28,17 @@ export function RecursionEdge({
     ? 'var(--edge-blocked)'
     : 'var(--edge-active)'
 
-  const [edgePath] = getSmoothStepPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-  })
+  const [edgePath] =
+    data?.edgeStyle === 'straight'
+      ? getStraightPath({ sourceX, sourceY, targetX, targetY })
+      : getSmoothStepPath({
+          sourceX,
+          sourceY,
+          sourcePosition,
+          targetX,
+          targetY,
+          targetPosition,
+        })
 
   return (
     <>

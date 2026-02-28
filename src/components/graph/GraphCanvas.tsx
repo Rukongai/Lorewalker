@@ -16,6 +16,7 @@ import '@xyflow/react/dist/style.css'
 import { EntryNode } from './EntryNode'
 import { RecursionEdge } from './RecursionEdge'
 import { GraphControls } from './GraphControls'
+import type { ConnectionVisibility } from './GraphControls'
 import { useDerivedState, EMPTY_STORE } from '@/hooks/useDerivedState'
 import { computeLayout, findCycles } from '@/services/graph-service'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
@@ -24,6 +25,8 @@ import type { RecursionEdgeData } from './RecursionEdge'
 
 const nodeTypes = { entryNode: EntryNode }
 const edgeTypes = { recursionEdge: RecursionEdge }
+
+const VISIBILITY_CYCLE: ConnectionVisibility[] = ['all', 'selected', 'none']
 
 interface GraphCanvasInnerProps {
   tabId: string
@@ -41,6 +44,8 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<EntryNodeData>>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<RecursionEdgeData>>([])
   const [showBlockedEdges, setShowBlockedEdges] = useState(true)
+  const [connectionVisibility, setConnectionVisibility] = useState<ConnectionVisibility>('all')
+  const [edgeStyle, setEdgeStyle] = useState<'smooth' | 'straight'>('smooth')
   const didInitialFitRef = useRef(false)
 
   const cycleInfo = useMemo(() => {
@@ -71,6 +76,11 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
 
   // Sync graph → React Flow edges
   useEffect(() => {
+    if (connectionVisibility === 'none') {
+      setEdges([])
+      return
+    }
+
     const newEdges: Edge<RecursionEdgeData>[] = []
     for (const [sourceId, targets] of graph.edges) {
       for (const targetId of targets) {
@@ -79,6 +89,13 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
         const blocked = meta?.blockedByPreventRecursion ?? false
         const isCyclic = cycleInfo.cycleEdgeIds.has(edgeKey)
         if (!showBlockedEdges && blocked) continue
+        if (
+          connectionVisibility === 'selected' &&
+          selectedEntryId !== sourceId &&
+          selectedEntryId !== targetId
+        ) {
+          continue
+        }
         newEdges.push({
           id: edgeKey,
           source: sourceId,
@@ -92,12 +109,12 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
               ? 'var(--edge-blocked)'
               : 'var(--edge-active)',
           },
-          data: { blocked, isCyclic },
+          data: { blocked, isCyclic, edgeStyle },
         })
       }
     }
     setEdges(newEdges)
-  }, [graph, cycleInfo, showBlockedEdges, setEdges])
+  }, [graph, cycleInfo, showBlockedEdges, connectionVisibility, selectedEntryId, edgeStyle, setEdges])
 
   // Fit view on first load
   useEffect(() => {
@@ -141,6 +158,17 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
     [onEdgesChange],
   )
 
+  const handleCycleConnectionVisibility = useCallback(() => {
+    setConnectionVisibility((v) => {
+      const idx = VISIBILITY_CYCLE.indexOf(v)
+      return VISIBILITY_CYCLE[(idx + 1) % VISIBILITY_CYCLE.length]
+    })
+  }, [])
+
+  const handleToggleEdgeStyle = useCallback(() => {
+    setEdgeStyle((v) => (v === 'smooth' ? 'straight' : 'smooth'))
+  }, [])
+
   if (entries.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center text-gray-600 text-sm">
@@ -183,6 +211,10 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
           onAutoLayout={handleAutoLayout}
           showBlockedEdges={showBlockedEdges}
           onToggleBlockedEdges={() => setShowBlockedEdges((v) => !v)}
+          connectionVisibility={connectionVisibility}
+          onCycleConnectionVisibility={handleCycleConnectionVisibility}
+          edgeStyle={edgeStyle}
+          onToggleEdgeStyle={handleToggleEdgeStyle}
         />
       </ReactFlow>
     </div>

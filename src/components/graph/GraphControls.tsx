@@ -1,18 +1,41 @@
 import { useReactFlow } from '@xyflow/react'
-import { LayoutGrid, Maximize2, Eye, EyeOff } from 'lucide-react'
+import { LayoutGrid, Maximize2, Eye, EyeOff, Network, Crosshair, Minus, Spline } from 'lucide-react'
+
+export type ConnectionVisibility = 'all' | 'selected' | 'none'
 
 interface GraphControlsProps {
   onAutoLayout: () => void
   showBlockedEdges: boolean
   onToggleBlockedEdges: () => void
+  connectionVisibility: ConnectionVisibility
+  onCycleConnectionVisibility: () => void
+  edgeStyle: 'smooth' | 'straight'
+  onToggleEdgeStyle: () => void
+}
+
+const visibilityIcon = {
+  all: Network,
+  selected: Crosshair,
+  none: EyeOff,
+}
+
+const visibilityTitle = {
+  all: 'Show all connections (click to show selected only)',
+  selected: 'Show connections for selected node (click to hide all)',
+  none: 'Connections hidden (click to show all)',
 }
 
 export function GraphControls({
   onAutoLayout,
   showBlockedEdges,
   onToggleBlockedEdges,
+  connectionVisibility,
+  onCycleConnectionVisibility,
+  edgeStyle,
+  onToggleEdgeStyle,
 }: GraphControlsProps) {
   const { fitView } = useReactFlow()
+  const VisibilityIcon = visibilityIcon[connectionVisibility]
 
   return (
     <div className="absolute top-3 right-3 z-10 flex gap-1">
@@ -34,11 +57,27 @@ export function GraphControls({
       </button>
 
       <button
+        onClick={onCycleConnectionVisibility}
+        title={visibilityTitle[connectionVisibility]}
+        className="p-1.5 bg-gray-800 border border-gray-700 rounded text-gray-300 hover:bg-gray-700 hover:text-gray-100 transition-colors"
+      >
+        <VisibilityIcon size={13} />
+      </button>
+
+      <button
         onClick={onToggleBlockedEdges}
         title={showBlockedEdges ? 'Hide blocked edges' : 'Show blocked edges'}
         className="p-1.5 bg-gray-800 border border-gray-700 rounded text-gray-300 hover:bg-gray-700 hover:text-gray-100 transition-colors"
       >
         {showBlockedEdges ? <Eye size={13} /> : <EyeOff size={13} />}
+      </button>
+
+      <button
+        onClick={onToggleEdgeStyle}
+        title={edgeStyle === 'smooth' ? 'Switch to straight edges' : 'Switch to curved edges'}
+        className="p-1.5 bg-gray-800 border border-gray-700 rounded text-gray-300 hover:bg-gray-700 hover:text-gray-100 transition-colors"
+      >
+        {edgeStyle === 'smooth' ? <Spline size={13} /> : <Minus size={13} />}
       </button>
     </div>
   )
