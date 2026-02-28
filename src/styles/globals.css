@@ -1,3 +1,16 @@
 @import "tailwindcss";
 
 /* Dark mode is the default — applied via the 'dark' class on <html> */
+
+:root {
+  /* Graph edge colors */
+  --edge-active: #818cf8;
+  --edge-blocked: #6b7280;
+  --edge-cycle: #ef4444;
+
+  /* Node activation type colors */
+  --node-constant: #a855f7;
+  --node-keyword: #6366f1;
+  --node-selective: #f59e0b;
+  --node-disabled: #6b7280;
+}
