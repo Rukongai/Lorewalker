@@ -7,6 +7,7 @@ import type {
   KeywordMatchOptions,
 } from '@/types'
 import { doesEntryMatchText } from '@/services/simulator/keyword-matching'
+import dagre from 'dagre'
 
 const DEFAULT_OPTIONS: KeywordMatchOptions = {
   caseSensitive: false,
@@ -195,4 +196,53 @@ export function incrementalUpdate(
   }
 
   return { edges, reverseEdges, edgeMeta }
+}
+
+const NODE_WIDTH = 180
+const NODE_HEIGHT = 60
+
+export function computeLayout(
+  entries: WorkingEntry[],
+  graph: RecursionGraph,
+  existingPositions?: Map<string, { x: number; y: number }>,
+): Map<string, { x: number; y: number }> {
+  // If all entries already have positions, return them unchanged
+  if (existingPositions && entries.every((e) => existingPositions.has(e.id))) {
+    return new Map(existingPositions)
+  }
+
+  const g = new dagre.graphlib.Graph()
+  g.setGraph({ rankdir: 'LR', nodesep: 40, ranksep: 80, marginx: 20, marginy: 20 })
+  g.setDefaultEdgeLabel(() => ({}))
+
+  for (const entry of entries) {
+    g.setNode(entry.id, { width: NODE_WIDTH, height: NODE_HEIGHT })
+  }
+
+  for (const [sourceId, targets] of graph.edges) {
+    for (const targetId of targets) {
+      g.setEdge(sourceId, targetId)
+    }
+  }
+
+  dagre.layout(g)
+
+  const positions = new Map<string, { x: number; y: number }>()
+  for (const entry of entries) {
+    const node = g.node(entry.id)
+    // dagre centers nodes; React Flow uses top-left corner
+    positions.set(entry.id, {
+      x: node ? node.x - NODE_WIDTH / 2 : 0,
+      y: node ? node.y - NODE_HEIGHT / 2 : 0,
+    })
+  }
+
+  // Preserve any existing positions (don't overwrite manual layout)
+  if (existingPositions) {
+    for (const [id, pos] of existingPositions) {
+      positions.set(id, pos)
+    }
+  }
+
+  return positions
 }
