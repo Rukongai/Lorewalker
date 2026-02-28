@@ -16,7 +16,7 @@ import '@xyflow/react/dist/style.css'
 import { EntryNode } from './EntryNode'
 import { RecursionEdge } from './RecursionEdge'
 import { GraphControls } from './GraphControls'
-import { useDerivedState } from '@/hooks/useDerivedState'
+import { useDerivedState, EMPTY_STORE } from '@/hooks/useDerivedState'
 import { computeLayout, findCycles } from '@/services/graph-service'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import type { EntryNodeData } from './EntryNode'
@@ -30,7 +30,8 @@ interface GraphCanvasInnerProps {
 }
 
 function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
-  const store = documentStoreRegistry.get(tabId)!
+  const realStore = documentStoreRegistry.get(tabId)
+  const store = realStore ?? EMPTY_STORE
   const entries = store((s) => s.entries)
   const graphPositions = store((s) => s.graphPositions)
   const selectedEntryId = store((s) => s.selection.selectedEntryId)
@@ -126,10 +127,7 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
 
   const handleAutoLayout = useCallback(() => {
     const newPositions = computeLayout(entries, graph)
-    const storeState = store.getState()
-    for (const [id, pos] of newPositions) {
-      storeState.setGraphPosition(id, pos)
-    }
+    store.setState((s) => ({ ...s, graphPositions: newPositions }))
     setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 50)
   }, [entries, graph, store, fitView])
 

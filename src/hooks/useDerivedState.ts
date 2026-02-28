@@ -23,7 +23,7 @@ function emptyGraph(): RecursionGraph {
 
 // Stable fallback store used when no real document store exists.
 // This ensures the Zustand hook is always called unconditionally.
-const EMPTY_STORE: DocumentStore = createDocumentStore({
+export const EMPTY_STORE: DocumentStore = createDocumentStore({
   entries: [],
   bookMeta: {
     name: '',
