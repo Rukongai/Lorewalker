@@ -301,7 +301,7 @@ export function WorkspaceShell() {
             <>
               <div className="p-3 border-b border-gray-800 shrink-0 flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Editor
+                  Entry
                 </span>
                 <button
                   onClick={() => setRightCollapsed(true)}
@@ -320,7 +320,7 @@ export function WorkspaceShell() {
                     className="w-full px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-400 transition-colors"
                   >
                     {lorebookSettingsOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                    Lorebook Settings
+                    Lorebook
                   </button>
                   {lorebookSettingsOpen && <BookMetaEditor />}
                 </div>
@@ -335,7 +335,7 @@ export function WorkspaceShell() {
                       className="flex-1 px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-400 transition-colors text-left"
                     >
                       {editorOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                      Editor
+                      Entry
                     </button>
                     {selectedEntryId && (
                       <button

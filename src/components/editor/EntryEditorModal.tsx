@@ -29,7 +29,7 @@ export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800 shrink-0">
           <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-            Entry Editor
+            Entry
           </span>
           <button
             onClick={onClose}
