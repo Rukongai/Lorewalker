@@ -158,7 +158,8 @@ export function incrementalUpdate(
         const matches = doesEntryMatchText(target, changedEntry.content, options)
         if (!matches.length) continue
         edges.get(changedEntry.id)!.add(target.id)
-        reverseEdges.get(target.id)?.add(changedEntry.id)
+        if (!reverseEdges.has(target.id)) reverseEdges.set(target.id, new Set())
+        reverseEdges.get(target.id)!.add(changedEntry.id)
         edgeMeta.set(`${changedEntry.id}\u2192${target.id}`, {
           sourceId: changedEntry.id,
           targetId: target.id,
@@ -181,7 +182,8 @@ export function incrementalUpdate(
       if (source.id === changedEntry.id || !source.content || changedEntry.keys.length === 0) continue
       const matches = doesEntryMatchText(changedEntry, source.content, options)
       if (!matches.length) continue
-      edges.get(source.id)?.add(changedEntry.id)
+      if (!edges.has(source.id)) edges.set(source.id, new Set())
+      edges.get(source.id)!.add(changedEntry.id)
       reverseEdges.get(changedEntry.id)!.add(source.id)
       edgeMeta.set(`${source.id}\u2192${changedEntry.id}`, {
         sourceId: source.id,
