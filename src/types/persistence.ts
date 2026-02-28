@@ -1,0 +1,35 @@
+import type { WorkingEntry, BookMeta } from './entry'
+import type { FileMeta, TabMeta, PanelLayout } from './ui'
+import type { SimulationSettings, SimulatorState } from './ui'
+import type { LLMProviderType, ProviderConfig } from './llm'
+
+export interface PersistedWorkspace {
+  tabs: TabMeta[];
+  activeTabId: string | null;
+  theme: 'dark' | 'light';
+  panelLayout: PanelLayout;
+}
+
+export interface PersistedDocument {
+  tabId: string;
+  entries: WorkingEntry[];
+  graphPositions: Record<string, { x: number; y: number }>;
+  bookMeta: BookMeta;
+  fileMeta: FileMeta;
+  simulatorState: SimulatorState;
+  savedAt: string;  // ISO timestamp
+}
+
+export interface PersistedPreferences {
+  simulationDefaults: SimulationSettings;
+  autosaveIntervalMs: number;
+  recoveryRetentionDays: number;
+}
+
+export interface PersistedProvider {
+  id: string;
+  name: string;
+  type: LLMProviderType;
+  config: Omit<ProviderConfig, 'apiKey'>;  // Key stored separately for Tauri keychain
+  apiKey: string;                           // Stored in same record for browser IndexedDB
+}
