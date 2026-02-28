@@ -20,6 +20,7 @@ import type { ConnectionVisibility } from './GraphControls'
 import { useDerivedState, EMPTY_STORE } from '@/hooks/useDerivedState'
 import { computeLayout, findCycles } from '@/services/graph-service'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
+import { useWorkspaceStore } from '@/stores/workspace-store'
 import type { EntryNodeData } from './EntryNode'
 import type { RecursionEdgeData } from './RecursionEdge'
 
@@ -33,19 +34,20 @@ interface GraphCanvasInnerProps {
 }
 
 function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
+  const graphSettings = useWorkspaceStore((s) => s.graphSettings)
   const realStore = documentStoreRegistry.get(tabId)
   const store = realStore ?? EMPTY_STORE
   const entries = store((s) => s.entries)
   const graphPositions = store((s) => s.graphPositions)
   const selectedEntryId = store((s) => s.selection.selectedEntryId)
   const { graph } = useDerivedState(tabId)
-  const { fitView } = useReactFlow()
+  const { fitView, getNode, setCenter } = useReactFlow()
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<EntryNodeData>>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<RecursionEdgeData>>([])
-  const [showBlockedEdges, setShowBlockedEdges] = useState(true)
+  const [showBlockedEdges, setShowBlockedEdges] = useState(false)
   const [connectionVisibility, setConnectionVisibility] = useState<ConnectionVisibility>('all')
-  const [edgeStyle, setEdgeStyle] = useState<'smooth' | 'straight'>('smooth')
+  const [edgeStyle, setEdgeStyle] = useState<'bezier' | 'straight'>('bezier')
   const didInitialFitRef = useRef(false)
 
   const cycleInfo = useMemo(() => {
@@ -69,10 +71,10 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
       type: 'entryNode',
       position: graphPositions.get(entry.id) ?? { x: 0, y: 0 },
       selected: entry.id === selectedEntryId,
-      data: { entry, isCyclic: cycleInfo.cycleNodeIds.has(entry.id) },
+      data: { entry, isCyclic: cycleInfo.cycleNodeIds.has(entry.id), edgeDirection: graphSettings.edgeDirection },
     }))
     setNodes(newNodes)
-  }, [entries, graphPositions, selectedEntryId, cycleInfo, setNodes])
+  }, [entries, graphPositions, selectedEntryId, cycleInfo, graphSettings, setNodes])
 
   // Sync graph → React Flow edges
   useEffect(() => {
@@ -86,7 +88,7 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
       for (const targetId of targets) {
         const edgeKey = `${sourceId}\u2192${targetId}`
         const meta = graph.edgeMeta.get(edgeKey)
-        const blocked = meta?.blockedByPreventRecursion ?? false
+        const blocked = (meta?.blockedByPreventRecursion ?? false) || (meta?.blockedByExcludeRecursion ?? false)
         const isCyclic = cycleInfo.cycleEdgeIds.has(edgeKey)
         if (!showBlockedEdges && blocked) continue
         if (
@@ -96,6 +98,7 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
         ) {
           continue
         }
+        const isIncoming = selectedEntryId != null && selectedEntryId === targetId
         newEdges.push({
           id: edgeKey,
           source: sourceId,
@@ -107,9 +110,11 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
               ? 'var(--edge-cycle)'
               : blocked
               ? 'var(--edge-blocked)'
+              : isIncoming
+              ? 'var(--edge-incoming)'
               : 'var(--edge-active)',
           },
-          data: { blocked, isCyclic, edgeStyle },
+          data: { blocked, isCyclic, isIncoming, edgeStyle },
         })
       }
     }
@@ -123,6 +128,19 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
       setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 150)
     }
   }, [entries.length, fitView])
+
+  // Navigate to selected node when selection changes
+  useEffect(() => {
+    if (!selectedEntryId) return
+    const timer = setTimeout(() => {
+      const node = getNode(selectedEntryId)
+      if (!node) return
+      const x = node.position.x + (node.measured?.width ?? 180) / 2
+      const y = node.position.y + (node.measured?.height ?? 60) / 2
+      setCenter(x, y, { duration: 400, zoom: 1.2 })
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [selectedEntryId, getNode, setCenter])
 
   const handleNodeDragStop = useCallback(
     (_event: React.MouseEvent, node: Node) => {
@@ -143,10 +161,10 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
   }, [store])
 
   const handleAutoLayout = useCallback(() => {
-    const newPositions = computeLayout(entries, graph)
+    const newPositions = computeLayout(entries, graph, undefined, graphSettings)
     store.setState((s) => ({ ...s, graphPositions: newPositions }))
     setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 50)
-  }, [entries, graph, store, fitView])
+  }, [entries, graph, graphSettings, store, fitView])
 
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => { onNodesChange(changes) },
@@ -166,7 +184,7 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
   }, [])
 
   const handleToggleEdgeStyle = useCallback(() => {
-    setEdgeStyle((v) => (v === 'smooth' ? 'straight' : 'smooth'))
+    setEdgeStyle((v) => (v === 'bezier' ? 'straight' : 'bezier'))
   }, [])
 
   if (entries.length === 0) {

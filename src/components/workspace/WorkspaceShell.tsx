@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { Upload, Save, Undo2, Redo2, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Upload, Save, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { EntryList } from '@/components/entry-list/EntryList'
 import { EntryEditor } from '@/components/editor/EntryEditor'
@@ -9,6 +9,7 @@ import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { GraphCanvas } from '@/components/graph/GraphCanvas'
 import { BookMetaEditor } from '@/components/editor/BookMetaEditor'
+import { SettingsDialog } from '@/components/settings/SettingsDialog'
 
 export function WorkspaceShell() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
@@ -22,15 +23,16 @@ export function WorkspaceShell() {
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
+  const [lorebookSettingsOpen, setLorebookSettingsOpen] = useState(false)
+  const [editorOpen, setEditorOpen] = useState(true)
+
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   // Always call the store hook unconditionally (Rules of Hooks).
   // EMPTY_STORE is a stable fallback used when no document is open.
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
   const selectedEntryId = activeStore((s) => s.selection.selectedEntryId)
-  const clearSelection = useCallback(() => {
-    realStore?.getState().clearSelection()
-  }, [realStore])
   // zundo exposes temporal state on the store instance (not via state selector)
   const temporalState = realStore?.temporal.getState()
   const canUndo = (temporalState?.pastStates.length ?? 0) > 0
@@ -176,6 +178,15 @@ export function WorkspaceShell() {
               className="sr-only"
             />
           </label>
+
+          {/* Settings */}
+          <button
+            onClick={() => setSettingsOpen(true)}
+            title="Settings"
+            className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+          >
+            <Settings size={16} />
+          </button>
         </div>
       </header>
 
@@ -220,15 +231,6 @@ export function WorkspaceShell() {
               <div className="p-3 border-b border-gray-800 shrink-0 flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Entries</span>
                 <div className="flex items-center gap-1">
-                  {activeTabId && (
-                    <button
-                      onClick={clearSelection}
-                      title="Book Settings"
-                      className="p-1 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
-                    >
-                      <Settings size={14} />
-                    </button>
-                  )}
                   <button
                     onClick={() => setLeftCollapsed(true)}
                     title="Collapse panel"
@@ -294,7 +296,7 @@ export function WorkspaceShell() {
             <>
               <div className="p-3 border-b border-gray-800 shrink-0 flex items-center justify-between">
                 <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  {selectedEntryId ? 'Editor' : activeTabId ? 'Book Settings' : 'Inspector'}
+                  Editor
                 </span>
                 <button
                   onClick={() => setRightCollapsed(true)}
@@ -304,19 +306,52 @@ export function WorkspaceShell() {
                   <ChevronRight size={14} />
                 </button>
               </div>
-              {selectedEntryId ? (
-                <EntryEditor entryId={selectedEntryId} />
-              ) : activeTabId ? (
-                <BookMetaEditor />
-              ) : (
-                <div className="flex-1 flex items-center justify-center">
-                  <p className="text-xs text-gray-600">Select an entry to edit</p>
+
+              {/* Lorebook Settings section — always shown when a book is open */}
+              {activeTabId && (
+                <div className="border-b border-gray-800 shrink-0">
+                  <button
+                    onClick={() => setLorebookSettingsOpen(o => !o)}
+                    className="w-full px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-400 transition-colors"
+                  >
+                    {lorebookSettingsOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                    Lorebook Settings
+                  </button>
+                  {lorebookSettingsOpen && <BookMetaEditor />}
                 </div>
               )}
+
+              {/* Editor section */}
+              <div className="flex flex-col flex-1 overflow-hidden">
+                {activeTabId && (
+                  <button
+                    onClick={() => setEditorOpen(o => !o)}
+                    className="w-full px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-400 transition-colors border-b border-gray-800 shrink-0"
+                  >
+                    {editorOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                    Editor
+                  </button>
+                )}
+                {editorOpen && (
+                  selectedEntryId ? (
+                    <EntryEditor entryId={selectedEntryId} />
+                  ) : activeTabId ? (
+                    <div className="flex-1 flex items-center justify-center">
+                      <p className="text-xs text-gray-600">Select an entry to edit</p>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center">
+                      <p className="text-xs text-gray-600">No file open</p>
+                    </div>
+                  )
+                )}
+              </div>
             </>
           )}
         </aside>
       </div>
+
+      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   )
 }

@@ -5,6 +5,7 @@ import type {
   CycleResult,
   DeadLink,
   KeywordMatchOptions,
+  GraphLayoutSettings,
 } from '@/types'
 import { doesEntryMatchText } from '@/services/simulator/keyword-matching'
 import dagre from 'dagre'
@@ -225,6 +226,7 @@ export function computeLayout(
   entries: WorkingEntry[],
   graph: RecursionGraph,
   existingPositions?: Map<string, { x: number; y: number }>,
+  settings?: GraphLayoutSettings,
 ): Map<string, { x: number; y: number }> {
   // If all entries already have positions, return them unchanged
   if (existingPositions && entries.every((e) => existingPositions.has(e.id))) {
@@ -237,7 +239,13 @@ export function computeLayout(
   }
 
   const g = new dagre.graphlib.Graph()
-  g.setGraph({ rankdir: 'TB', nodesep: 30, ranksep: 60, marginx: 20, marginy: 20 })
+  g.setGraph({
+    acyclicer: settings?.acyclicer === 'none' ? undefined : (settings?.acyclicer ?? 'greedy'),
+    ranker: settings?.ranker ?? 'network-simplex',
+    align: settings?.align ?? 'UR',
+    rankdir: settings?.rankdir ?? 'LR',
+    nodesep: 30, ranksep: 60, marginx: 20, marginy: 20,
+  })
   g.setDefaultEdgeLabel(() => ({}))
 
   for (const entry of entries) {
@@ -248,6 +256,9 @@ export function computeLayout(
     if (!g.hasNode(sourceId)) continue
     for (const targetId of targets) {
       if (!g.hasNode(targetId)) continue
+      const edgeKey = `${sourceId}\u2192${targetId}`
+      const meta = graph.edgeMeta.get(edgeKey)
+      if (meta?.blockedByPreventRecursion || meta?.blockedByExcludeRecursion) continue
       g.setEdge(sourceId, targetId)
     }
   }

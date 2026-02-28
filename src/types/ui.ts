@@ -52,3 +52,11 @@ export interface SimulatorState {
 
 // Re-export SimulationSettings for use in persistence types
 export type { SimulationSettings }
+
+export interface GraphLayoutSettings {
+  acyclicer: 'greedy' | 'none'
+  ranker: 'network-simplex' | 'tight-tree' | 'longest-path'
+  align: 'UL' | 'UR' | 'DL' | 'DR'
+  rankdir: 'LR' | 'TB' | 'RL' | 'BT'
+  edgeDirection: 'LR' | 'TB'
+}

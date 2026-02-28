@@ -4,6 +4,7 @@ export type {
   SelectiveLogic,
   EntryPosition,
   LorebookFormat,
+  CharacterFilter,
 } from './entry'
 
 export type {
@@ -66,4 +67,5 @@ export type {
   GraphFilter,
   PanelLayout,
   SimulatorState,
+  GraphLayoutSettings,
 } from './ui'

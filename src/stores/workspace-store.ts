@@ -1,11 +1,20 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { TabMeta, FileMeta } from '@/types'
+import type { TabMeta, FileMeta, GraphLayoutSettings } from '@/types'
+
+const DEFAULT_GRAPH_SETTINGS: GraphLayoutSettings = {
+  acyclicer: 'greedy',
+  ranker: 'network-simplex',
+  align: 'UR',
+  rankdir: 'LR',
+  edgeDirection: 'LR',
+}
 
 interface WorkspaceState {
   tabs: TabMeta[]
   activeTabId: string | null
   theme: 'dark' | 'light'
+  graphSettings: GraphLayoutSettings
 
   // Actions
   openTab(tabId: string, name: string, fileMeta: FileMeta): void
@@ -13,6 +22,7 @@ interface WorkspaceState {
   switchTab(tabId: string): void
   markDirty(tabId: string, isDirty: boolean): void
   setTheme(theme: 'dark' | 'light'): void
+  setGraphSettings(settings: GraphLayoutSettings): void
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -20,6 +30,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     tabs: [],
     activeTabId: null,
     theme: 'dark' as const,
+    graphSettings: DEFAULT_GRAPH_SETTINGS,
 
     openTab(tabId, name, fileMeta) {
       set((state) => {
@@ -68,6 +79,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       set((state) => {
         state.theme = theme
       })
+    },
+
+    setGraphSettings(settings) {
+      set((state) => { state.graphSettings = settings })
     },
   }))
 )
