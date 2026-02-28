@@ -1,0 +1,222 @@
+import { create } from 'zustand'
+import { immer } from 'zustand/middleware/immer'
+import { temporal } from 'zundo'
+import { generateId } from '@/lib/uuid'
+import type { WorkingEntry, BookMeta, SimulatorState, SimulationSettings } from '@/types'
+
+// --- Selection state ---
+
+interface SelectionState {
+  selectedEntryId: string | null
+  multiSelect: string[]
+}
+
+// --- Simulator state defaults ---
+
+const DEFAULT_SIMULATION_SETTINGS: SimulationSettings = {
+  defaultScanDepth: 4,
+  defaultTokenBudget: 4096,
+  defaultCaseSensitive: false,
+  defaultMatchWholeWords: false,
+  defaultMaxRecursionSteps: 0,
+  defaultIncludeNames: false,
+}
+
+const DEFAULT_SIMULATOR_STATE: SimulatorState = {
+  messages: [],
+  settings: DEFAULT_SIMULATION_SETTINGS,
+  lastResult: null,
+  conversationHistory: [],
+}
+
+// --- DocumentStore type ---
+
+export interface DocumentState {
+  // Persisted (tracked by zundo for undo/redo)
+  entries: WorkingEntry[]
+  graphPositions: Map<string, { x: number; y: number }>
+  bookMeta: BookMeta
+
+  // UI state (excluded from undo)
+  selection: SelectionState
+  simulatorState: SimulatorState
+
+  // Undo / redo (provided by zundo)
+  undo(): void
+  redo(): void
+  canUndo: boolean
+  canRedo: boolean
+
+  // Entry actions
+  updateEntry(id: string, changes: Partial<WorkingEntry>): void
+  addEntry(partial?: Partial<WorkingEntry>): string
+  removeEntry(id: string): void
+  reorderEntries(ids: string[]): void
+  batchUpdate(updates: Map<string, Partial<WorkingEntry>>): void
+
+  // Graph position actions
+  setGraphPosition(id: string, pos: { x: number; y: number }): void
+
+  // Selection actions
+  selectEntry(id: string | null): void
+  toggleMultiSelect(id: string): void
+  clearSelection(): void
+}
+
+function makeDefaultEntry(partial: Partial<WorkingEntry> = {}): WorkingEntry {
+  return {
+    id: generateId(),
+    uid: 0,
+    name: partial.name ?? 'New Entry',
+    content: partial.content ?? '',
+    keys: partial.keys ?? [],
+    secondaryKeys: partial.secondaryKeys ?? [],
+    constant: partial.constant ?? false,
+    selective: partial.selective ?? false,
+    selectiveLogic: partial.selectiveLogic ?? 0,
+    enabled: partial.enabled ?? true,
+    position: partial.position ?? 0,
+    order: partial.order ?? 100,
+    depth: partial.depth ?? 4,
+    delay: partial.delay ?? 0,
+    cooldown: partial.cooldown ?? 0,
+    sticky: partial.sticky ?? 0,
+    probability: partial.probability ?? 100,
+    preventRecursion: partial.preventRecursion ?? false,
+    excludeRecursion: partial.excludeRecursion ?? false,
+    ignoreBudget: partial.ignoreBudget ?? false,
+    tokenCount: partial.tokenCount ?? 0,
+    extensions: partial.extensions ?? {},
+  }
+}
+
+export interface DocumentStoreInit {
+  entries: WorkingEntry[]
+  bookMeta: BookMeta
+  graphPositions?: Map<string, { x: number; y: number }>
+  simulatorState?: SimulatorState
+}
+
+/**
+ * Factory: creates a fresh Zustand store for a document tab.
+ * Each tab gets its own store so undo/redo is scoped per document.
+ */
+export function createDocumentStore(init: DocumentStoreInit) {
+  const store = create<DocumentState>()(
+    temporal(
+      immer((set, get) => ({
+        // --- Initial state ---
+        entries: init.entries,
+        graphPositions: init.graphPositions ?? new Map(),
+        bookMeta: init.bookMeta,
+
+        selection: { selectedEntryId: null, multiSelect: [] },
+        simulatorState: init.simulatorState ?? DEFAULT_SIMULATOR_STATE,
+
+        // Temporal placeholders — zundo injects actual undo/redo
+        undo() { /* provided by temporal */ },
+        redo() { /* provided by temporal */ },
+        canUndo: false,
+        canRedo: false,
+
+        // --- Entry actions ---
+
+        updateEntry(id, changes) {
+          set((state) => {
+            const entry = state.entries.find((e) => e.id === id)
+            if (!entry) return
+            Object.assign(entry, changes)
+          })
+        },
+
+        addEntry(partial = {}) {
+          const newEntry = makeDefaultEntry(partial)
+          set((state) => {
+            state.entries.push(newEntry)
+          })
+          return newEntry.id
+        },
+
+        removeEntry(id) {
+          set((state) => {
+            const idx = state.entries.findIndex((e) => e.id === id)
+            if (idx !== -1) state.entries.splice(idx, 1)
+
+            // Clear selection if removed entry was selected
+            if (state.selection.selectedEntryId === id) {
+              state.selection.selectedEntryId = null
+            }
+            state.selection.multiSelect = state.selection.multiSelect.filter((sid) => sid !== id)
+          })
+        },
+
+        reorderEntries(ids) {
+          set((state) => {
+            const entryMap = new Map(state.entries.map((e) => [e.id, e]))
+            const reordered = ids.map((id) => entryMap.get(id)).filter(Boolean) as WorkingEntry[]
+            state.entries = reordered
+          })
+        },
+
+        batchUpdate(updates) {
+          set((state) => {
+            for (const [id, changes] of updates) {
+              const entry = state.entries.find((e) => e.id === id)
+              if (entry) Object.assign(entry, changes)
+            }
+          })
+        },
+
+        // --- Graph position actions ---
+
+        setGraphPosition(id, pos) {
+          set((state) => {
+            state.graphPositions.set(id, pos)
+          })
+        },
+
+        // --- Selection actions (excluded from undo) ---
+
+        selectEntry(id) {
+          // Update selection without touching undo history
+          const current = get()
+          // Bypass immer + temporal by modifying state directly outside temporal scope
+          store.setState((state) => ({
+            ...state,
+            selection: { selectedEntryId: id, multiSelect: [] },
+          }))
+          void current // suppress unused warning
+        },
+
+        toggleMultiSelect(id) {
+          store.setState((state) => {
+            const multiSelect = state.selection.multiSelect.includes(id)
+              ? state.selection.multiSelect.filter((sid) => sid !== id)
+              : [...state.selection.multiSelect, id]
+            return { ...state, selection: { ...state.selection, multiSelect } }
+          })
+        },
+
+        clearSelection() {
+          store.setState((state) => ({
+            ...state,
+            selection: { selectedEntryId: null, multiSelect: [] },
+          }))
+        },
+      })),
+      {
+        // Only track persisted fields for undo/redo
+        partialize: (state) => ({
+          entries: state.entries,
+          graphPositions: state.graphPositions,
+          bookMeta: state.bookMeta,
+        }),
+        limit: 100,    // max undo steps
+      }
+    )
+  )
+
+  return store
+}
+
+export type DocumentStore = ReturnType<typeof createDocumentStore>
