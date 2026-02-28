@@ -86,4 +86,13 @@ describe('buildGraph', () => {
     const graph = buildGraph(entries, opts)
     expect(graph.edges.get('src')?.size).toBe(0)
   })
+
+  it('includes edges from excludeRecursion:true entries (graph is structural; simulator enforces this flag at runtime)', () => {
+    const entries = [
+      makeEntry({ id: 'src', content: 'the wolf appeared', keys: [], excludeRecursion: true }),
+      makeEntry({ id: 'tgt', keys: ['wolf'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(graph.edges.get('src')?.has('tgt')).toBe(true)
+  })
 })
