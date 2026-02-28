@@ -19,6 +19,12 @@ export type LorebookFormat =
   | 'wyvern'
   | 'unknown';
 
+export interface CharacterFilter {
+  isExclude: boolean;
+  names: string[];
+  tags: string[];
+}
+
 export interface WorkingEntry {
   // === Identity ===
   id: string;                     // Internal stable UUID, assigned on import, never changes
@@ -48,11 +54,42 @@ export interface WorkingEntry {
   probability: number;            // Percent chance to activate when triggered (1-100)
 
   // === Recursion Control ===
-  preventRecursion: boolean;      // If true, this entry's keys can't be triggered by other entries' content
-  excludeRecursion: boolean;      // If true, this entry's content is invisible to recursive scanning
+  preventRecursion: boolean;      // If true, this entry's content won't be scanned during recursive passes (ST: "Prevent Further Recursion")
+  excludeRecursion: boolean;      // If true, this entry's keys can't be triggered by recursion (ST: "Non-recursable")
 
   // === Budget ===
   ignoreBudget: boolean;          // If true, ignores token budget limits
+
+  // === Group System ===
+  group: string;
+  groupOverride: boolean;
+  groupWeight: number;               // default 100
+  useGroupScoring: boolean | null;   // null = use global setting
+
+  // === Per-entry Scan Overrides ===
+  scanDepth: number | null;          // null = use book default
+  caseSensitive: boolean | null;     // null = use book default
+  matchWholeWords: boolean | null;   // null = use book default
+
+  // === Match Sources ===
+  matchPersonaDescription: boolean;
+  matchCharacterDescription: boolean;
+  matchCharacterPersonality: boolean;
+  matchCharacterDepthPrompt: boolean;
+  matchScenario: boolean;
+  matchCreatorNotes: boolean;
+
+  // === Advanced ST Fields ===
+  role: number;                      // 0=system, 1=user, 2=assistant
+  automationId: string;
+  outletName: string;
+  vectorized: boolean;
+  useProbability: boolean;
+  addMemo: boolean;
+  displayIndex: number;
+  delayUntilRecursion: number;
+  triggers: string[];
+  characterFilter: CharacterFilter;
 
   // === Computed (read-only, set by TransformService) ===
   tokenCount: number;             // Estimated token count of content field
@@ -70,4 +107,14 @@ export interface BookMeta {
   caseSensitive: boolean;
   matchWholeWords: boolean;
   extensions: Record<string, unknown>;
+
+  // ST-specific global settings
+  minActivations: number;       // Min entries to activate; 0 = disabled
+  maxDepth: number;             // Max message depth for minActivations; 0 = unlimited
+  maxRecursionSteps: number;    // Max recursion passes; 0 = unlimited
+  insertionStrategy: 'none' | 'evenly'; // How entries are distributed in context
+  includeNames: boolean;        // Include chat participant names in keyword scan
+  useGroupScoring: boolean;     // Global default for group scoring
+  alertOnOverflow: boolean;     // Show alert when WI exceeds token budget
+  budgetCap: number;            // Hard token cap; 0 = no cap
 }

@@ -8,7 +8,8 @@ export interface EdgeMeta {
   sourceId: string;
   targetId: string;
   matchedKeywords: string[];                // Keywords in source's content that matched target's keys
-  blockedByPreventRecursion: boolean;       // True if target has preventRecursion: true
+  blockedByPreventRecursion: boolean;       // True if source has preventRecursion: true (source's content won't be scanned)
+  blockedByExcludeRecursion: boolean;       // True if target has excludeRecursion: true (target's keys can't be triggered by recursion)
 }
 
 export interface CycleResult {

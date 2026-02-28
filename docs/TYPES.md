@@ -115,7 +115,8 @@ interface EdgeMeta {
   sourceId: string;
   targetId: string;
   matchedKeywords: string[];                // Keywords in source's content that matched target's keys
-  blockedByPreventRecursion: boolean;       // True if target has preventRecursion: true
+  blockedByPreventRecursion: boolean;       // True if source has preventRecursion: true
+  blockedByExcludeRecursion: boolean;       // True if target has excludeRecursion: true
 }
 ```
 

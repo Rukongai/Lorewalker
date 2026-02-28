@@ -519,15 +519,16 @@ interface EdgeMeta {
   sourceId: string;
   targetId: string;
   matchedKeywords: string[];                // which keywords in content triggered this
-  blockedByPreventRecursion: boolean;       // edge exists but would be blocked at runtime
+  blockedByPreventRecursion: boolean;       // True if source has preventRecursion: true (source's content won't be scanned)
+  blockedByExcludeRecursion: boolean;       // True if target has excludeRecursion: true (target's keys can't be triggered by recursion)
 }
 ```
 
 ### Computation
 
-The graph is built by scanning each entry's `content` field for substrings matching other entries' `keys`. The matching uses the same logic as the activation simulator (case sensitivity, whole word, regex).
+The graph is built by scanning each entry's `content` field for substrings matching other entries' `keys`. The matching uses the same logic as the activation simulator (case sensitivity, whole word, regex). Per-entry `caseSensitive` and `matchWholeWords` overrides are resolved at edge-build time: the target entry's setting takes precedence over the book-level default (null = use book default).
 
-Edges where the target entry has `preventRecursion: true` are still recorded but marked as `blockedByPreventRecursion`. This is important for visualization — the user should see that the link *exists* but is *blocked*, which is different from the link not existing at all.
+Edges where the target entry has `preventRecursion: true` are still recorded but marked as `blockedByPreventRecursion`. Edges where the source entry has `excludeRecursion: true` are still recorded but marked as `blockedByExcludeRecursion`. Both flags render the edge as dashed in the graph. This is important for visualization — the user should see that the link *exists* but is *blocked*, which is different from the link not existing at all.
 
 ### Incremental Update
 
