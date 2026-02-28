@@ -32,10 +32,10 @@ function FieldGroup({ label, stOnly, defaultCollapsed = false, children }: {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1">
       <span className="text-[10px] text-gray-500">{label}</span>
       {children}
-    </label>
+    </div>
   )
 }
 

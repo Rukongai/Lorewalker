@@ -41,7 +41,7 @@ export function KeywordInput({ value, onChange, placeholder }: KeywordInputProps
     >
       {value.map((kw, i) => (
         <span
-          key={i}
+          key={kw}
           className="inline-flex items-center gap-0.5 pl-1.5 pr-0.5 py-0.5 rounded text-[10px] bg-indigo-900/50 border border-indigo-700/40 text-indigo-200 select-none"
         >
           {kw}
