@@ -96,6 +96,7 @@ export function useDerivedState(tabId: string | null): DerivedState {
         const keysChanged = curr.keys !== prev.keys
         if (contentChanged || keysChanged) {
           if (changedEntry !== null) { multipleChanged = true; break }
+          if (contentChanged && keysChanged) { multipleChanged = true; break }
           changedEntry = curr
           changeType = keysChanged ? 'keys' : 'content'
         }
