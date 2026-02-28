@@ -1,4 +1,5 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
@@ -6,13 +7,24 @@ import type { WorkingEntry, SelectiveLogic, EntryPosition } from '@/types'
 import { estimateTokenCount } from '@/lib/token-estimate'
 import { ContentEditor } from './ContentEditor'
 
-function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
+function FieldGroup({ label, stOnly, defaultCollapsed = false, children }: {
+  label: string
+  stOnly?: boolean
+  defaultCollapsed?: boolean
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(!defaultCollapsed)
   return (
     <div className="mb-4">
-      <h4 className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2 px-3 pt-2">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-gray-400 transition-colors"
+      >
+        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         {label}
-      </h4>
-      <div className="px-3 space-y-2">{children}</div>
+        {stOnly && <span className="text-[9px] font-semibold bg-amber-900/40 text-amber-400 border border-amber-700/50 rounded px-1 py-0.5 normal-case tracking-normal">ST</span>}
+      </button>
+      {open && <div className="px-3 space-y-2 pb-2">{children}</div>}
     </div>
   )
 }
@@ -78,7 +90,8 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
             placeholder="Entry name"
           />
         </Field>
-        <Field label={`Content (${entry.tokenCount} tokens)`}>
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] text-gray-500">{`Content (${entry.tokenCount} tokens)`}</span>
           <ContentEditor
             value={entry.content}
             entryId={entryId}
@@ -86,12 +99,12 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
             onChange={(v) => handleChange('content', v)}
             inputClass={inputClass}
           />
-        </Field>
+        </div>
       </FieldGroup>
 
       {/* Activation */}
       <FieldGroup label="Activation">
-        <Field label="Primary Keywords (comma-separated)">
+        <Field label="Keys">
           <input
             type="text"
             value={entry.keys.join(', ')}
@@ -128,7 +141,7 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
         </label>
         {entry.selective && (
           <>
-            <Field label="Secondary Keywords (comma-separated)">
+            <Field label="Optional Filter">
               <input
                 type="text"
                 value={entry.secondaryKeys.join(', ')}
@@ -171,21 +184,21 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
       </FieldGroup>
 
       {/* Priority */}
-      <FieldGroup label="Priority">
-        <Field label="Position (0–4)">
+      <FieldGroup label="Insertion">
+        <Field label="Insertion Position">
           <select
             value={entry.position}
             onChange={(e) => handleChange('position', Number(e.target.value) as EntryPosition)}
             className={inputClass}
           >
-            <option value={0}>0 — After char (default)</option>
-            <option value={1}>1 — After char (higher priority)</option>
-            <option value={2}>2 — After char (speech patterns)</option>
-            <option value={3}>3 — Scene depth</option>
-            <option value={4}>4 — Highest priority (rules)</option>
+            <option value={0}>0 — After char (top)</option>
+            <option value={1}>1 — After char</option>
+            <option value={2}>2 — In-chat</option>
+            <option value={3}>3 — Before char</option>
+            <option value={4}>4 — Highest priority</option>
           </select>
         </Field>
-        <Field label="Order (higher = first)">
+        <Field label="Insertion Order">
           <input
             type="number"
             value={entry.order}
@@ -193,7 +206,7 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
             className={inputClass}
           />
         </Field>
-        <Field label="Depth">
+        <Field label="Context Depth">
           <input
             type="number"
             value={entry.depth}
@@ -204,9 +217,9 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
       </FieldGroup>
 
       {/* Timed Effects */}
-      <FieldGroup label="Timed Effects">
+      <FieldGroup label="Timed Effects" stOnly defaultCollapsed>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Probability (%)">
+          <Field label="Trigger %">
             <input
               type="number"
               min={1}
@@ -216,7 +229,7 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
               className={inputClass}
             />
           </Field>
-          <Field label="Delay (msgs)">
+          <Field label="Delay">
             <input
               type="number"
               min={0}
@@ -225,7 +238,7 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
               className={inputClass}
             />
           </Field>
-          <Field label="Cooldown (msgs)">
+          <Field label="Cooldown Duration">
             <input
               type="number"
               min={0}
@@ -234,7 +247,7 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
               className={inputClass}
             />
           </Field>
-          <Field label="Sticky (msgs)">
+          <Field label="Sticky Duration">
             <input
               type="number"
               min={0}
@@ -247,7 +260,7 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
       </FieldGroup>
 
       {/* Recursion */}
-      <FieldGroup label="Recursion">
+      <FieldGroup label="Recursion" stOnly defaultCollapsed>
         <label className="flex items-center gap-2 text-xs text-gray-400">
           <input
             type="checkbox"
@@ -255,7 +268,7 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
             onChange={(e) => handleChange('preventRecursion', e.target.checked)}
             className={checkboxClass}
           />
-          Prevent Recursion (keys can't be triggered by content)
+          Prevent Further Recursion
         </label>
         <label className="flex items-center gap-2 text-xs text-gray-400">
           <input
@@ -264,12 +277,12 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
             onChange={(e) => handleChange('excludeRecursion', e.target.checked)}
             className={checkboxClass}
           />
-          Exclude Recursion (content invisible to recursive scan)
+          Non-recursable
         </label>
       </FieldGroup>
 
       {/* Budget */}
-      <FieldGroup label="Budget">
+      <FieldGroup label="Budget" stOnly defaultCollapsed>
         <label className="flex items-center gap-2 text-xs text-gray-400">
           <input
             type="checkbox"
@@ -278,6 +291,292 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
             className={checkboxClass}
           />
           Ignore Budget
+        </label>
+      </FieldGroup>
+
+      {/* Group System */}
+      <FieldGroup label="Inclusion Group" stOnly defaultCollapsed>
+        <Field label="Inclusion Group">
+          <input
+            type="text"
+            value={entry.group}
+            onChange={(e) => handleChange('group', e.target.value)}
+            className={inputClass}
+            placeholder="Group name"
+          />
+        </Field>
+        <Field label="Group Weight">
+          <input
+            type="number"
+            min={0}
+            value={entry.groupWeight}
+            onChange={(e) => handleChange('groupWeight', Number(e.target.value))}
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Use Group Scoring">
+          <select
+            value={entry.useGroupScoring === null ? '' : String(entry.useGroupScoring)}
+            onChange={(e) => handleChange('useGroupScoring', e.target.value === '' ? null : e.target.value === 'true')}
+            className={inputClass}
+          >
+            <option value="">Default (global setting)</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </Field>
+        <label className="flex items-center gap-2 text-xs text-gray-400">
+          <input
+            type="checkbox"
+            checked={entry.groupOverride}
+            onChange={(e) => handleChange('groupOverride', e.target.checked)}
+            className={checkboxClass}
+          />
+          Prioritize Inclusion
+        </label>
+      </FieldGroup>
+
+      {/* Scan Settings */}
+      <FieldGroup label="Scan Settings" stOnly defaultCollapsed>
+        <Field label="Scan Depth (empty = book default)">
+          <input
+            type="number"
+            placeholder="Default"
+            value={entry.scanDepth ?? ''}
+            onChange={(e) => handleChange('scanDepth', e.target.value === '' ? null : Number(e.target.value))}
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Case Sensitive">
+          <select
+            value={entry.caseSensitive === null ? '' : String(entry.caseSensitive)}
+            onChange={(e) => handleChange('caseSensitive', e.target.value === '' ? null : e.target.value === 'true')}
+            className={inputClass}
+          >
+            <option value="">Default (book setting)</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </Field>
+        <Field label="Match Whole Words">
+          <select
+            value={entry.matchWholeWords === null ? '' : String(entry.matchWholeWords)}
+            onChange={(e) => handleChange('matchWholeWords', e.target.value === '' ? null : e.target.value === 'true')}
+            className={inputClass}
+          >
+            <option value="">Default (book setting)</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </Field>
+      </FieldGroup>
+
+      {/* Match Sources */}
+      <FieldGroup label="Match Sources" stOnly defaultCollapsed>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="flex items-center gap-2 text-xs text-gray-400">
+            <input
+              type="checkbox"
+              checked={entry.matchPersonaDescription}
+              onChange={(e) => handleChange('matchPersonaDescription', e.target.checked)}
+              className={checkboxClass}
+            />
+            Persona Description
+          </label>
+          <label className="flex items-center gap-2 text-xs text-gray-400">
+            <input
+              type="checkbox"
+              checked={entry.matchCharacterDescription}
+              onChange={(e) => handleChange('matchCharacterDescription', e.target.checked)}
+              className={checkboxClass}
+            />
+            Char Description
+          </label>
+          <label className="flex items-center gap-2 text-xs text-gray-400">
+            <input
+              type="checkbox"
+              checked={entry.matchCharacterPersonality}
+              onChange={(e) => handleChange('matchCharacterPersonality', e.target.checked)}
+              className={checkboxClass}
+            />
+            Char Personality
+          </label>
+          <label className="flex items-center gap-2 text-xs text-gray-400">
+            <input
+              type="checkbox"
+              checked={entry.matchCharacterDepthPrompt}
+              onChange={(e) => handleChange('matchCharacterDepthPrompt', e.target.checked)}
+              className={checkboxClass}
+            />
+            Depth Prompt
+          </label>
+          <label className="flex items-center gap-2 text-xs text-gray-400">
+            <input
+              type="checkbox"
+              checked={entry.matchScenario}
+              onChange={(e) => handleChange('matchScenario', e.target.checked)}
+              className={checkboxClass}
+            />
+            Scenario
+          </label>
+          <label className="flex items-center gap-2 text-xs text-gray-400">
+            <input
+              type="checkbox"
+              checked={entry.matchCreatorNotes}
+              onChange={(e) => handleChange('matchCreatorNotes', e.target.checked)}
+              className={checkboxClass}
+            />
+            Creator Notes
+          </label>
+        </div>
+      </FieldGroup>
+
+      {/* Triggers */}
+      <FieldGroup label="Triggers" stOnly defaultCollapsed>
+        <Field label="Triggers (comma-separated)">
+          <input
+            type="text"
+            value={entry.triggers.join(', ')}
+            onChange={(e) =>
+              handleChange(
+                'triggers',
+                e.target.value
+                  .split(',')
+                  .map((t) => t.trim())
+                  .filter(Boolean)
+              )
+            }
+            className={inputClass}
+            placeholder="trigger1, trigger2"
+          />
+        </Field>
+      </FieldGroup>
+
+      {/* Character Filter */}
+      <FieldGroup label="Character Filter" stOnly defaultCollapsed>
+        <label className="flex items-center gap-2 text-xs text-gray-400">
+          <input
+            type="checkbox"
+            checked={entry.characterFilter.isExclude}
+            onChange={(e) =>
+              handleChange('characterFilter', { ...entry.characterFilter, isExclude: e.target.checked })
+            }
+            className={checkboxClass}
+          />
+          Exclude (block listed characters instead of allow)
+        </label>
+        <Field label="Character Names (comma-separated)">
+          <input
+            type="text"
+            value={entry.characterFilter.names.join(', ')}
+            onChange={(e) =>
+              handleChange('characterFilter', {
+                ...entry.characterFilter,
+                names: e.target.value
+                  .split(',')
+                  .map((n) => n.trim())
+                  .filter(Boolean),
+              })
+            }
+            className={inputClass}
+            placeholder="CharacterName1, CharacterName2"
+          />
+        </Field>
+        <Field label="Character Tags (comma-separated)">
+          <input
+            type="text"
+            value={entry.characterFilter.tags.join(', ')}
+            onChange={(e) =>
+              handleChange('characterFilter', {
+                ...entry.characterFilter,
+                tags: e.target.value
+                  .split(',')
+                  .map((t) => t.trim())
+                  .filter(Boolean),
+              })
+            }
+            className={inputClass}
+            placeholder="tag1, tag2"
+          />
+        </Field>
+      </FieldGroup>
+
+      {/* Advanced */}
+      <FieldGroup label="Advanced" stOnly defaultCollapsed>
+        <Field label="Role">
+          <select
+            value={entry.role}
+            onChange={(e) => handleChange('role', Number(e.target.value))}
+            className={inputClass}
+          >
+            <option value={0}>System</option>
+            <option value={1}>User</option>
+            <option value={2}>Assistant</option>
+          </select>
+        </Field>
+        <Field label="Automation ID">
+          <input
+            type="text"
+            value={entry.automationId}
+            onChange={(e) => handleChange('automationId', e.target.value)}
+            className={inputClass}
+            placeholder="Automation ID"
+          />
+        </Field>
+        <Field label="Outlet Name">
+          <input
+            type="text"
+            value={entry.outletName}
+            onChange={(e) => handleChange('outletName', e.target.value)}
+            className={inputClass}
+            placeholder="Outlet name"
+          />
+        </Field>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Display Index">
+            <input
+              type="number"
+              value={entry.displayIndex}
+              onChange={(e) => handleChange('displayIndex', Number(e.target.value))}
+              className={inputClass}
+            />
+          </Field>
+          <Field label="Delay Until Recursion">
+            <input
+              type="number"
+              min={0}
+              value={entry.delayUntilRecursion}
+              onChange={(e) => handleChange('delayUntilRecursion', Number(e.target.value))}
+              className={inputClass}
+            />
+          </Field>
+        </div>
+        <label className="flex items-center gap-2 text-xs text-gray-400">
+          <input
+            type="checkbox"
+            checked={entry.vectorized}
+            onChange={(e) => handleChange('vectorized', e.target.checked)}
+            className={checkboxClass}
+          />
+          Vectorized
+        </label>
+        <label className="flex items-center gap-2 text-xs text-gray-400">
+          <input
+            type="checkbox"
+            checked={entry.useProbability}
+            onChange={(e) => handleChange('useProbability', e.target.checked)}
+            className={checkboxClass}
+          />
+          Use Probability
+        </label>
+        <label className="flex items-center gap-2 text-xs text-gray-400">
+          <input
+            type="checkbox"
+            checked={entry.addMemo}
+            onChange={(e) => handleChange('addMemo', e.target.checked)}
+            className={checkboxClass}
+          />
+          Add Memo
         </label>
       </FieldGroup>
     </div>
