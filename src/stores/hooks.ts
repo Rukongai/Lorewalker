@@ -3,10 +3,10 @@
  * Provides type-safe, minimal subscription store hooks.
  */
 
-import { useRef } from 'react'
 import { useWorkspaceStore } from './workspace-store'
 import { documentStoreRegistry } from './document-store-registry'
 import type { DocumentState } from './document-store'
+import { EMPTY_STORE } from '@/hooks/useDerivedState'
 
 export { useWorkspaceStore }
 
@@ -23,14 +23,12 @@ export function useActiveDocumentStore(): ReturnType<typeof documentStoreRegistr
 /**
  * Subscribes to a slice of the active document store.
  * Re-renders when the selected slice changes.
- * Returns undefined if no tab is active.
+ * Returns null if no tab is active.
  */
-export function useDocumentStore<T>(selector: (state: DocumentState) => T): T | undefined {
-  const store = useActiveDocumentStore()
-  // We can't conditionally call hooks, so we use a stable ref for the null case.
-  const nullRef = useRef<T | undefined>(undefined)
-
-  if (!store) return nullRef.current
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  return store(selector)
+export function useDocumentStore<T>(selector: (state: DocumentState) => T): T | null {
+  const activeTabId = useWorkspaceStore((s) => s.activeTabId)
+  const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
+  const activeStore = realStore ?? EMPTY_STORE
+  const value = activeStore(selector)
+  return realStore ? value : null
 }

@@ -54,6 +54,9 @@ export interface DocumentState {
   reorderEntries(ids: string[]): void
   batchUpdate(updates: Map<string, Partial<WorkingEntry>>): void
 
+  // BookMeta actions
+  updateBookMeta(changes: Partial<BookMeta>): void
+
   // Graph position actions
   setGraphPosition(id: string, pos: { x: number; y: number }): void
 
@@ -66,7 +69,7 @@ export interface DocumentState {
 function makeDefaultEntry(partial: Partial<WorkingEntry> = {}): WorkingEntry {
   return {
     id: generateId(),
-    uid: 0,
+    uid: partial.uid ?? 0,
     name: partial.name ?? 'New Entry',
     content: partial.content ?? '',
     keys: partial.keys ?? [],
@@ -85,6 +88,29 @@ function makeDefaultEntry(partial: Partial<WorkingEntry> = {}): WorkingEntry {
     preventRecursion: partial.preventRecursion ?? false,
     excludeRecursion: partial.excludeRecursion ?? false,
     ignoreBudget: partial.ignoreBudget ?? false,
+    group: partial.group ?? '',
+    groupOverride: partial.groupOverride ?? false,
+    groupWeight: partial.groupWeight ?? 100,
+    useGroupScoring: partial.useGroupScoring ?? null,
+    scanDepth: partial.scanDepth ?? null,
+    caseSensitive: partial.caseSensitive ?? null,
+    matchWholeWords: partial.matchWholeWords ?? null,
+    matchPersonaDescription: partial.matchPersonaDescription ?? false,
+    matchCharacterDescription: partial.matchCharacterDescription ?? false,
+    matchCharacterPersonality: partial.matchCharacterPersonality ?? false,
+    matchCharacterDepthPrompt: partial.matchCharacterDepthPrompt ?? false,
+    matchScenario: partial.matchScenario ?? false,
+    matchCreatorNotes: partial.matchCreatorNotes ?? false,
+    role: partial.role ?? 0,
+    automationId: partial.automationId ?? '',
+    outletName: partial.outletName ?? '',
+    vectorized: partial.vectorized ?? false,
+    useProbability: partial.useProbability ?? true,
+    addMemo: partial.addMemo ?? true,
+    displayIndex: partial.displayIndex ?? 0,
+    delayUntilRecursion: partial.delayUntilRecursion ?? 0,
+    triggers: partial.triggers ?? [],
+    characterFilter: partial.characterFilter ?? { isExclude: false, names: [], tags: [] },
     tokenCount: partial.tokenCount ?? 0,
     extensions: partial.extensions ?? {},
   }
@@ -164,6 +190,14 @@ export function createDocumentStore(init: DocumentStoreInit) {
               const entry = state.entries.find((e) => e.id === id)
               if (entry) Object.assign(entry, changes)
             }
+          })
+        },
+
+        // --- BookMeta actions ---
+
+        updateBookMeta(changes) {
+          set((state) => {
+            Object.assign(state.bookMeta, changes)
           })
         },
 

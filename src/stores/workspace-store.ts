@@ -15,6 +15,7 @@ interface WorkspaceState {
   activeTabId: string | null
   theme: 'dark' | 'light'
   graphSettings: GraphLayoutSettings
+  checkRecursionLoops: boolean
 
   // Actions
   openTab(tabId: string, name: string, fileMeta: FileMeta): void
@@ -23,6 +24,7 @@ interface WorkspaceState {
   markDirty(tabId: string, isDirty: boolean): void
   setTheme(theme: 'dark' | 'light'): void
   setGraphSettings(settings: GraphLayoutSettings): void
+  setCheckRecursionLoops(value: boolean): void
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -31,6 +33,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     activeTabId: null,
     theme: 'dark' as const,
     graphSettings: DEFAULT_GRAPH_SETTINGS,
+    checkRecursionLoops: false,
 
     openTab(tabId, name, fileMeta) {
       set((state) => {
@@ -83,6 +86,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
     setGraphSettings(settings) {
       set((state) => { state.graphSettings = settings })
+    },
+
+    setCheckRecursionLoops(value) {
+      set((state) => { state.checkRecursionLoops = value })
     },
   }))
 )
