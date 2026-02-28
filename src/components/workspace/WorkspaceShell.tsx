@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { Upload, Save, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
+import { Upload, Save, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, ChevronDown, Maximize2 } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { EntryList } from '@/components/entry-list/EntryList'
 import { EntryEditor } from '@/components/editor/EntryEditor'
@@ -10,6 +10,7 @@ import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { GraphCanvas } from '@/components/graph/GraphCanvas'
 import { BookMetaEditor } from '@/components/editor/BookMetaEditor'
 import { SettingsDialog } from '@/components/settings/SettingsDialog'
+import { EntryEditorModal } from '@/components/editor/EntryEditorModal'
 
 export function WorkspaceShell() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
@@ -25,6 +26,7 @@ export function WorkspaceShell() {
   const [isResizing, setIsResizing] = useState(false)
   const [lorebookSettingsOpen, setLorebookSettingsOpen] = useState(false)
   const [editorOpen, setEditorOpen] = useState(true)
+  const [editorModalOpen, setEditorModalOpen] = useState(false)
 
   const [settingsOpen, setSettingsOpen] = useState(false)
 
@@ -264,7 +266,10 @@ export function WorkspaceShell() {
               </div>
             </div>
           ) : (
-            <GraphCanvas tabId={activeTabId} />
+            <GraphCanvas
+              tabId={activeTabId}
+              onNodeDoubleClick={() => setEditorModalOpen(true)}
+            />
           )}
         </main>
 
@@ -324,13 +329,24 @@ export function WorkspaceShell() {
               {/* Editor section */}
               <div className="flex flex-col flex-1 overflow-hidden">
                 {activeTabId && (
-                  <button
-                    onClick={() => setEditorOpen(o => !o)}
-                    className="w-full px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-400 transition-colors border-b border-gray-800 shrink-0"
-                  >
-                    {editorOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                    Editor
-                  </button>
+                  <div className="flex items-center border-b border-gray-800 shrink-0">
+                    <button
+                      onClick={() => setEditorOpen(o => !o)}
+                      className="flex-1 px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-400 transition-colors text-left"
+                    >
+                      {editorOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+                      Editor
+                    </button>
+                    {selectedEntryId && (
+                      <button
+                        onClick={() => setEditorModalOpen(true)}
+                        title="Open in full editor"
+                        className="p-1.5 mr-2 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+                      >
+                        <Maximize2 size={12} />
+                      </button>
+                    )}
+                  </div>
                 )}
                 {editorOpen && (
                   selectedEntryId ? (
@@ -351,6 +367,12 @@ export function WorkspaceShell() {
         </aside>
       </div>
 
+      {editorModalOpen && selectedEntryId && (
+        <EntryEditorModal
+          entryId={selectedEntryId}
+          onClose={() => setEditorModalOpen(false)}
+        />
+      )}
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   )

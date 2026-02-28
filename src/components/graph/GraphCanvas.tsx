@@ -31,9 +31,10 @@ const VISIBILITY_CYCLE: ConnectionVisibility[] = ['all', 'selected', 'none']
 
 interface GraphCanvasInnerProps {
   tabId: string
+  onNodeDoubleClick?: (entryId: string) => void
 }
 
-function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
+function GraphCanvasInner({ tabId, onNodeDoubleClick }: GraphCanvasInnerProps) {
   const graphSettings = useWorkspaceStore((s) => s.graphSettings)
   const realStore = documentStoreRegistry.get(tabId)
   const store = realStore ?? EMPTY_STORE
@@ -121,13 +122,13 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
     setEdges(newEdges)
   }, [graph, cycleInfo, showBlockedEdges, connectionVisibility, selectedEntryId, edgeStyle, setEdges])
 
-  // Fit view on first load
+  // Fit view on first load — wait until positions are computed for all entries
   useEffect(() => {
-    if (entries.length > 0 && !didInitialFitRef.current) {
+    if (entries.length > 0 && graphPositions.size >= entries.length && !didInitialFitRef.current) {
       didInitialFitRef.current = true
-      setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 150)
+      setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 50)
     }
-  }, [entries.length, fitView])
+  }, [entries.length, graphPositions.size, fitView])
 
   // Navigate to selected node when selection changes
   useEffect(() => {
@@ -154,6 +155,14 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
       store.getState().selectEntry(node.id)
     },
     [store],
+  )
+
+  const handleNodeDoubleClick = useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      store.getState().selectEntry(node.id)
+      onNodeDoubleClick?.(node.id)
+    },
+    [store, onNodeDoubleClick],
   )
 
   const handlePaneClick = useCallback(() => {
@@ -206,6 +215,7 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
         onEdgesChange={handleEdgesChange}
         onNodeDragStop={handleNodeDragStop}
         onNodeClick={handleNodeClick}
+        onNodeDoubleClick={handleNodeDoubleClick}
         onPaneClick={handlePaneClick}
         fitView={false}
         colorMode="dark"
@@ -241,12 +251,13 @@ function GraphCanvasInner({ tabId }: GraphCanvasInnerProps) {
 
 interface GraphCanvasProps {
   tabId: string
+  onNodeDoubleClick?: (entryId: string) => void
 }
 
-export function GraphCanvas({ tabId }: GraphCanvasProps) {
+export function GraphCanvas({ tabId, onNodeDoubleClick }: GraphCanvasProps) {
   return (
     <ReactFlowProvider>
-      <GraphCanvasInner tabId={tabId} />
+      <GraphCanvasInner tabId={tabId} onNodeDoubleClick={onNodeDoubleClick} />
     </ReactFlowProvider>
   )
 }
