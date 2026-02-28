@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@character-foundry/character-foundry": "^0.5.0",
+    "@codemirror/state": "^6.5.4",
+    "@codemirror/view": "^6.39.15",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-separator": "^1.1.8",

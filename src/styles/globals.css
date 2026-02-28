@@ -5,12 +5,48 @@
 :root {
   /* Graph edge colors */
   --edge-active: #818cf8;
+  --edge-selected: #c7d2fe;  /* indigo-200, matches keyword highlight text color */
+  --edge-incoming: #2dd4bf;  /* teal-400: edges flowing INTO selected node */
   --edge-blocked: #6b7280;
   --edge-cycle: #ef4444;
 
   /* Node activation type colors */
   --node-constant: #a855f7;
   --node-keyword: #6366f1;
-  --node-selective: #f59e0b;
+  --node-selective: #2dd4bf;
   --node-disabled: #6b7280;
+}
+
+/* CodeMirror editor resets */
+.cm-editor { outline: none; }
+.cm-editor.cm-focused { outline: none !important; }
+.cm-selectionBackground,
+.cm-focused .cm-selectionBackground { background: rgba(99,102,241,0.3) !important; }
+
+/* Keyword highlight decorations */
+.cm-kw-normal {
+  background: rgba(49,46,129,0.6);
+  border-radius: 2px;
+  position: relative;
+}
+.cm-kw-normal::after {
+  content: attr(data-count);
+  position: absolute;
+  top: -0.6em; right: -0.25em;
+  font-size: 8px; font-weight: 700;
+  color: #a5b4fc; line-height: 1;
+  pointer-events: none;
+}
+.cm-kw-cycle {
+  background: rgba(127,29,29,0.6);
+  border-radius: 2px;
+  position: relative;
+}
+.cm-kw-cycle::after {
+  content: attr(data-count);
+  position: absolute;
+  top: -0.6em; right: -0.25em;
+  font-size: 8px; font-weight: 700;
+  color: #fca5a5; line-height: 1;
+  pointer-events: none;
 }
