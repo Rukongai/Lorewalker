@@ -220,7 +220,9 @@ export function computeLayout(
   }
 
   for (const [sourceId, targets] of graph.edges) {
+    if (!g.hasNode(sourceId)) continue
     for (const targetId of targets) {
+      if (!g.hasNode(targetId)) continue
       g.setEdge(sourceId, targetId)
     }
   }
@@ -239,8 +241,11 @@ export function computeLayout(
 
   // Preserve any existing positions (don't overwrite manual layout)
   if (existingPositions) {
+    const entryIds = new Set(entries.map((e) => e.id))
     for (const [id, pos] of existingPositions) {
-      positions.set(id, pos)
+      if (entryIds.has(id)) {
+        positions.set(id, pos)
+      }
     }
   }
 
