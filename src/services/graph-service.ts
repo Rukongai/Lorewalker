@@ -34,7 +34,11 @@ export function buildGraph(
       if (source.id === target.id) continue
       if (target.keys.length === 0) continue
 
-      const matches = doesEntryMatchText(target, source.content, options)
+      const edgeOptions: KeywordMatchOptions = {
+        caseSensitive: target.caseSensitive ?? options.caseSensitive,
+        matchWholeWords: target.matchWholeWords ?? options.matchWholeWords,
+      }
+      const matches = doesEntryMatchText(target, source.content, edgeOptions)
       if (matches.length === 0) continue
 
       edges.get(source.id)!.add(target.id)
@@ -45,7 +49,8 @@ export function buildGraph(
         sourceId: source.id,
         targetId: target.id,
         matchedKeywords: [...new Set(matches.map((m) => m.keyword))],
-        blockedByPreventRecursion: target.preventRecursion,
+        blockedByPreventRecursion: source.preventRecursion,
+        blockedByExcludeRecursion: target.excludeRecursion,
       })
     }
   }
@@ -65,6 +70,11 @@ export function findCycles(graph: RecursionGraph): CycleResult {
     path.push(nodeId)
 
     for (const neighbor of graph.edges.get(nodeId) ?? new Set()) {
+      // Skip blocked edges — they cannot propagate recursion, so can't form real cycles
+      const edgeKey = `${nodeId}\u2192${neighbor}`
+      const meta = graph.edgeMeta.get(edgeKey)
+      if (meta?.blockedByPreventRecursion || meta?.blockedByExcludeRecursion) continue
+
       if (!visited.has(neighbor)) {
         dfs(neighbor)
       } else if (onStack.has(neighbor)) {
@@ -156,7 +166,11 @@ export function incrementalUpdate(
     if (changedEntry.content) {
       for (const target of allEntries) {
         if (target.id === changedEntry.id || target.keys.length === 0) continue
-        const matches = doesEntryMatchText(target, changedEntry.content, options)
+        const edgeOptions: KeywordMatchOptions = {
+          caseSensitive: target.caseSensitive ?? options.caseSensitive,
+          matchWholeWords: target.matchWholeWords ?? options.matchWholeWords,
+        }
+        const matches = doesEntryMatchText(target, changedEntry.content, edgeOptions)
         if (!matches.length) continue
         edges.get(changedEntry.id)!.add(target.id)
         if (!reverseEdges.has(target.id)) reverseEdges.set(target.id, new Set())
@@ -165,7 +179,8 @@ export function incrementalUpdate(
           sourceId: changedEntry.id,
           targetId: target.id,
           matchedKeywords: [...new Set(matches.map((m) => m.keyword))],
-          blockedByPreventRecursion: target.preventRecursion,
+          blockedByPreventRecursion: changedEntry.preventRecursion,
+          blockedByExcludeRecursion: target.excludeRecursion,
         })
       }
     }
@@ -179,9 +194,13 @@ export function incrementalUpdate(
     reverseEdges.set(changedEntry.id, new Set())
 
     // Recompute incoming edges: scan all other entries' content against new keys
+    const targetEdgeOptions: KeywordMatchOptions = {
+      caseSensitive: changedEntry.caseSensitive ?? options.caseSensitive,
+      matchWholeWords: changedEntry.matchWholeWords ?? options.matchWholeWords,
+    }
     for (const source of allEntries) {
       if (source.id === changedEntry.id || !source.content || changedEntry.keys.length === 0) continue
-      const matches = doesEntryMatchText(changedEntry, source.content, options)
+      const matches = doesEntryMatchText(changedEntry, source.content, targetEdgeOptions)
       if (!matches.length) continue
       if (!edges.has(source.id)) edges.set(source.id, new Set())
       edges.get(source.id)!.add(changedEntry.id)
@@ -190,7 +209,8 @@ export function incrementalUpdate(
         sourceId: source.id,
         targetId: changedEntry.id,
         matchedKeywords: [...new Set(matches.map((m) => m.keyword))],
-        blockedByPreventRecursion: changedEntry.preventRecursion,
+        blockedByPreventRecursion: source.preventRecursion,
+        blockedByExcludeRecursion: changedEntry.excludeRecursion,
       })
     }
   }
@@ -217,7 +237,7 @@ export function computeLayout(
   }
 
   const g = new dagre.graphlib.Graph()
-  g.setGraph({ rankdir: 'LR', nodesep: 40, ranksep: 80, marginx: 20, marginy: 20 })
+  g.setGraph({ rankdir: 'TB', nodesep: 30, ranksep: 60, marginx: 20, marginy: 20 })
   g.setDefaultEdgeLabel(() => ({}))
 
   for (const entry of entries) {
