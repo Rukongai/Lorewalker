@@ -30,6 +30,29 @@ function makeBook(overrides: Partial<CCv3CharacterBook> = {}): CCv3CharacterBook
             ignoreBudget: false,
             excludeRecursion: false,
             preventRecursion: false,
+            group: '',
+            groupOverride: false,
+            groupWeight: 100,
+            useGroupScoring: null,
+            scanDepth: null,
+            caseSensitive: null,
+            matchWholeWords: null,
+            matchPersonaDescription: false,
+            matchCharacterDescription: false,
+            matchCharacterPersonality: false,
+            matchCharacterDepthPrompt: false,
+            matchScenario: false,
+            matchCreatorNotes: false,
+            role: 0,
+            automationId: '',
+            outletName: '',
+            vectorized: false,
+            useProbability: true,
+            addMemo: true,
+            displayIndex: 0,
+            delayUntilRecursion: 0,
+            triggers: [],
+            characterFilter: { isExclude: false, names: [], tags: [] },
           },
         },
         probability: 100,
@@ -55,6 +78,29 @@ function makeBook(overrides: Partial<CCv3CharacterBook> = {}): CCv3CharacterBook
             ignoreBudget: false,
             excludeRecursion: false,
             preventRecursion: true,
+            group: 'knights',
+            groupOverride: false,
+            groupWeight: 100,
+            useGroupScoring: null,
+            scanDepth: 2,
+            caseSensitive: true,
+            matchWholeWords: null,
+            matchPersonaDescription: false,
+            matchCharacterDescription: false,
+            matchCharacterPersonality: false,
+            matchCharacterDepthPrompt: false,
+            matchScenario: false,
+            matchCreatorNotes: false,
+            role: 0,
+            automationId: '',
+            outletName: '',
+            vectorized: false,
+            useProbability: true,
+            addMemo: true,
+            displayIndex: 0,
+            delayUntilRecursion: 0,
+            triggers: ['combat', 'siege'],
+            characterFilter: { isExclude: false, names: ['Arthur'], tags: [] },
           },
         },
         probability: 80,
@@ -109,6 +155,12 @@ describe('TransformService', () => {
       expect(castle.probability).toBe(80)
       expect(castle.selective).toBe(true)
       expect(castle.secondaryKeys).toEqual(['region', 'north'])
+      // New fields
+      expect(castle.group).toBe('knights')
+      expect(castle.scanDepth).toBe(2)
+      expect(castle.caseSensitive).toBe(true)
+      expect(castle.triggers).toEqual(['combat', 'siege'])
+      expect(castle.characterFilter).toEqual({ isExclude: false, names: ['Arthur'], tags: [] })
     })
 
     it('computes a non-zero token count for non-empty content', () => {
@@ -143,6 +195,40 @@ describe('TransformService', () => {
       expect(entries[0].sticky).toBe(0)
       expect(entries[0].constant).toBe(false)
       expect(entries[0].probability).toBe(100)
+    })
+
+    it('maps ST preventRecursion directly to WorkingEntry preventRecursion', () => {
+      const book = makeBook({
+        entries: [
+          {
+            keys: ['test'],
+            content: 'Test entry',
+            enabled: true,
+            insertion_order: 0,
+            extensions: { sillytavern: { preventRecursion: true, excludeRecursion: false } },
+          } as CCv3CharacterBook['entries'][0],
+        ],
+      })
+      const { entries } = inflate(book)
+      expect(entries[0].preventRecursion).toBe(true)
+      expect(entries[0].excludeRecursion).toBe(false)
+    })
+
+    it('maps ST excludeRecursion directly to WorkingEntry excludeRecursion', () => {
+      const book = makeBook({
+        entries: [
+          {
+            keys: ['test'],
+            content: 'Test entry',
+            enabled: true,
+            insertion_order: 0,
+            extensions: { sillytavern: { excludeRecursion: true, preventRecursion: false } },
+          } as CCv3CharacterBook['entries'][0],
+        ],
+      })
+      const { entries } = inflate(book)
+      expect(entries[0].excludeRecursion).toBe(true)
+      expect(entries[0].preventRecursion).toBe(false)
     })
   })
 

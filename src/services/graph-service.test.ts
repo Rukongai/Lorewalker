@@ -22,8 +22,31 @@ function makeEntry(overrides: Partial<WorkingEntry> = {}): WorkingEntry {
     sticky: 0,
     probability: 100,
     preventRecursion: overrides.preventRecursion ?? false,
-    excludeRecursion: false,
+    excludeRecursion: overrides.excludeRecursion ?? false,
     ignoreBudget: false,
+    caseSensitive: null,
+    matchWholeWords: null,
+    scanDepth: null,
+    group: '',
+    groupOverride: false,
+    groupWeight: 100,
+    useGroupScoring: null,
+    matchPersonaDescription: false,
+    matchCharacterDescription: false,
+    matchCharacterPersonality: false,
+    matchCharacterDepthPrompt: false,
+    matchScenario: false,
+    matchCreatorNotes: false,
+    role: 0,
+    automationId: '',
+    outletName: '',
+    vectorized: false,
+    useProbability: false,
+    addMemo: false,
+    displayIndex: 0,
+    delayUntilRecursion: 0,
+    triggers: [],
+    characterFilter: { isExclude: false, names: [], tags: [] },
     tokenCount: 0,
     extensions: {},
     ...overrides,
@@ -60,10 +83,10 @@ describe('buildGraph', () => {
     expect(meta?.matchedKeywords).toContain('wolf')
   })
 
-  it('marks edge as blocked when target has preventRecursion:true', () => {
+  it('marks edge as blocked (blockedByPreventRecursion) when source has preventRecursion:true', () => {
     const entries = [
-      makeEntry({ id: 'src', content: 'the wolf appeared', keys: [] }),
-      makeEntry({ id: 'tgt', keys: ['wolf'], preventRecursion: true }),
+      makeEntry({ id: 'src', content: 'the wolf appeared', keys: [], preventRecursion: true }),
+      makeEntry({ id: 'tgt', keys: ['wolf'] }),
     ]
     const graph = buildGraph(entries, opts)
     const meta = graph.edgeMeta.get('src\u2192tgt')
@@ -87,13 +110,51 @@ describe('buildGraph', () => {
     expect(graph.edges.get('src')?.size).toBe(0)
   })
 
-  it('includes edges from excludeRecursion:true entries (graph is structural; simulator enforces this flag at runtime)', () => {
+  it('includes edges from entries with preventRecursion:true (graph is structural; simulator enforces this flag at runtime)', () => {
     const entries = [
-      makeEntry({ id: 'src', content: 'the wolf appeared', keys: [], excludeRecursion: true }),
+      makeEntry({ id: 'src', content: 'the wolf appeared', keys: [], preventRecursion: true }),
       makeEntry({ id: 'tgt', keys: ['wolf'] }),
     ]
     const graph = buildGraph(entries, opts)
     expect(graph.edges.get('src')?.has('tgt')).toBe(true)
+  })
+
+  it('does not form edge when book has caseSensitive:true and content uses wrong case', () => {
+    const entries = [
+      makeEntry({ id: 'src', content: 'The Dragon roared', keys: [] }),
+      makeEntry({ id: 'tgt', keys: ['dragon'] }),
+    ]
+    const graph = buildGraph(entries, { caseSensitive: true, matchWholeWords: false })
+    expect(graph.edges.get('src')?.has('tgt')).toBe(false)
+  })
+
+  it('forms edge when per-entry caseSensitive:false overrides book caseSensitive:true', () => {
+    const entries = [
+      makeEntry({ id: 'src', content: 'The Dragon roared', keys: [] }),
+      makeEntry({ id: 'tgt', keys: ['dragon'], caseSensitive: false }),
+    ]
+    const graph = buildGraph(entries, { caseSensitive: true, matchWholeWords: false })
+    expect(graph.edges.get('src')?.has('tgt')).toBe(true)
+  })
+
+  it('sets blockedByExcludeRecursion:true on edges when target has excludeRecursion:true', () => {
+    const entries = [
+      makeEntry({ id: 'src', content: 'the wolf appeared', keys: [] }),
+      makeEntry({ id: 'tgt', keys: ['wolf'], excludeRecursion: true }),
+    ]
+    const graph = buildGraph(entries, opts)
+    const meta = graph.edgeMeta.get('src\u2192tgt')
+    expect(meta?.blockedByExcludeRecursion).toBe(true)
+  })
+
+  it('sets blockedByExcludeRecursion:false on edges when target does not have excludeRecursion', () => {
+    const entries = [
+      makeEntry({ id: 'src', content: 'the wolf appeared', keys: [] }),
+      makeEntry({ id: 'tgt', keys: ['wolf'], excludeRecursion: false }),
+    ]
+    const graph = buildGraph(entries, opts)
+    const meta = graph.edgeMeta.get('src\u2192tgt')
+    expect(meta?.blockedByExcludeRecursion).toBe(false)
   })
 })
 
@@ -117,6 +178,26 @@ describe('findCycles', () => {
     expect(result.cycles).toHaveLength(1)
     expect(result.cycles[0]).toContain('a')
     expect(result.cycles[0]).toContain('b')
+  })
+
+  it('does not detect cycle when the only cycle-completing edge is blocked by preventRecursion', () => {
+    // A→B is blocked (A has preventRecursion). B→A is active. No real cycle.
+    const entries = [
+      makeEntry({ id: 'a', content: 'see the wolf', keys: ['castle'], preventRecursion: true }),
+      makeEntry({ id: 'b', content: 'see the castle', keys: ['wolf'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(findCycles(graph).cycles).toHaveLength(0)
+  })
+
+  it('does not detect cycle when the only cycle-completing edge is blocked by excludeRecursion', () => {
+    // A→B is blocked (B has excludeRecursion). B→A is active. No real cycle.
+    const entries = [
+      makeEntry({ id: 'a', content: 'see the wolf', keys: ['castle'] }),
+      makeEntry({ id: 'b', content: 'see the castle', keys: ['wolf'], excludeRecursion: true }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(findCycles(graph).cycles).toHaveLength(0)
   })
 
   it('detects longer cycle A-B-C-A', () => {

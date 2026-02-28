@@ -13,6 +13,7 @@ import type {
   BookMeta,
   SelectiveLogic,
   EntryPosition,
+  CharacterFilter,
 } from '@/types'
 
 // SillyTavern-specific fields stored in extensions.sillytavern after normalization
@@ -26,6 +27,26 @@ interface STExtensions {
   addMemo?: boolean
   useProbability?: boolean
   vectorized?: boolean
+  group?: string
+  groupOverride?: boolean
+  groupWeight?: number
+  useGroupScoring?: boolean | null
+  scanDepth?: number | null
+  caseSensitive?: boolean | null
+  matchWholeWords?: boolean | null
+  matchPersonaDescription?: boolean
+  matchCharacterDescription?: boolean
+  matchCharacterPersonality?: boolean
+  matchCharacterDepthPrompt?: boolean
+  matchScenario?: boolean
+  matchCreatorNotes?: boolean
+  role?: number
+  automationId?: string
+  outletName?: string
+  displayIndex?: number
+  delayUntilRecursion?: number
+  triggers?: string[]
+  characterFilter?: CharacterFilter
 }
 
 // Result of inflate, includes the book-level metadata
@@ -110,6 +131,33 @@ export function inflate(book: CCv3CharacterBook): InflateResult {
       excludeRecursion: stExt.excludeRecursion ?? false,
       ignoreBudget: stExt.ignoreBudget ?? false,
 
+      group: stExt.group ?? '',
+      groupOverride: stExt.groupOverride ?? false,
+      groupWeight: stExt.groupWeight ?? 100,
+      useGroupScoring: stExt.useGroupScoring ?? null,
+
+      scanDepth: stExt.scanDepth ?? null,
+      caseSensitive: stExt.caseSensitive ?? null,
+      matchWholeWords: stExt.matchWholeWords ?? null,
+
+      matchPersonaDescription: stExt.matchPersonaDescription ?? false,
+      matchCharacterDescription: stExt.matchCharacterDescription ?? false,
+      matchCharacterPersonality: stExt.matchCharacterPersonality ?? false,
+      matchCharacterDepthPrompt: stExt.matchCharacterDepthPrompt ?? false,
+      matchScenario: stExt.matchScenario ?? false,
+      matchCreatorNotes: stExt.matchCreatorNotes ?? false,
+
+      role: stExt.role ?? 0,
+      automationId: stExt.automationId ?? '',
+      outletName: stExt.outletName ?? '',
+      vectorized: stExt.vectorized ?? false,
+      useProbability: stExt.useProbability ?? true,
+      addMemo: stExt.addMemo ?? true,
+      displayIndex: stExt.displayIndex ?? 0,
+      delayUntilRecursion: stExt.delayUntilRecursion ?? 0,
+      triggers: Array.isArray(stExt.triggers) ? stExt.triggers : [],
+      characterFilter: stExt.characterFilter ?? { isExclude: false, names: [], tags: [] },
+
       tokenCount,
 
       // Passthrough: store everything except 'sillytavern' key for round-trip
@@ -119,14 +167,24 @@ export function inflate(book: CCv3CharacterBook): InflateResult {
     return entry
   })
 
+  const stBookExt = (book.extensions?.['sillytavern'] ?? {}) as Record<string, unknown>
+
   const bookMeta: BookMeta = {
     name: book.name ?? '',
     description: book.description ?? '',
     scanDepth: book.scan_depth ?? 4,
     tokenBudget: book.token_budget ?? 4096,
     recursiveScan: book.recursive_scanning ?? false,
-    caseSensitive: false,       // SillyTavern book-level setting not in CCv3 schema
-    matchWholeWords: false,
+    caseSensitive: (stBookExt['case_sensitive'] as boolean | undefined) ?? false,
+    matchWholeWords: (stBookExt['match_whole_words'] as boolean | undefined) ?? false,
+    minActivations: (stBookExt['min_activations'] as number | undefined) ?? 0,
+    maxDepth: (stBookExt['max_depth'] as number | undefined) ?? 0,
+    maxRecursionSteps: (stBookExt['max_recursion_steps'] as number | undefined) ?? 0,
+    insertionStrategy: ((stBookExt['insertion_strategy'] as string | undefined) === 'evenly' ? 'evenly' : 'none'),
+    includeNames: (stBookExt['include_names'] as boolean | undefined) ?? false,
+    useGroupScoring: (stBookExt['use_group_scoring'] as boolean | undefined) ?? false,
+    alertOnOverflow: (stBookExt['alert_on_overflow'] as boolean | undefined) ?? false,
+    budgetCap: (stBookExt['budget_cap'] as number | undefined) ?? 0,
     extensions: book.extensions ?? {},
   }
 
@@ -148,6 +206,29 @@ export function deflate(entries: WorkingEntry[], bookMeta: BookMeta): CCv3Charac
       ignoreBudget: entry.ignoreBudget,
       excludeRecursion: entry.excludeRecursion,
       preventRecursion: entry.preventRecursion,
+      group: entry.group,
+      groupOverride: entry.groupOverride,
+      groupWeight: entry.groupWeight,
+      useGroupScoring: entry.useGroupScoring,
+      scanDepth: entry.scanDepth,
+      caseSensitive: entry.caseSensitive,
+      matchWholeWords: entry.matchWholeWords,
+      matchPersonaDescription: entry.matchPersonaDescription,
+      matchCharacterDescription: entry.matchCharacterDescription,
+      matchCharacterPersonality: entry.matchCharacterPersonality,
+      matchCharacterDepthPrompt: entry.matchCharacterDepthPrompt,
+      matchScenario: entry.matchScenario,
+      matchCreatorNotes: entry.matchCreatorNotes,
+      role: entry.role,
+      automationId: entry.automationId,
+      outletName: entry.outletName,
+      vectorized: entry.vectorized,
+      useProbability: entry.useProbability,
+      addMemo: entry.addMemo,
+      displayIndex: entry.displayIndex,
+      delayUntilRecursion: entry.delayUntilRecursion,
+      triggers: entry.triggers,
+      characterFilter: entry.characterFilter,
     }
 
     // Rebuild extensions: passthrough + sillytavern
@@ -174,13 +255,32 @@ export function deflate(entries: WorkingEntry[], bookMeta: BookMeta): CCv3Charac
     }
   })
 
+  const stBookExt: Record<string, unknown> = {
+    ...((bookMeta.extensions['sillytavern'] as Record<string, unknown> | undefined) ?? {}),
+    case_sensitive: bookMeta.caseSensitive,
+    match_whole_words: bookMeta.matchWholeWords,
+    min_activations: bookMeta.minActivations,
+    max_depth: bookMeta.maxDepth,
+    max_recursion_steps: bookMeta.maxRecursionSteps,
+    insertion_strategy: bookMeta.insertionStrategy,
+    include_names: bookMeta.includeNames,
+    use_group_scoring: bookMeta.useGroupScoring,
+    alert_on_overflow: bookMeta.alertOnOverflow,
+    budget_cap: bookMeta.budgetCap,
+  }
+
+  const bookExtensions: Record<string, unknown> = {
+    ...bookMeta.extensions,
+    sillytavern: stBookExt,
+  }
+
   const book: CCv3CharacterBook = {
     name: bookMeta.name,
     description: bookMeta.description,
     scan_depth: bookMeta.scanDepth,
     token_budget: bookMeta.tokenBudget,
     recursive_scanning: bookMeta.recursiveScan,
-    extensions: bookMeta.extensions,
+    extensions: bookExtensions,
     entries: deflatedEntries as CCv3CharacterBook['entries'],
   }
 
