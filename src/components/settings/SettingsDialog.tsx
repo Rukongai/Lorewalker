@@ -1,3 +1,5 @@
+import { useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { HelpCircle } from 'lucide-react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import type { GraphLayoutSettings } from '@/types'
@@ -6,15 +8,41 @@ const inputClass =
   'bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors'
 
 function HelpTooltip({ text }: { text: string }) {
+  const [visible, setVisible] = useState(false)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const iconRef = useRef<HTMLDivElement>(null)
+
+  function handleMouseEnter() {
+    if (iconRef.current) {
+      const rect = iconRef.current.getBoundingClientRect()
+      setPos({ top: rect.top, left: rect.left + rect.width / 2 })
+    }
+    setVisible(true)
+  }
+
   return (
-    <div className="relative group inline-flex items-center ml-1">
-      <HelpCircle size={12} className="text-gray-600 hover:text-gray-400 cursor-help" />
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-52 px-2 py-1.5
-        text-xs bg-gray-800 border border-gray-700 rounded text-gray-300 z-50
-        pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity
-        whitespace-normal leading-relaxed">
-        {text}
-      </div>
+    <div
+      ref={iconRef}
+      className="inline-flex items-center ml-1 cursor-help"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={() => setVisible(false)}
+    >
+      <HelpCircle size={12} className="text-gray-600 hover:text-gray-400" />
+      {visible && createPortal(
+        <div
+          style={{
+            position: 'fixed',
+            top: pos.top,
+            left: pos.left,
+            transform: 'translate(-50%, calc(-100% - 6px))',
+            zIndex: 9999,
+          }}
+          className="w-56 px-2 py-1.5 text-xs bg-gray-800 border border-gray-700 rounded text-gray-300 pointer-events-none whitespace-normal leading-relaxed shadow-lg"
+        >
+          {text}
+        </div>,
+        document.body,
+      )}
     </div>
   )
 }
@@ -123,6 +151,26 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
+  const [leftWidth, setLeftWidth] = useState(140)
+  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null)
+
+  function startDrag(e: React.MouseEvent) {
+    e.preventDefault()
+    dragRef.current = { startX: e.clientX, startWidth: leftWidth }
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return
+      const delta = ev.clientX - dragRef.current.startX
+      setLeftWidth(Math.min(300, Math.max(100, dragRef.current.startWidth + delta)))
+    }
+    const onUp = () => {
+      dragRef.current = null
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
+
   if (!open) return null
 
   return (
@@ -131,8 +179,8 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
       onClick={onClose}
     >
       <div
-        className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl w-[480px]"
-        style={{ maxHeight: '460px' }}
+        className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl flex flex-col"
+        style={{ width: 'min(640px, 80vw)', maxHeight: '75vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -147,13 +195,19 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         </div>
 
         {/* Body */}
-        <div className="flex" style={{ minHeight: '360px' }}>
+        <div className="flex flex-1 overflow-hidden">
           {/* Left: category list */}
-          <div className="w-28 border-r border-gray-800 p-2 shrink-0">
+          <div className="shrink-0 border-r border-gray-800 p-2 overflow-y-auto" style={{ width: leftWidth }}>
             <button className="w-full text-left px-2 py-1.5 rounded text-xs text-indigo-400 bg-gray-800 font-medium">
               Graph Settings
             </button>
           </div>
+
+          {/* Drag divider */}
+          <div
+            className="w-1 shrink-0 cursor-col-resize bg-gray-800 hover:bg-indigo-600 transition-colors"
+            onMouseDown={startDrag}
+          />
 
           {/* Right: content */}
           <div className="flex-1 p-4 overflow-y-auto">
