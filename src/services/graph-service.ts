@@ -68,7 +68,7 @@ export function findCycles(graph: RecursionGraph): CycleResult {
         dfs(neighbor)
       } else if (onStack.has(neighbor)) {
         const cycleStart = path.lastIndexOf(neighbor)
-        cycles.push(path.slice(cycleStart))
+        cycles.push([...path.slice(cycleStart), neighbor])
       }
     }
 
@@ -107,6 +107,11 @@ export function findDeadLinks(entries: WorkingEntry[], graph: RecursionGraph): D
       const lowerName = target.name.toLowerCase()
       const idx = lowerContent.indexOf(lowerName)
       if (idx === -1) continue
+
+      // Require word boundaries to avoid false positives (e.g., "Al" matching "also")
+      const before = idx > 0 ? lowerContent[idx - 1] : ''
+      const after = idx + lowerName.length < lowerContent.length ? lowerContent[idx + lowerName.length] : ''
+      if ((before && /\w/.test(before)) || (after && /\w/.test(after))) continue
 
       const snippetStart = Math.max(0, idx - 20)
       const snippetEnd = Math.min(source.content.length, idx + target.name.length + 20)

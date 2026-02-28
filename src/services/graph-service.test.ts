@@ -128,7 +128,7 @@ describe('findCycles', () => {
     const graph = buildGraph(entries, opts)
     const result = findCycles(graph)
     expect(result.cycles).toHaveLength(1)
-    expect(result.cycles[0]).toHaveLength(3)
+    expect(result.cycles[0]).toHaveLength(4)
   })
 })
 
