@@ -60,3 +60,13 @@ export interface GraphLayoutSettings {
   rankdir: 'LR' | 'TB' | 'RL' | 'BT'
   edgeDirection: 'LR' | 'TB'
 }
+
+export interface GraphDisplayDefaults {
+  connectionVisibility: 'all' | 'selected' | 'none'
+  showBlockedEdges: boolean
+  edgeStyle: 'bezier' | 'straight' | 'smoothstep'
+}
+
+export interface EditorDefaults {
+  showKeywordHighlights: boolean
+}

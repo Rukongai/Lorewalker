@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { TabMeta, FileMeta, GraphLayoutSettings } from '@/types'
+import type { TabMeta, FileMeta, GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults } from '@/types'
 
 const DEFAULT_GRAPH_SETTINGS: GraphLayoutSettings = {
   acyclicer: 'greedy',
@@ -10,12 +10,24 @@ const DEFAULT_GRAPH_SETTINGS: GraphLayoutSettings = {
   edgeDirection: 'LR',
 }
 
+const DEFAULT_GRAPH_DISPLAY_DEFAULTS: GraphDisplayDefaults = {
+  connectionVisibility: 'selected',
+  showBlockedEdges: false,
+  edgeStyle: 'bezier',
+}
+
+const DEFAULT_EDITOR_DEFAULTS: EditorDefaults = {
+  showKeywordHighlights: true,
+}
+
 interface WorkspaceState {
   tabs: TabMeta[]
   activeTabId: string | null
   theme: 'dark' | 'light'
   graphSettings: GraphLayoutSettings
   checkRecursionLoops: boolean
+  graphDisplayDefaults: GraphDisplayDefaults
+  editorDefaults: EditorDefaults
 
   // Actions
   openTab(tabId: string, name: string, fileMeta: FileMeta): void
@@ -25,6 +37,8 @@ interface WorkspaceState {
   setTheme(theme: 'dark' | 'light'): void
   setGraphSettings(settings: GraphLayoutSettings): void
   setCheckRecursionLoops(value: boolean): void
+  setGraphDisplayDefaults(settings: GraphDisplayDefaults): void
+  setEditorDefaults(settings: EditorDefaults): void
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -34,6 +48,8 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     theme: 'dark' as const,
     graphSettings: DEFAULT_GRAPH_SETTINGS,
     checkRecursionLoops: false,
+    graphDisplayDefaults: DEFAULT_GRAPH_DISPLAY_DEFAULTS,
+    editorDefaults: DEFAULT_EDITOR_DEFAULTS,
 
     openTab(tabId, name, fileMeta) {
       set((state) => {
@@ -90,6 +106,14 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
     setCheckRecursionLoops(value) {
       set((state) => { state.checkRecursionLoops = value })
+    },
+
+    setGraphDisplayDefaults(settings) {
+      set((state) => { state.graphDisplayDefaults = settings })
+    },
+
+    setEditorDefaults(settings) {
+      set((state) => { state.editorDefaults = settings })
     },
   }))
 )

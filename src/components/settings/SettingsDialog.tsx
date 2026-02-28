@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { HelpCircle } from 'lucide-react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import type { GraphLayoutSettings } from '@/types'
+import type { GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults } from '@/types'
 
 const inputClass =
   'bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors'
@@ -47,6 +47,14 @@ function HelpTooltip({ text }: { text: string }) {
   )
 }
 
+function SubcategoryHeader({ title }: { title: string }) {
+  return (
+    <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-3">
+      {title}
+    </p>
+  )
+}
+
 function GeneralSettingsPanel() {
   const checkRecursionLoops = useWorkspaceStore((s) => s.checkRecursionLoops)
   const setCheckRecursionLoops = useWorkspaceStore((s) => s.setCheckRecursionLoops)
@@ -72,13 +80,21 @@ function GeneralSettingsPanel() {
 function GraphSettingsPanel() {
   const graphSettings = useWorkspaceStore((s) => s.graphSettings)
   const setGraphSettings = useWorkspaceStore((s) => s.setGraphSettings)
+  const graphDisplayDefaults = useWorkspaceStore((s) => s.graphDisplayDefaults)
+  const setGraphDisplayDefaults = useWorkspaceStore((s) => s.setGraphDisplayDefaults)
 
-  function update<K extends keyof GraphLayoutSettings>(key: K, value: GraphLayoutSettings[K]) {
+  function updateLayout<K extends keyof GraphLayoutSettings>(key: K, value: GraphLayoutSettings[K]) {
     setGraphSettings({ ...graphSettings, [key]: value })
+  }
+
+  function updateDisplay<K extends keyof GraphDisplayDefaults>(key: K, value: GraphDisplayDefaults[K]) {
+    setGraphDisplayDefaults({ ...graphDisplayDefaults, [key]: value })
   }
 
   return (
     <div className="flex flex-col gap-3">
+      <SubcategoryHeader title="Auto-Layout" />
+
       {/* Acyclicer */}
       <div className="flex items-center justify-between">
         <div className="flex items-center text-xs text-gray-300">
@@ -88,7 +104,7 @@ function GraphSettingsPanel() {
         <select
           className={inputClass}
           value={graphSettings.acyclicer}
-          onChange={(e) => update('acyclicer', e.target.value as GraphLayoutSettings['acyclicer'])}
+          onChange={(e) => updateLayout('acyclicer', e.target.value as GraphLayoutSettings['acyclicer'])}
         >
           <option value="greedy">Greedy</option>
           <option value="none">Disabled</option>
@@ -104,7 +120,7 @@ function GraphSettingsPanel() {
         <select
           className={inputClass}
           value={graphSettings.ranker}
-          onChange={(e) => update('ranker', e.target.value as GraphLayoutSettings['ranker'])}
+          onChange={(e) => updateLayout('ranker', e.target.value as GraphLayoutSettings['ranker'])}
         >
           <option value="network-simplex">Network Simplex</option>
           <option value="tight-tree">Tight Tree</option>
@@ -121,7 +137,7 @@ function GraphSettingsPanel() {
         <select
           className={inputClass}
           value={graphSettings.align}
-          onChange={(e) => update('align', e.target.value as GraphLayoutSettings['align'])}
+          onChange={(e) => updateLayout('align', e.target.value as GraphLayoutSettings['align'])}
         >
           <option value="UL">UL</option>
           <option value="UR">UR</option>
@@ -139,7 +155,7 @@ function GraphSettingsPanel() {
         <select
           className={inputClass}
           value={graphSettings.rankdir}
-          onChange={(e) => update('rankdir', e.target.value as GraphLayoutSettings['rankdir'])}
+          onChange={(e) => updateLayout('rankdir', e.target.value as GraphLayoutSettings['rankdir'])}
         >
           <option value="LR">LR</option>
           <option value="TB">TB</option>
@@ -157,10 +173,94 @@ function GraphSettingsPanel() {
         <select
           className={inputClass}
           value={graphSettings.edgeDirection}
-          onChange={(e) => update('edgeDirection', e.target.value as GraphLayoutSettings['edgeDirection'])}
+          onChange={(e) => updateLayout('edgeDirection', e.target.value as GraphLayoutSettings['edgeDirection'])}
         >
           <option value="LR">LR</option>
           <option value="TB">TB</option>
+        </select>
+      </div>
+
+      <div className="border-t border-gray-800 my-2" />
+      <SubcategoryHeader title="Defaults" />
+
+      {/* Connections */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-xs text-gray-300">
+          Connections
+          <HelpTooltip text="Default connection visibility when opening a graph. 'Show for Selected Node' only shows edges connected to the selected entry." />
+        </div>
+        <select
+          className={inputClass}
+          value={graphDisplayDefaults.connectionVisibility}
+          onChange={(e) => updateDisplay('connectionVisibility', e.target.value as GraphDisplayDefaults['connectionVisibility'])}
+        >
+          <option value="all">Show All Connections</option>
+          <option value="selected">Show for Selected Node</option>
+          <option value="none">Connections Hidden</option>
+        </select>
+      </div>
+
+      {/* Blocked Edges */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-xs text-gray-300">
+          Blocked Edges
+          <HelpTooltip text="Whether to show edges blocked by prevent_recursion or exclude_recursion by default." />
+        </div>
+        <select
+          className={inputClass}
+          value={String(graphDisplayDefaults.showBlockedEdges)}
+          onChange={(e) => updateDisplay('showBlockedEdges', e.target.value === 'true')}
+        >
+          <option value="false">Hide</option>
+          <option value="true">Show</option>
+        </select>
+      </div>
+
+      {/* Edge Style */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-xs text-gray-300">
+          Style
+          <HelpTooltip text="Default edge rendering style. Bezier uses curved noodle paths; Straight uses direct lines; Smoothed Paths uses rounded corner paths." />
+        </div>
+        <select
+          className={inputClass}
+          value={graphDisplayDefaults.edgeStyle}
+          onChange={(e) => updateDisplay('edgeStyle', e.target.value as GraphDisplayDefaults['edgeStyle'])}
+        >
+          <option value="bezier">Bezier</option>
+          <option value="straight">Straight</option>
+          <option value="smoothstep">Smoothed Paths</option>
+        </select>
+      </div>
+    </div>
+  )
+}
+
+function EditorSettingsPanel() {
+  const editorDefaults = useWorkspaceStore((s) => s.editorDefaults)
+  const setEditorDefaults = useWorkspaceStore((s) => s.setEditorDefaults)
+
+  function updateEditor<K extends keyof EditorDefaults>(key: K, value: EditorDefaults[K]) {
+    setEditorDefaults({ ...editorDefaults, [key]: value })
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <SubcategoryHeader title="Defaults" />
+
+      {/* Keyword Highlights */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-xs text-gray-300">
+          Keyword Highlights
+          <HelpTooltip text="Whether the keyword highlight toggle in the content editor starts on or off by default." />
+        </div>
+        <select
+          className={inputClass}
+          value={String(editorDefaults.showKeywordHighlights)}
+          onChange={(e) => updateEditor('showKeywordHighlights', e.target.value === 'true')}
+        >
+          <option value="true">Show</option>
+          <option value="false">Hide</option>
         </select>
       </div>
     </div>
@@ -173,7 +273,7 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
-  const [activeCategory, setActiveCategory] = useState<'general' | 'graph'>('general')
+  const [activeCategory, setActiveCategory] = useState<'general' | 'graph' | 'editor'>('general')
   const [leftWidth, setLeftWidth] = useState(140)
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null)
 
@@ -221,26 +321,19 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         <div className="flex flex-1 overflow-hidden">
           {/* Left: category list */}
           <div className="shrink-0 border-r border-gray-800 p-2 overflow-y-auto" style={{ width: leftWidth }}>
-            <button
-              onClick={() => setActiveCategory('general')}
-              className={`w-full text-left px-2 py-1.5 rounded text-xs font-medium ${
-                activeCategory === 'general'
-                  ? 'text-indigo-400 bg-gray-800'
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
-              } transition-colors`}
-            >
-              General
-            </button>
-            <button
-              onClick={() => setActiveCategory('graph')}
-              className={`w-full text-left px-2 py-1.5 rounded text-xs font-medium ${
-                activeCategory === 'graph'
-                  ? 'text-indigo-400 bg-gray-800'
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
-              } transition-colors`}
-            >
-              Graph Settings
-            </button>
+            {(['general', 'graph', 'editor'] as const).map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`w-full text-left px-2 py-1.5 rounded text-xs font-medium ${
+                  activeCategory === cat
+                    ? 'text-indigo-400 bg-gray-800'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                } transition-colors`}
+              >
+                {cat === 'general' ? 'General' : cat === 'graph' ? 'Graph Settings' : 'Editor'}
+              </button>
+            ))}
           </div>
 
           {/* Drag divider */}
@@ -251,7 +344,9 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
           {/* Right: content */}
           <div className="flex-1 p-4 overflow-y-auto">
-            {activeCategory === 'general' ? <GeneralSettingsPanel /> : <GraphSettingsPanel />}
+            {activeCategory === 'general' && <GeneralSettingsPanel />}
+            {activeCategory === 'graph' && <GraphSettingsPanel />}
+            {activeCategory === 'editor' && <EditorSettingsPanel />}
           </div>
         </div>
       </div>

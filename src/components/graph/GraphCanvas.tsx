@@ -45,11 +45,16 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick }: GraphCanvasInnerProps) {
   const { graph } = useDerivedState(tabId)
   const { fitView, getNode, setCenter } = useReactFlow()
 
+  const graphDisplayDefaults = useWorkspaceStore((s) => s.graphDisplayDefaults)
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<EntryNodeData>>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<RecursionEdgeData>>([])
-  const [showBlockedEdges, setShowBlockedEdges] = useState(false)
-  const [connectionVisibility, setConnectionVisibility] = useState<ConnectionVisibility>('all')
-  const [edgeStyle, setEdgeStyle] = useState<'bezier' | 'straight'>('bezier')
+  const [showBlockedEdges, setShowBlockedEdges] = useState(graphDisplayDefaults.showBlockedEdges)
+  const [connectionVisibility, setConnectionVisibility] = useState<ConnectionVisibility>(
+    graphDisplayDefaults.connectionVisibility,
+  )
+  const [edgeStyle, setEdgeStyle] = useState<'bezier' | 'straight' | 'smoothstep'>(
+    graphDisplayDefaults.edgeStyle,
+  )
   const didInitialFitRef = useRef(false)
 
   const cycleInfo = useMemo(() => {
@@ -195,7 +200,11 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick }: GraphCanvasInnerProps) {
   }, [])
 
   const handleToggleEdgeStyle = useCallback(() => {
-    setEdgeStyle((v) => (v === 'bezier' ? 'straight' : 'bezier'))
+    setEdgeStyle((v) => {
+      if (v === 'bezier') return 'straight'
+      if (v === 'straight') return 'smoothstep'
+      return 'bezier'
+    })
   }, [])
 
   if (entries.length === 0) {

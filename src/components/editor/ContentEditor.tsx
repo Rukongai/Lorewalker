@@ -105,7 +105,8 @@ interface ContentEditorProps {
 }
 
 export function ContentEditor({ value, entryId, graph, onChange }: ContentEditorProps) {
-  const [highlight, setHighlight] = useState(false)
+  const showKeywordHighlightsByDefault = useWorkspaceStore((s) => s.editorDefaults.showKeywordHighlights)
+  const [highlight, setHighlight] = useState(showKeywordHighlightsByDefault)
   const containerRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const onChangeRef = useRef(onChange)

@@ -1,4 +1,4 @@
-import { getBezierPath, getStraightPath, EdgeLabelRenderer } from '@xyflow/react'
+import { getBezierPath, getStraightPath, getSmoothStepPath, EdgeLabelRenderer } from '@xyflow/react'
 import type { EdgeProps } from '@xyflow/react'
 
 export interface RecursionEdgeData {
@@ -6,7 +6,7 @@ export interface RecursionEdgeData {
   isCyclic: boolean
   isHighlighted?: boolean
   isIncoming?: boolean
-  edgeStyle?: 'bezier' | 'straight'
+  edgeStyle?: 'bezier' | 'straight' | 'smoothstep'
   [key: string]: unknown
 }
 
@@ -36,14 +36,9 @@ export function RecursionEdge({
   const [edgePath] =
     data?.edgeStyle === 'straight'
       ? getStraightPath({ sourceX, sourceY, targetX, targetY })
-      : getBezierPath({
-          sourceX,
-          sourceY,
-          sourcePosition,
-          targetX,
-          targetY,
-          targetPosition,
-        })
+      : data?.edgeStyle === 'smoothstep'
+      ? getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
+      : getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
 
   return (
     <>

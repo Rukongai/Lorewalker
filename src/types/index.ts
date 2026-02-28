@@ -68,4 +68,6 @@ export type {
   PanelLayout,
   SimulatorState,
   GraphLayoutSettings,
+  GraphDisplayDefaults,
+  EditorDefaults,
 } from './ui'
