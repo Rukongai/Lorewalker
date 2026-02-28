@@ -36,6 +36,7 @@ interface GraphCanvasInnerProps {
 
 function GraphCanvasInner({ tabId, onNodeDoubleClick }: GraphCanvasInnerProps) {
   const graphSettings = useWorkspaceStore((s) => s.graphSettings)
+  const checkRecursionLoops = useWorkspaceStore((s) => s.checkRecursionLoops)
   const realStore = documentStoreRegistry.get(tabId)
   const store = realStore ?? EMPTY_STORE
   const entries = store((s) => s.entries)
@@ -52,6 +53,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick }: GraphCanvasInnerProps) {
   const didInitialFitRef = useRef(false)
 
   const cycleInfo = useMemo(() => {
+    if (!checkRecursionLoops) return { cycleNodeIds: new Set<string>(), cycleEdgeIds: new Set<string>() }
     const result = findCycles(graph)
     const cycleNodeIds = new Set<string>()
     const cycleEdgeIds = new Set<string>()
@@ -63,7 +65,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick }: GraphCanvasInnerProps) {
       }
     }
     return { cycleNodeIds, cycleEdgeIds }
-  }, [graph])
+  }, [graph, checkRecursionLoops])
 
   // Sync entries + positions + selection → React Flow nodes
   useEffect(() => {

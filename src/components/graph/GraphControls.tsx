@@ -9,7 +9,7 @@ interface GraphControlsProps {
   onToggleBlockedEdges: () => void
   connectionVisibility: ConnectionVisibility
   onCycleConnectionVisibility: () => void
-  edgeStyle: 'smooth' | 'straight'
+  edgeStyle: 'bezier' | 'straight'
   onToggleEdgeStyle: () => void
 }
 
@@ -74,10 +74,10 @@ export function GraphControls({
 
       <button
         onClick={onToggleEdgeStyle}
-        title={edgeStyle === 'smooth' ? 'Switch to straight edges' : 'Switch to curved edges'}
+        title={edgeStyle === 'bezier' ? 'Switch to straight edges' : 'Switch to bezier/noodle edges'}
         className="p-1.5 bg-gray-800 border border-gray-700 rounded text-gray-300 hover:bg-gray-700 hover:text-gray-100 transition-colors"
       >
-        {edgeStyle === 'smooth' ? <Spline size={13} /> : <Minus size={13} />}
+        {edgeStyle === 'bezier' ? <Spline size={13} /> : <Minus size={13} />}
       </button>
     </div>
   )

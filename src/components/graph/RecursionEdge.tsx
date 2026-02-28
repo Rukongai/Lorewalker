@@ -1,10 +1,12 @@
-import { getSmoothStepPath, getStraightPath, EdgeLabelRenderer } from '@xyflow/react'
+import { getBezierPath, getStraightPath, EdgeLabelRenderer } from '@xyflow/react'
 import type { EdgeProps } from '@xyflow/react'
 
 export interface RecursionEdgeData {
   blocked: boolean
   isCyclic: boolean
-  edgeStyle?: 'smooth' | 'straight'
+  isHighlighted?: boolean
+  isIncoming?: boolean
+  edgeStyle?: 'bezier' | 'straight'
   [key: string]: unknown
 }
 
@@ -21,17 +23,20 @@ export function RecursionEdge({
 }: EdgeProps<RecursionEdgeData>) {
   const blocked = data?.blocked ?? false
   const isCyclic = data?.isCyclic ?? false
+  const isIncoming = data?.isIncoming ?? false
 
   const color = isCyclic
     ? 'var(--edge-cycle)'
     : blocked
     ? 'var(--edge-blocked)'
+    : isIncoming
+    ? 'var(--edge-incoming)'
     : 'var(--edge-active)'
 
   const [edgePath] =
     data?.edgeStyle === 'straight'
       ? getStraightPath({ sourceX, sourceY, targetX, targetY })
-      : getSmoothStepPath({
+      : getBezierPath({
           sourceX,
           sourceY,
           sourcePosition,
@@ -46,9 +51,7 @@ export function RecursionEdge({
         id={id}
         d={edgePath}
         fill="none"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeDasharray={blocked ? '5 3' : undefined}
+        style={{ stroke: color, strokeWidth: 1.5, strokeDasharray: blocked ? '5 3' : undefined }}
         markerEnd={markerEnd}
         className="react-flow__edge-path"
       />
