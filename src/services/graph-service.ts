@@ -208,7 +208,12 @@ export function computeLayout(
 ): Map<string, { x: number; y: number }> {
   // If all entries already have positions, return them unchanged
   if (existingPositions && entries.every((e) => existingPositions.has(e.id))) {
-    return new Map(existingPositions)
+    const entryIds = new Set(entries.map((e) => e.id))
+    const filtered = new Map<string, { x: number; y: number }>()
+    for (const [id, pos] of existingPositions) {
+      if (entryIds.has(id)) filtered.set(id, pos)
+    }
+    return filtered
   }
 
   const g = new dagre.graphlib.Graph()
