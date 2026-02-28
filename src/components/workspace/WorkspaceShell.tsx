@@ -6,7 +6,7 @@ import { EntryEditor } from '@/components/editor/EntryEditor'
 import { importFile, exportFile } from '@/services/file-service'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
-import { cn } from '@/lib/cn'
+import { GraphCanvas } from '@/components/graph/GraphCanvas'
 
 export function WorkspaceShell() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
@@ -163,24 +163,18 @@ export function WorkspaceShell() {
           <EntryList />
         </aside>
 
-        {/* Center panel: graph canvas placeholder */}
-        <main
-          className={cn(
-            'flex-1 bg-gray-950 flex items-center justify-center',
-            !activeTabId && 'cursor-default'
-          )}
-        >
+        {/* Center panel: graph canvas */}
+        <main className="flex-1 bg-gray-950 flex overflow-hidden">
           {!activeTabId ? (
-            <div className="text-center space-y-3 pointer-events-none">
-              <div className="text-5xl text-gray-700">⬡</div>
-              <p className="text-sm text-gray-500">Drag a SillyTavern JSON file here</p>
-              <p className="text-xs text-gray-600">or click the upload icon above</p>
+            <div className="flex-1 flex items-center justify-center pointer-events-none">
+              <div className="text-center space-y-3">
+                <div className="text-5xl text-gray-700">&#x2B21;</div>
+                <p className="text-sm text-gray-500">Drag a SillyTavern JSON file here</p>
+                <p className="text-xs text-gray-600">or click the upload icon above</p>
+              </div>
             </div>
           ) : (
-            <div className="text-center space-y-2">
-              <div className="text-4xl text-gray-700">⬡</div>
-              <p className="text-xs text-gray-600">Graph visualization — Phase 2</p>
-            </div>
+            <GraphCanvas tabId={activeTabId} />
           )}
         </main>
 
