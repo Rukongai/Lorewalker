@@ -71,7 +71,12 @@ export interface EditorDefaults {
   showKeywordHighlights: boolean
 }
 
+export type SortKey = 'uid' | 'name' | 'tokenCount' | 'order'
+
 export interface EntriesListDefaults {
-  sortBy: 'uid' | 'name' | 'tokenCount' | 'order'
+  sortBy: SortKey
   sortDirection: 'asc' | 'desc'
+  sortBy2: SortKey | null
+  sortDir2: 'asc' | 'desc'
+  pinConstantsToTop: boolean
 }

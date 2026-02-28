@@ -272,6 +272,58 @@ function EntriesSettingsPanel() {
           <option value="desc">Descending</option>
         </select>
       </div>
+
+      {/* Secondary Sort By */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-xs text-gray-300">
+          Secondary Sort
+          <HelpTooltip text="Tiebreak key applied when the primary sort produces a tie. Set to None to disable." />
+        </div>
+        <select
+          className={inputClass}
+          value={entriesListDefaults.sortBy2 ?? ''}
+          onChange={(e) => update('sortBy2', e.target.value === '' ? null : e.target.value as EntriesListDefaults['sortBy'])}
+        >
+          <option value="">— None —</option>
+          <option value="uid">UID</option>
+          <option value="name">Name</option>
+          <option value="tokenCount">Tokens</option>
+          <option value="order">Order</option>
+        </select>
+      </div>
+
+      {/* Secondary Sort Direction */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-xs text-gray-300">
+          Secondary Direction
+          <HelpTooltip text="Sort direction for the secondary sort key." />
+        </div>
+        <select
+          className={inputClass}
+          value={entriesListDefaults.sortDir2}
+          disabled={entriesListDefaults.sortBy2 === null}
+          onChange={(e) => update('sortDir2', e.target.value as EntriesListDefaults['sortDir2'])}
+        >
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
+        </select>
+      </div>
+
+      {/* Pin Constants to Top */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-xs text-gray-300">
+          Pin Constants to Top
+          <HelpTooltip text="Always show Constant (always-active) entries at the top of the list, regardless of sort order." />
+        </div>
+        <select
+          className={inputClass}
+          value={String(entriesListDefaults.pinConstantsToTop)}
+          onChange={(e) => update('pinConstantsToTop', e.target.value === 'true')}
+        >
+          <option value="true">Enabled</option>
+          <option value="false">Disabled</option>
+        </select>
+      </div>
     </div>
   )
 }

@@ -23,6 +23,9 @@ const DEFAULT_EDITOR_DEFAULTS: EditorDefaults = {
 const DEFAULT_ENTRIES_LIST_DEFAULTS: EntriesListDefaults = {
   sortBy: 'order',
   sortDirection: 'asc',
+  sortBy2: null,
+  sortDir2: 'asc',
+  pinConstantsToTop: true,
 }
 
 interface WorkspaceState {

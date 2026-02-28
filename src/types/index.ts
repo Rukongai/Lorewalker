@@ -71,4 +71,5 @@ export type {
   GraphDisplayDefaults,
   EditorDefaults,
   EntriesListDefaults,
+  SortKey,
 } from './ui'

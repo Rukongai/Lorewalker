@@ -1,5 +1,5 @@
 import { useReactFlow } from '@xyflow/react'
-import { LayoutGrid, Maximize2, Eye, EyeOff, Network, Crosshair, Minus, Spline } from 'lucide-react'
+import { LayoutGrid, Maximize2, Eye, EyeOff, Network, Crosshair, Minus, Spline, CornerDownRight } from 'lucide-react'
 
 export type ConnectionVisibility = 'all' | 'selected' | 'none'
 
@@ -77,7 +77,7 @@ export function GraphControls({
         title={edgeStyle === 'bezier' ? 'Switch to straight edges' : edgeStyle === 'straight' ? 'Switch to smoothed paths' : 'Switch to bezier/noodle edges'}
         className="p-1.5 bg-gray-800 border border-gray-700 rounded text-gray-300 hover:bg-gray-700 hover:text-gray-100 transition-colors"
       >
-        {edgeStyle === 'bezier' ? <Spline size={13} /> : <Minus size={13} />}
+        {edgeStyle === 'bezier' ? <Spline size={13} /> : edgeStyle === 'straight' ? <Minus size={13} /> : <CornerDownRight size={13} />}
       </button>
     </div>
   )
