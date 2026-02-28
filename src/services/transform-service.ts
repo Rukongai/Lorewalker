@@ -180,7 +180,12 @@ export function inflate(book: CCv3CharacterBook): InflateResult {
     minActivations: (stBookExt['min_activations'] as number | undefined) ?? 0,
     maxDepth: (stBookExt['max_depth'] as number | undefined) ?? 0,
     maxRecursionSteps: (stBookExt['max_recursion_steps'] as number | undefined) ?? 0,
-    insertionStrategy: ((stBookExt['insertion_strategy'] as string | undefined) === 'evenly' ? 'evenly' : 'none'),
+    insertionStrategy: (() => {
+      const s = stBookExt['insertion_strategy'] as string | undefined
+      if (s === 'character_lore_first') return 'character_lore_first'
+      if (s === 'global_lore_first') return 'global_lore_first'
+      return 'evenly'
+    })(),
     includeNames: (stBookExt['include_names'] as boolean | undefined) ?? false,
     useGroupScoring: (stBookExt['use_group_scoring'] as boolean | undefined) ?? false,
     alertOnOverflow: (stBookExt['alert_on_overflow'] as boolean | undefined) ?? false,

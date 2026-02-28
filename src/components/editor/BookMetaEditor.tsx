@@ -15,7 +15,7 @@ function FieldGroup({ label, defaultCollapsed = false, children }: {
     <div className="mb-4">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-gray-400 transition-colors"
+        className="w-full text-left text-[10px] font-semibold tracking-wider text-gray-500 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-gray-400 transition-colors"
       >
         {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         {label}
@@ -160,11 +160,12 @@ export function BookMetaEditor() {
         <Field label="Insertion Strategy">
           <select
             value={bookMeta.insertionStrategy}
-            onChange={(e) => handleChange('insertionStrategy', e.target.value as 'none' | 'evenly')}
+            onChange={(e) => handleChange('insertionStrategy', e.target.value as 'evenly' | 'character_lore_first' | 'global_lore_first')}
             className={inputClass}
           >
-            <option value="none">None</option>
-            <option value="evenly">Evenly</option>
+            <option value="evenly">Sorted Evenly</option>
+            <option value="character_lore_first">Character Lore First</option>
+            <option value="global_lore_first">Global Lore First</option>
           </select>
         </Field>
       </FieldGroup>

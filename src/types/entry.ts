@@ -112,7 +112,7 @@ export interface BookMeta {
   minActivations: number;       // Min entries to activate; 0 = disabled
   maxDepth: number;             // Max message depth for minActivations; 0 = unlimited
   maxRecursionSteps: number;    // Max recursion passes; 0 = unlimited
-  insertionStrategy: 'none' | 'evenly'; // How entries are distributed in context
+  insertionStrategy: 'evenly' | 'character_lore_first' | 'global_lore_first'; // How entries are distributed in context
   includeNames: boolean;        // Include chat participant names in keyword scan
   useGroupScoring: boolean;     // Global default for group scoring
   alertOnOverflow: boolean;     // Show alert when WI exceeds token budget

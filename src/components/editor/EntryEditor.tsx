@@ -19,7 +19,7 @@ function FieldGroup({ label, stOnly, defaultCollapsed = false, children }: {
     <div className="mb-4">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-gray-400 transition-colors"
+        className="w-full text-left text-[10px] font-semibold tracking-wider text-gray-500 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-gray-400 transition-colors"
       >
         {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         {label}
