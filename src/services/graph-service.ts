@@ -126,3 +126,71 @@ export function findDeadLinks(entries: WorkingEntry[], graph: RecursionGraph): D
 
   return deadLinks
 }
+
+export function incrementalUpdate(
+  graph: RecursionGraph,
+  changedEntry: WorkingEntry,
+  allEntries: WorkingEntry[],
+  options: KeywordMatchOptions,
+  changeType: 'content' | 'keys',
+): RecursionGraph {
+  // Shallow-clone the graph (new Maps with new Sets — don't mutate original)
+  const edges = new Map<string, Set<string>>()
+  const reverseEdges = new Map<string, Set<string>>()
+  const edgeMeta = new Map<string, EdgeMeta>(graph.edgeMeta)
+
+  for (const [id, set] of graph.edges) edges.set(id, new Set(set))
+  for (const [id, set] of graph.reverseEdges) reverseEdges.set(id, new Set(set))
+
+  if (changeType === 'content') {
+    // Remove all outgoing edges from changedEntry
+    const oldOutgoing = new Set(edges.get(changedEntry.id) ?? [])
+    for (const targetId of oldOutgoing) {
+      reverseEdges.get(targetId)?.delete(changedEntry.id)
+      edgeMeta.delete(`${changedEntry.id}\u2192${targetId}`)
+    }
+    edges.set(changedEntry.id, new Set())
+
+    // Recompute outgoing edges using the new content
+    if (changedEntry.content) {
+      for (const target of allEntries) {
+        if (target.id === changedEntry.id || target.keys.length === 0) continue
+        const matches = doesEntryMatchText(target, changedEntry.content, options)
+        if (!matches.length) continue
+        edges.get(changedEntry.id)!.add(target.id)
+        reverseEdges.get(target.id)?.add(changedEntry.id)
+        edgeMeta.set(`${changedEntry.id}\u2192${target.id}`, {
+          sourceId: changedEntry.id,
+          targetId: target.id,
+          matchedKeywords: [...new Set(matches.map((m) => m.keyword))],
+          blockedByPreventRecursion: target.preventRecursion,
+        })
+      }
+    }
+  } else {
+    // changeType === 'keys': remove all incoming edges to changedEntry
+    const oldIncoming = new Set(reverseEdges.get(changedEntry.id) ?? [])
+    for (const sourceId of oldIncoming) {
+      edges.get(sourceId)?.delete(changedEntry.id)
+      edgeMeta.delete(`${sourceId}\u2192${changedEntry.id}`)
+    }
+    reverseEdges.set(changedEntry.id, new Set())
+
+    // Recompute incoming edges: scan all other entries' content against new keys
+    for (const source of allEntries) {
+      if (source.id === changedEntry.id || !source.content || changedEntry.keys.length === 0) continue
+      const matches = doesEntryMatchText(changedEntry, source.content, options)
+      if (!matches.length) continue
+      edges.get(source.id)?.add(changedEntry.id)
+      reverseEdges.get(changedEntry.id)!.add(source.id)
+      edgeMeta.set(`${source.id}\u2192${changedEntry.id}`, {
+        sourceId: source.id,
+        targetId: changedEntry.id,
+        matchedKeywords: [...new Set(matches.map((m) => m.keyword))],
+        blockedByPreventRecursion: changedEntry.preventRecursion,
+      })
+    }
+  }
+
+  return { edges, reverseEdges, edgeMeta }
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildGraph, findCycles, findOrphans, findDeadLinks } from './graph-service'
+import { buildGraph, findCycles, findOrphans, findDeadLinks, incrementalUpdate } from './graph-service'
 import type { WorkingEntry } from '@/types'
 
 function makeEntry(overrides: Partial<WorkingEntry> = {}): WorkingEntry {
@@ -173,5 +173,88 @@ describe('findDeadLinks', () => {
     expect(deadLinks.length).toBeGreaterThan(0)
     expect(deadLinks[0].sourceEntryId).toBe('b')
     expect(deadLinks[0].mentionedName).toBe('Dragon Keep')
+  })
+})
+
+describe('incrementalUpdate', () => {
+  it('removes outgoing edge when content changes to no longer match', () => {
+    const entries = [
+      makeEntry({ id: 'src', content: 'see the wolf', keys: [] }),
+      makeEntry({ id: 'tgt', keys: ['wolf'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(graph.edges.get('src')?.has('tgt')).toBe(true)
+
+    const updatedSrc = { ...entries[0], content: 'see the knight' }
+    const updated = [updatedSrc, entries[1]]
+    const newGraph = incrementalUpdate(graph, updatedSrc, updated, opts, 'content')
+
+    expect(newGraph.edges.get('src')?.has('tgt')).toBe(false)
+    expect(newGraph.reverseEdges.get('tgt')?.has('src')).toBe(false)
+    expect(newGraph.edgeMeta.has('src\u2192tgt')).toBe(false)
+  })
+
+  it('adds outgoing edge when content changes to match a new entry', () => {
+    const entries = [
+      makeEntry({ id: 'src', content: 'see the knight', keys: [] }),
+      makeEntry({ id: 'tgt', keys: ['wolf'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(graph.edges.get('src')?.has('tgt')).toBe(false)
+
+    const updatedSrc = { ...entries[0], content: 'see the wolf' }
+    const updated = [updatedSrc, entries[1]]
+    const newGraph = incrementalUpdate(graph, updatedSrc, updated, opts, 'content')
+
+    expect(newGraph.edges.get('src')?.has('tgt')).toBe(true)
+    expect(newGraph.reverseEdges.get('tgt')?.has('src')).toBe(true)
+  })
+
+  it('removes incoming edge when keys change to no longer match', () => {
+    const entries = [
+      makeEntry({ id: 'src', content: 'see the wolf', keys: [] }),
+      makeEntry({ id: 'tgt', keys: ['wolf'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(graph.reverseEdges.get('tgt')?.has('src')).toBe(true)
+
+    const updatedTgt = { ...entries[1], keys: ['dragon'] }
+    const updated = [entries[0], updatedTgt]
+    const newGraph = incrementalUpdate(graph, updatedTgt, updated, opts, 'keys')
+
+    expect(newGraph.reverseEdges.get('tgt')?.has('src')).toBe(false)
+    expect(newGraph.edges.get('src')?.has('tgt')).toBe(false)
+    expect(newGraph.edgeMeta.has('src\u2192tgt')).toBe(false)
+  })
+
+  it('adds incoming edge when keys change to match existing content', () => {
+    const entries = [
+      makeEntry({ id: 'src', content: 'see the wolf', keys: [] }),
+      makeEntry({ id: 'tgt', keys: ['dragon'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(graph.reverseEdges.get('tgt')?.has('src')).toBe(false)
+
+    const updatedTgt = { ...entries[1], keys: ['wolf'] }
+    const updated = [entries[0], updatedTgt]
+    const newGraph = incrementalUpdate(graph, updatedTgt, updated, opts, 'keys')
+
+    expect(newGraph.reverseEdges.get('tgt')?.has('src')).toBe(true)
+    expect(newGraph.edges.get('src')?.has('tgt')).toBe(true)
+  })
+
+  it('does not mutate the original graph', () => {
+    const entries = [
+      makeEntry({ id: 'src', content: 'see the wolf', keys: [] }),
+      makeEntry({ id: 'tgt', keys: ['wolf'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    const originalEdgeSize = graph.edges.get('src')?.size
+
+    const updatedSrc = { ...entries[0], content: 'see the knight' }
+    incrementalUpdate(graph, updatedSrc, [updatedSrc, entries[1]], opts, 'content')
+
+    // Original graph unchanged
+    expect(graph.edges.get('src')?.size).toBe(originalEdgeSize)
   })
 })
