@@ -4,6 +4,7 @@ import { EditorState, StateEffect, StateField, RangeSetBuilder } from '@codemirr
 import { EditorView, Decoration, type DecorationSet } from '@codemirror/view'
 import type { RecursionGraph } from '@/types'
 import { findCycles } from '@/services/graph-service'
+import { useWorkspaceStore } from '@/stores/workspace-store'
 
 // ---------------------------------------------------------------------------
 // Decoration computation (pure, module-level)
@@ -110,9 +111,12 @@ export function ContentEditor({ value, entryId, graph, onChange }: ContentEditor
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
 
+  const checkRecursionLoops = useWorkspaceStore((s) => s.checkRecursionLoops)
+
   // --- derived keyword metadata ---
 
   const cycleTargetIds = useMemo(() => {
+    if (!checkRecursionLoops) return new Set<string>()
     const { cycles } = findCycles(graph)
     const ids = new Set<string>()
     for (const cycle of cycles) {
@@ -121,7 +125,7 @@ export function ContentEditor({ value, entryId, graph, onChange }: ContentEditor
       }
     }
     return ids
-  }, [graph, entryId])
+  }, [graph, entryId, checkRecursionLoops])
 
   const keywordMeta = useMemo(() => {
     const targets = graph.edges.get(entryId)
