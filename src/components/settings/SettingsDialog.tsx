@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { HelpCircle } from 'lucide-react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import type { GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults } from '@/types'
+import type { GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults } from '@/types'
 
 const inputClass =
   'bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors'
@@ -181,7 +181,7 @@ function GraphSettingsPanel() {
       </div>
 
       <div className="border-t border-gray-800 my-2" />
-      <SubcategoryHeader title="Defaults" />
+      <SubcategoryHeader title="Workspace Defaults" />
 
       {/* Connections */}
       <div className="flex items-center justify-between">
@@ -267,13 +267,62 @@ function EditorSettingsPanel() {
   )
 }
 
+function EntriesSettingsPanel() {
+  const entriesListDefaults = useWorkspaceStore((s) => s.entriesListDefaults)
+  const setEntriesListDefaults = useWorkspaceStore((s) => s.setEntriesListDefaults)
+
+  function update<K extends keyof EntriesListDefaults>(key: K, value: EntriesListDefaults[K]) {
+    setEntriesListDefaults({ ...entriesListDefaults, [key]: value })
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <SubcategoryHeader title="Entries List Defaults" />
+
+      {/* Sort By */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-xs text-gray-300">
+          Sort By
+          <HelpTooltip text="Default sort order for the entries list." />
+        </div>
+        <select
+          className={inputClass}
+          value={entriesListDefaults.sortBy}
+          onChange={(e) => update('sortBy', e.target.value as EntriesListDefaults['sortBy'])}
+        >
+          <option value="uid">UID</option>
+          <option value="name">Name</option>
+          <option value="tokenCount">Tokens</option>
+          <option value="order">Order</option>
+        </select>
+      </div>
+
+      {/* Sort Direction */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-xs text-gray-300">
+          Sort Direction
+          <HelpTooltip text="Default sort direction for the entries list." />
+        </div>
+        <select
+          className={inputClass}
+          value={entriesListDefaults.sortDirection}
+          onChange={(e) => update('sortDirection', e.target.value as EntriesListDefaults['sortDirection'])}
+        >
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
+        </select>
+      </div>
+    </div>
+  )
+}
+
 interface SettingsDialogProps {
   open: boolean
   onClose: () => void
 }
 
 export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
-  const [activeCategory, setActiveCategory] = useState<'general' | 'graph' | 'editor'>('general')
+  const [activeCategory, setActiveCategory] = useState<'general' | 'graph' | 'editor' | 'entries'>('general')
   const [leftWidth, setLeftWidth] = useState(140)
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null)
 
@@ -321,7 +370,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         <div className="flex flex-1 overflow-hidden">
           {/* Left: category list */}
           <div className="shrink-0 border-r border-gray-800 p-2 overflow-y-auto" style={{ width: leftWidth }}>
-            {(['general', 'graph', 'editor'] as const).map((cat) => (
+            {(['general', 'graph', 'editor', 'entries'] as const).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
@@ -331,7 +380,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                     : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
                 } transition-colors`}
               >
-                {cat === 'general' ? 'General' : cat === 'graph' ? 'Graph Settings' : 'Editor'}
+                {cat === 'general' ? 'General' : cat === 'graph' ? 'Workspace Settings' : cat === 'editor' ? 'Editor' : 'Entries'}
               </button>
             ))}
           </div>
@@ -347,6 +396,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
             {activeCategory === 'general' && <GeneralSettingsPanel />}
             {activeCategory === 'graph' && <GraphSettingsPanel />}
             {activeCategory === 'editor' && <EditorSettingsPanel />}
+            {activeCategory === 'entries' && <EntriesSettingsPanel />}
           </div>
         </div>
       </div>

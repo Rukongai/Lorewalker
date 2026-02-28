@@ -6,13 +6,14 @@ import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { EntryListItem } from './EntryListItem'
 import type { WorkingEntry } from '@/types'
 
-type SortMode = 'uid' | 'name' | 'tokenCount'
+type SortMode = 'uid' | 'name' | 'tokenCount' | 'order'
 
 export function EntryList() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
+  const entriesListDefaults = useWorkspaceStore((s) => s.entriesListDefaults)
   const [search, setSearch] = useState('')
-  const [sortBy, setSortBy] = useState<SortMode>('uid')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [sortBy, setSortBy] = useState<SortMode>(entriesListDefaults.sortBy)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(entriesListDefaults.sortDirection)
 
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
@@ -37,6 +38,7 @@ export function EntryList() {
         case 'uid':        return a.uid - b.uid
         case 'name':       return a.name.localeCompare(b.name)
         case 'tokenCount': return a.tokenCount - b.tokenCount
+        case 'order':      return a.order - b.order
       }
     })()
     return sortDir === 'asc' ? cmp : -cmp
@@ -77,9 +79,10 @@ export function EntryList() {
             onChange={(e) => setSortBy(e.target.value as SortMode)}
             className="bg-transparent text-xs text-gray-500 outline-none cursor-pointer hover:text-gray-300 transition-colors"
           >
-            <option value="uid">Default</option>
+            <option value="uid">UID</option>
             <option value="name">Name</option>
             <option value="tokenCount">Tokens</option>
+            <option value="order">Order</option>
           </select>
           <button
             onClick={() => setSortDir((d) => d === 'asc' ? 'desc' : 'asc')}

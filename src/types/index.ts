@@ -70,4 +70,5 @@ export type {
   GraphLayoutSettings,
   GraphDisplayDefaults,
   EditorDefaults,
+  EntriesListDefaults,
 } from './ui'

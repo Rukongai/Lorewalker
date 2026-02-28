@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { TabMeta, FileMeta, GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults } from '@/types'
+import type { TabMeta, FileMeta, GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults } from '@/types'
 
 const DEFAULT_GRAPH_SETTINGS: GraphLayoutSettings = {
   acyclicer: 'greedy',
@@ -20,6 +20,11 @@ const DEFAULT_EDITOR_DEFAULTS: EditorDefaults = {
   showKeywordHighlights: true,
 }
 
+const DEFAULT_ENTRIES_LIST_DEFAULTS: EntriesListDefaults = {
+  sortBy: 'order',
+  sortDirection: 'asc',
+}
+
 interface WorkspaceState {
   tabs: TabMeta[]
   activeTabId: string | null
@@ -28,6 +33,7 @@ interface WorkspaceState {
   checkRecursionLoops: boolean
   graphDisplayDefaults: GraphDisplayDefaults
   editorDefaults: EditorDefaults
+  entriesListDefaults: EntriesListDefaults
 
   // Actions
   openTab(tabId: string, name: string, fileMeta: FileMeta): void
@@ -39,6 +45,7 @@ interface WorkspaceState {
   setCheckRecursionLoops(value: boolean): void
   setGraphDisplayDefaults(settings: GraphDisplayDefaults): void
   setEditorDefaults(settings: EditorDefaults): void
+  setEntriesListDefaults(settings: EntriesListDefaults): void
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -50,6 +57,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     checkRecursionLoops: false,
     graphDisplayDefaults: DEFAULT_GRAPH_DISPLAY_DEFAULTS,
     editorDefaults: DEFAULT_EDITOR_DEFAULTS,
+    entriesListDefaults: DEFAULT_ENTRIES_LIST_DEFAULTS,
 
     openTab(tabId, name, fileMeta) {
       set((state) => {
@@ -114,6 +122,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
     setEditorDefaults(settings) {
       set((state) => { state.editorDefaults = settings })
+    },
+
+    setEntriesListDefaults(settings) {
+      set((state) => { state.entriesListDefaults = settings })
     },
   }))
 )

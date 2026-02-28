@@ -70,3 +70,8 @@ export interface GraphDisplayDefaults {
 export interface EditorDefaults {
   showKeywordHighlights: boolean
 }
+
+export interface EntriesListDefaults {
+  sortBy: 'uid' | 'name' | 'tokenCount' | 'order'
+  sortDirection: 'asc' | 'desc'
+}
