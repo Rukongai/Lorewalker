@@ -2,6 +2,8 @@ import type {
   WorkingEntry,
   RecursionGraph,
   EdgeMeta,
+  CycleResult,
+  DeadLink,
   KeywordMatchOptions,
 } from '@/types'
 import { doesEntryMatchText } from '@/services/simulator/keyword-matching'
@@ -48,4 +50,74 @@ export function buildGraph(
   }
 
   return { edges, reverseEdges, edgeMeta }
+}
+
+export function findCycles(graph: RecursionGraph): CycleResult {
+  const cycles: string[][] = []
+  const visited = new Set<string>()
+  const onStack = new Set<string>()
+  const path: string[] = []
+
+  function dfs(nodeId: string): void {
+    visited.add(nodeId)
+    onStack.add(nodeId)
+    path.push(nodeId)
+
+    for (const neighbor of graph.edges.get(nodeId) ?? new Set()) {
+      if (!visited.has(neighbor)) {
+        dfs(neighbor)
+      } else if (onStack.has(neighbor)) {
+        const cycleStart = path.lastIndexOf(neighbor)
+        cycles.push(path.slice(cycleStart))
+      }
+    }
+
+    path.pop()
+    onStack.delete(nodeId)
+  }
+
+  for (const nodeId of graph.edges.keys()) {
+    if (!visited.has(nodeId)) dfs(nodeId)
+  }
+
+  return { cycles }
+}
+
+export function findOrphans(entries: WorkingEntry[], graph: RecursionGraph): string[] {
+  return entries
+    .filter((e) => !e.constant && (graph.reverseEdges.get(e.id)?.size ?? 0) === 0)
+    .map((e) => e.id)
+}
+
+export function findDeadLinks(entries: WorkingEntry[], graph: RecursionGraph): DeadLink[] {
+  const deadLinks: DeadLink[] = []
+
+  for (const source of entries) {
+    if (!source.content) continue
+
+    for (const target of entries) {
+      if (source.id === target.id) continue
+      if (!target.name) continue
+
+      // Skip if an edge already exists (keywords matched correctly)
+      if (graph.edges.get(source.id)?.has(target.id)) continue
+
+      // Check if target's display name appears in source's content (case-insensitive)
+      const lowerContent = source.content.toLowerCase()
+      const lowerName = target.name.toLowerCase()
+      const idx = lowerContent.indexOf(lowerName)
+      if (idx === -1) continue
+
+      const snippetStart = Math.max(0, idx - 20)
+      const snippetEnd = Math.min(source.content.length, idx + target.name.length + 20)
+
+      deadLinks.push({
+        sourceEntryId: source.id,
+        mentionedName: target.name,
+        contextSnippet: source.content.slice(snippetStart, snippetEnd),
+      })
+    }
+  }
+
+  return deadLinks
 }

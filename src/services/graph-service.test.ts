@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildGraph } from './graph-service'
+import { buildGraph, findCycles, findOrphans, findDeadLinks } from './graph-service'
 import type { WorkingEntry } from '@/types'
 
 function makeEntry(overrides: Partial<WorkingEntry> = {}): WorkingEntry {
@@ -94,5 +94,84 @@ describe('buildGraph', () => {
     ]
     const graph = buildGraph(entries, opts)
     expect(graph.edges.get('src')?.has('tgt')).toBe(true)
+  })
+})
+
+describe('findCycles', () => {
+  it('returns empty for acyclic graph', () => {
+    const entries = [
+      makeEntry({ id: 'a', content: 'mentions wolf', keys: [] }),
+      makeEntry({ id: 'b', keys: ['wolf'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(findCycles(graph).cycles).toHaveLength(0)
+  })
+
+  it('detects simple A-B-A cycle', () => {
+    const entries = [
+      makeEntry({ id: 'a', content: 'see the wolf', keys: ['castle'] }),
+      makeEntry({ id: 'b', content: 'see the castle', keys: ['wolf'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    const result = findCycles(graph)
+    expect(result.cycles).toHaveLength(1)
+    expect(result.cycles[0]).toContain('a')
+    expect(result.cycles[0]).toContain('b')
+  })
+
+  it('detects longer cycle A-B-C-A', () => {
+    const entries = [
+      makeEntry({ id: 'a', content: 'mentions beta', keys: ['alpha'] }),
+      makeEntry({ id: 'b', content: 'mentions gamma', keys: ['beta'] }),
+      makeEntry({ id: 'c', content: 'mentions alpha', keys: ['gamma'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    const result = findCycles(graph)
+    expect(result.cycles).toHaveLength(1)
+    expect(result.cycles[0]).toHaveLength(3)
+  })
+})
+
+describe('findOrphans', () => {
+  it('returns entries with no incoming edges (non-constants)', () => {
+    const entries = [
+      makeEntry({ id: 'tgt', content: '', keys: ['wolf'] }),
+      makeEntry({ id: 'src', content: 'see the wolf', keys: [] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    const orphans = findOrphans(entries, graph)
+    expect(orphans).toContain('src')
+    expect(orphans).not.toContain('tgt')
+  })
+
+  it('excludes constant entries from orphan list', () => {
+    const entries = [
+      makeEntry({ id: 'const', constant: true, keys: [] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(findOrphans(entries, graph)).not.toContain('const')
+  })
+})
+
+describe('findDeadLinks', () => {
+  it('returns empty when all entry names are reachable via keywords', () => {
+    const entries = [
+      makeEntry({ id: 'a', name: 'The Wolf', content: '', keys: ['wolf'] }),
+      makeEntry({ id: 'b', content: 'see the wolf', keys: [] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(findDeadLinks(entries, graph)).toHaveLength(0)
+  })
+
+  it('returns dead link when entry name appears in content but has no matching key', () => {
+    const entries = [
+      makeEntry({ id: 'a', name: 'Dragon Keep', content: '', keys: ['fortress'] }),
+      makeEntry({ id: 'b', name: 'Explorer', content: 'She visited Dragon Keep.', keys: [] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    const deadLinks = findDeadLinks(entries, graph)
+    expect(deadLinks.length).toBeGreaterThan(0)
+    expect(deadLinks[0].sourceEntryId).toBe('b')
+    expect(deadLinks[0].mentionedName).toBe('Dragon Keep')
   })
 })
