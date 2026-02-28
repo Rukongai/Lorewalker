@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { Upload, Save, Undo2, Redo2 } from 'lucide-react'
+import { Upload, Save, Undo2, Redo2, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { EntryList } from '@/components/entry-list/EntryList'
 import { EntryEditor } from '@/components/editor/EntryEditor'
@@ -8,6 +8,7 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { GraphCanvas } from '@/components/graph/GraphCanvas'
+import { BookMetaEditor } from '@/components/editor/BookMetaEditor'
 
 export function WorkspaceShell() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
@@ -17,12 +18,19 @@ export function WorkspaceShell() {
   const [leftWidth, setLeftWidth] = useState(256)
   const [rightWidth, setRightWidth] = useState(320)
   const dragStateRef = useRef<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
+  const COLLAPSED_WIDTH = 28
+  const [leftCollapsed, setLeftCollapsed] = useState(false)
+  const [rightCollapsed, setRightCollapsed] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
 
   // Always call the store hook unconditionally (Rules of Hooks).
   // EMPTY_STORE is a stable fallback used when no document is open.
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
   const selectedEntryId = activeStore((s) => s.selection.selectedEntryId)
+  const clearSelection = useCallback(() => {
+    realStore?.getState().clearSelection()
+  }, [realStore])
   // zundo exposes temporal state on the store instance (not via state selector)
   const temporalState = realStore?.temporal.getState()
   const canUndo = (temporalState?.pastStates.length ?? 0) > 0
@@ -80,12 +88,15 @@ export function WorkspaceShell() {
   }
 
   const startDrag = useCallback((e: React.MouseEvent, side: 'left' | 'right') => {
+    if (side === 'left' && leftCollapsed) return
+    if (side === 'right' && rightCollapsed) return
     e.preventDefault()
     dragStateRef.current = {
       side,
       startX: e.clientX,
       startWidth: side === 'left' ? leftWidth : rightWidth,
     }
+    setIsResizing(true)
     const onMouseMove = (ev: MouseEvent) => {
       const state = dragStateRef.current
       if (!state) return
@@ -97,12 +108,13 @@ export function WorkspaceShell() {
     }
     const onMouseUp = () => {
       dragStateRef.current = null
+      setIsResizing(false)
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('mouseup', onMouseUp)
     }
     window.addEventListener('mousemove', onMouseMove)
     window.addEventListener('mouseup', onMouseUp)
-  }, [leftWidth, rightWidth])
+  }, [leftWidth, rightWidth, leftCollapsed, rightCollapsed])
 
   return (
     <div
@@ -190,19 +202,54 @@ export function WorkspaceShell() {
         {/* Left panel: entry list */}
         <aside
           className="shrink-0 border-r border-gray-800 bg-gray-950 flex flex-col overflow-hidden"
-          style={{ width: leftWidth }}
+          style={{
+            width: leftCollapsed ? COLLAPSED_WIDTH : leftWidth,
+            transition: isResizing ? 'none' : 'width 200ms ease-in-out',
+          }}
         >
-          <div className="p-3 border-b border-gray-800 shrink-0">
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Entries</span>
-          </div>
-          <EntryList />
+          {leftCollapsed ? (
+            <button
+              className="flex-1 flex items-center justify-center text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+              onClick={() => setLeftCollapsed(false)}
+              title="Expand entries panel"
+            >
+              <ChevronRight size={14} />
+            </button>
+          ) : (
+            <>
+              <div className="p-3 border-b border-gray-800 shrink-0 flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Entries</span>
+                <div className="flex items-center gap-1">
+                  {activeTabId && (
+                    <button
+                      onClick={clearSelection}
+                      title="Book Settings"
+                      className="p-1 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+                    >
+                      <Settings size={14} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setLeftCollapsed(true)}
+                    title="Collapse panel"
+                    className="p-1 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                </div>
+              </div>
+              <EntryList />
+            </>
+          )}
         </aside>
 
         {/* Drag divider: left ↔ center */}
-        <div
-          className="w-1 shrink-0 cursor-col-resize bg-gray-800 hover:bg-indigo-600 transition-colors"
-          onMouseDown={(e) => startDrag(e, 'left')}
-        />
+        {!leftCollapsed && (
+          <div
+            className="w-1 shrink-0 cursor-col-resize bg-gray-800 hover:bg-indigo-600 transition-colors"
+            onMouseDown={(e) => startDrag(e, 'left')}
+          />
+        )}
 
         {/* Center panel: graph canvas */}
         <main className="flex-1 bg-gray-950 flex overflow-hidden">
@@ -220,27 +267,53 @@ export function WorkspaceShell() {
         </main>
 
         {/* Drag divider: center ↔ right */}
-        <div
-          className="w-1 shrink-0 cursor-col-resize bg-gray-800 hover:bg-indigo-600 transition-colors"
-          onMouseDown={(e) => startDrag(e, 'right')}
-        />
+        {!rightCollapsed && (
+          <div
+            className="w-1 shrink-0 cursor-col-resize bg-gray-800 hover:bg-indigo-600 transition-colors"
+            onMouseDown={(e) => startDrag(e, 'right')}
+          />
+        )}
 
         {/* Right panel: entry editor */}
         <aside
           className="shrink-0 border-l border-gray-800 bg-gray-950 flex flex-col overflow-hidden"
-          style={{ width: rightWidth }}
+          style={{
+            width: rightCollapsed ? COLLAPSED_WIDTH : rightWidth,
+            transition: isResizing ? 'none' : 'width 200ms ease-in-out',
+          }}
         >
-          <div className="p-3 border-b border-gray-800 shrink-0">
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-              {selectedEntryId ? 'Editor' : 'Inspector'}
-            </span>
-          </div>
-          {selectedEntryId ? (
-            <EntryEditor entryId={selectedEntryId} />
+          {rightCollapsed ? (
+            <button
+              className="flex-1 flex items-center justify-center text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+              onClick={() => setRightCollapsed(false)}
+              title="Expand editor panel"
+            >
+              <ChevronLeft size={14} />
+            </button>
           ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <p className="text-xs text-gray-600">Select an entry to edit</p>
-            </div>
+            <>
+              <div className="p-3 border-b border-gray-800 shrink-0 flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  {selectedEntryId ? 'Editor' : activeTabId ? 'Book Settings' : 'Inspector'}
+                </span>
+                <button
+                  onClick={() => setRightCollapsed(true)}
+                  title="Collapse panel"
+                  className="p-1 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+                >
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+              {selectedEntryId ? (
+                <EntryEditor entryId={selectedEntryId} />
+              ) : activeTabId ? (
+                <BookMetaEditor />
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-xs text-gray-600">Select an entry to edit</p>
+                </div>
+              )}
+            </>
           )}
         </aside>
       </div>
