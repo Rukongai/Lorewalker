@@ -1,8 +1,10 @@
 import { useCallback } from 'react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
+import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
 import type { WorkingEntry, SelectiveLogic, EntryPosition } from '@/types'
 import { estimateTokenCount } from '@/lib/token-estimate'
+import { ContentEditor } from './ContentEditor'
 
 function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -35,22 +37,24 @@ interface EntryEditorProps {
 
 export function EntryEditor({ entryId }: EntryEditorProps) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
-  const store = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
-  const entry = store ? store((s) => s.entries.find((e) => e.id === entryId)) : undefined
+  const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
+  const activeStore = realStore ?? EMPTY_STORE
+  const entry = activeStore((s) => s.entries.find((e) => e.id === entryId))
+  const { graph } = useDerivedState(activeTabId ?? '')
 
   const handleChange = useCallback(
     <K extends keyof WorkingEntry>(field: K, value: WorkingEntry[K]) => {
-      if (!store) return
+      if (!realStore) return
       const changes: Partial<WorkingEntry> = { [field]: value }
       // Recompute token count when content changes
       if (field === 'content') {
         changes.tokenCount = estimateTokenCount(String(value))
       }
-      store.getState().updateEntry(entryId, changes)
+      realStore.getState().updateEntry(entryId, changes)
       // Mark the tab dirty
       if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
     },
-    [store, entryId, activeTabId]
+    [realStore, entryId, activeTabId]
   )
 
   if (!entry) {
@@ -75,12 +79,12 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
           />
         </Field>
         <Field label={`Content (${entry.tokenCount} tokens)`}>
-          <textarea
+          <ContentEditor
             value={entry.content}
-            onChange={(e) => handleChange('content', e.target.value)}
-            rows={6}
-            className={`${inputClass} resize-y font-mono`}
-            placeholder="Lore text…"
+            entryId={entryId}
+            graph={graph}
+            onChange={(v) => handleChange('content', v)}
+            inputClass={inputClass}
           />
         </Field>
       </FieldGroup>
