@@ -7,6 +7,7 @@
  */
 
 import { parseLorebook, parseCard } from '@character-foundry/character-foundry/loader'
+import type { CCv3CharacterBook } from '@character-foundry/character-foundry/loader'
 import { generateId } from '@/lib/uuid'
 import { inflate, deflate } from './transform-service'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -32,6 +33,78 @@ export class FileExportError extends Error {
     super(message)
     this.name = 'FileExportError'
     this.cause = cause
+  }
+}
+
+/**
+ * Patches missing SillyTavern fields (preventRecursion, ignoreBudget) into the normalized book.
+ *
+ * character-foundry's normalizeSillyTavern() extracts most ST fields into extensions.sillytavern,
+ * but omits preventRecursion and ignoreBudget. This function re-reads the raw JSON to recover them.
+ */
+type RawSTEntry = {
+  uid?: number
+  preventRecursion?: boolean
+  ignoreBudget?: boolean
+  displayIndex?: number
+  matchPersonaDescription?: boolean
+  matchCharacterDescription?: boolean
+  matchCharacterPersonality?: boolean
+  matchCharacterDepthPrompt?: boolean
+  matchScenario?: boolean
+  matchCreatorNotes?: boolean
+  delayUntilRecursion?: number
+  outletName?: string
+  useGroupScoring?: boolean | null
+  addMemo?: boolean
+  triggers?: string[]
+  characterFilter?: { isExclude: boolean; names: string[]; tags: string[] }
+}
+
+const CATEGORY_B_FIELDS = [
+  'displayIndex',
+  'matchPersonaDescription',
+  'matchCharacterDescription',
+  'matchCharacterPersonality',
+  'matchCharacterDepthPrompt',
+  'matchScenario',
+  'matchCreatorNotes',
+  'delayUntilRecursion',
+  'outletName',
+  'useGroupScoring',
+  'addMemo',
+  'triggers',
+  'characterFilter',
+  'preventRecursion',
+  'ignoreBudget',
+] as const
+
+function patchSillyTavernMissingFields(buffer: Uint8Array, book: CCv3CharacterBook): void {
+  try {
+    const text = new TextDecoder().decode(buffer)
+    const raw = JSON.parse(text) as { entries?: Record<string, RawSTEntry> }
+    if (!raw.entries || typeof raw.entries !== 'object') return
+
+    // Build lookup: uid → raw ST entry fields
+    const byUid = new Map<number, RawSTEntry>()
+    for (const entry of Object.values(raw.entries)) {
+      if (typeof entry.uid === 'number') {
+        byUid.set(entry.uid, entry)
+      }
+    }
+
+    // Patch missing fields into the normalized book entries
+    for (const entry of book.entries) {
+      const uid = typeof entry.id === 'number' ? entry.id : -1
+      const missing = byUid.get(uid)
+      if (!missing) continue
+      const stExt = ((entry.extensions ??= {})['sillytavern'] ??= {}) as Record<string, unknown>
+      for (const key of CATEGORY_B_FIELDS) {
+        if (missing[key] !== undefined) stExt[key] = missing[key]
+      }
+    }
+  } catch {
+    // If raw JSON parse fails, continue — inflate() will fall back to defaults
   }
 }
 
@@ -99,6 +172,12 @@ export async function importFile(file: File): Promise<string> {
     } else {
       // Standalone lorebook JSON
       const result = parseLorebook(buffer)
+
+      // character-foundry doesn't extract preventRecursion / ignoreBudget for SillyTavern format
+      if (result.lorebookFormat === 'sillytavern') {
+        patchSillyTavernMissingFields(buffer, result.book)
+      }
+
       const { entries, bookMeta } = inflate(result.book)
 
       const tabId = generateId()
@@ -144,6 +223,7 @@ export function exportFile(tabId: string, fileName?: string): void {
   // Serialize to the SillyTavern lorebook format (entries keyed by UID)
   const stExport: { entries: Record<string, unknown> } = { entries: {} }
   book.entries.forEach((entry, index) => {
+    const stExt = (entry.extensions?.['sillytavern'] ?? {}) as Record<string, unknown>
     const stEntry = {
       uid: index,
       key: entry.keys ?? [],
@@ -153,20 +233,40 @@ export function exportFile(tabId: string, fileName?: string): void {
       constant: entry.constant ?? false,
       selective: entry.selective ?? false,
       selectiveLogic: entry.selective_logic ?? 0,
-      addMemo: true,
+      addMemo: stExt.addMemo ?? true,
       order: entry.insertion_order,
       position: entry.position,
       disable: !entry.enabled,
       probability: entry.probability ?? 100,
-      useProbability: true,
+      useProbability: stExt.useProbability ?? true,
       depth: entry.depth ?? 4,
-      delay: (entry.extensions?.['sillytavern'] as Record<string, unknown>)?.delay ?? 0,
-      cooldown: (entry.extensions?.['sillytavern'] as Record<string, unknown>)?.cooldown ?? 0,
-      sticky: (entry.extensions?.['sillytavern'] as Record<string, unknown>)?.sticky ?? 0,
-      vectorized: false,
-      ignoreBudget: (entry.extensions?.['sillytavern'] as Record<string, unknown>)?.ignoreBudget ?? false,
-      excludeRecursion: (entry.extensions?.['sillytavern'] as Record<string, unknown>)?.excludeRecursion ?? false,
-      preventRecursion: (entry.extensions?.['sillytavern'] as Record<string, unknown>)?.preventRecursion ?? false,
+      delay: stExt.delay ?? 0,
+      cooldown: stExt.cooldown ?? 0,
+      sticky: stExt.sticky ?? 0,
+      vectorized: stExt.vectorized ?? false,
+      ignoreBudget: stExt.ignoreBudget ?? false,
+      excludeRecursion: stExt.excludeRecursion ?? false,
+      preventRecursion: stExt.preventRecursion ?? false,
+      group: stExt.group ?? '',
+      groupOverride: stExt.groupOverride ?? false,
+      groupWeight: stExt.groupWeight ?? 100,
+      useGroupScoring: stExt.useGroupScoring ?? null,
+      scanDepth: stExt.scanDepth ?? null,
+      caseSensitive: stExt.caseSensitive ?? null,
+      matchWholeWords: stExt.matchWholeWords ?? null,
+      matchPersonaDescription: stExt.matchPersonaDescription ?? false,
+      matchCharacterDescription: stExt.matchCharacterDescription ?? false,
+      matchCharacterPersonality: stExt.matchCharacterPersonality ?? false,
+      matchCharacterDepthPrompt: stExt.matchCharacterDepthPrompt ?? false,
+      matchScenario: stExt.matchScenario ?? false,
+      matchCreatorNotes: stExt.matchCreatorNotes ?? false,
+      role: stExt.role ?? 0,
+      automationId: stExt.automationId ?? '',
+      outletName: stExt.outletName ?? '',
+      displayIndex: stExt.displayIndex ?? 0,
+      delayUntilRecursion: stExt.delayUntilRecursion ?? 0,
+      triggers: stExt.triggers ?? [],
+      characterFilter: stExt.characterFilter ?? { isExclude: false, names: [], tags: [] },
     }
     stExport.entries[String(index)] = stEntry
   })
