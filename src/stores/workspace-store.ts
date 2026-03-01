@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { TabMeta, FileMeta, GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults, LorebookDefaults } from '@/types'
+import type { TabMeta, FileMeta, GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults, LorebookDefaults, ThemeId } from '@/types'
 
 const DEFAULT_GRAPH_SETTINGS: GraphLayoutSettings = {
   acyclicer: 'greedy',
@@ -43,14 +43,6 @@ const DEFAULT_LOREBOOK_DEFAULTS: LorebookDefaults = {
   alertOnOverflow: false,
   insertionStrategy: 'evenly',
 }
-
-export type ThemeId =
-  | 'dark'
-  | 'catppuccin-macchiato' | 'catppuccin-latte' | 'catppuccin-frappe' | 'catppuccin-mocha'
-  | 'nord' | 'nord-aurora' | 'one-dark'
-  | 'rose-pine' | 'rose-pine-dawn'
-  | 'tokyo-night' | 'tokyo-night-day'
-  | 'dracula' | 'dracula-soft'
 
 interface WorkspaceState {
   tabs: TabMeta[]

@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client'
 import './styles/globals.css'
 import { App } from './App'
 import { useWorkspaceStore } from './stores/workspace-store'
-import type { ThemeId } from './stores/workspace-store'
+import type { ThemeId } from './types'
 
 // Required for Immer to handle Map/Set mutations (used in document-store graphPositions)
 enableMapSet()
