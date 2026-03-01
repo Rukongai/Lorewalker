@@ -20,22 +20,24 @@ const themeClasses = [
   'theme-catppuccin-latte',
   'theme-catppuccin-frappe',
   'theme-catppuccin-mocha',
+  'theme-nord',
+  'theme-nord-aurora',
+  'theme-one-dark',
+  'theme-dracula',
 ] as const
 
 function applyTheme(theme: ThemeId) {
   const html = document.documentElement
   themeClasses.forEach((cls) => html.classList.remove(cls))
 
-  // Latte is light-mode; all other themes use dark-mode base
-  if (theme === 'catppuccin-latte') {
+  // Light themes: remove the 'dark' class
+  if (theme === 'catppuccin-latte' || theme === 'nord-aurora') {
     html.classList.remove('dark')
-    html.classList.add('theme-catppuccin-latte')
+    html.classList.add(`theme-${theme}`)
   } else {
     html.classList.add('dark')
-    if (theme === 'catppuccin-macchiato') html.classList.add('theme-catppuccin-macchiato')
-    else if (theme === 'catppuccin-frappe') html.classList.add('theme-catppuccin-frappe')
-    else if (theme === 'catppuccin-mocha') html.classList.add('theme-catppuccin-mocha')
-    else html.classList.add('theme-default')
+    if (theme === 'dark') html.classList.add('theme-default')
+    else html.classList.add(`theme-${theme}`)
   }
 }
 

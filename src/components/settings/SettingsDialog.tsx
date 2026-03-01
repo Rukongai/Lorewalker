@@ -41,6 +41,10 @@ function GeneralSettingsPanel() {
           <option value="catppuccin-frappe">Catppuccin Frappé</option>
           <option value="catppuccin-macchiato">Catppuccin Macchiato</option>
           <option value="catppuccin-mocha">Catppuccin Mocha</option>
+          <option value="nord">Nord</option>
+          <option value="nord-aurora">Nord Aurora</option>
+          <option value="one-dark">One Dark</option>
+          <option value="dracula">Dracula</option>
         </select>
       </div>
       <div className="flex items-center justify-between">
