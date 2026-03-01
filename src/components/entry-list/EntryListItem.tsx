@@ -15,7 +15,7 @@ function getTypeBadge(entry: WorkingEntry): { label: string; color: string } {
   if (entry.constant) return { label: 'CONST', color: 'bg-ctp-mauve/50 text-ctp-mauve ring-1 ring-ctp-mauve/40' }
   if (entry.selective) return { label: 'SEL', color: 'bg-ctp-teal/50 text-ctp-teal ring-1 ring-ctp-teal/40' }
   if (entry.sticky > 0) return { label: 'STICKY', color: 'bg-ctp-blue/50 text-ctp-blue ring-1 ring-ctp-blue/40' }
-  return { label: 'KW', color: 'bg-ctp-lavender/50 text-ctp-lavender ring-1 ring-ctp-lavender/40' }
+  return { label: 'KW', color: 'bg-ctp-blue/50 text-ctp-blue ring-1 ring-ctp-blue/40' }
 }
 
 export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, displayMetric }: EntryListItemProps) {
@@ -31,7 +31,7 @@ export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, di
       className={cn(
         'w-full flex items-center gap-2 px-3 py-2 text-left border-b border-ctp-surface0 transition-colors text-sm cursor-default',
         isSelected
-          ? 'bg-ctp-lavender/20 text-ctp-text border-l-2 border-l-ctp-lavender'
+          ? 'bg-ctp-accent/20 text-ctp-text border-l-2 border-l-ctp-accent'
           : 'text-ctp-subtext1 hover:bg-ctp-surface0',
         !entry.enabled && 'opacity-50'
       )}

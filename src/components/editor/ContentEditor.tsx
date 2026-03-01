@@ -215,7 +215,7 @@ export function ContentEditor({ value, entryId, graph, onChange, preventRecursio
     <div className="relative" onClick={(e) => e.stopPropagation()}>
       <div
         ref={containerRef}
-        className="w-full bg-ctp-surface0 border border-ctp-surface1 rounded focus-within:border-ctp-lavender transition-colors"
+        className="w-full bg-ctp-surface0 border border-ctp-surface1 rounded focus-within:border-ctp-accent transition-colors"
       />
 
       <button

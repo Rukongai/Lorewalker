@@ -52,7 +52,7 @@ function Field({ label, help, children }: { label: string; help?: string; childr
 }
 
 const inputClass =
-  'w-full bg-ctp-surface0 border border-ctp-surface2 rounded px-2 py-1.5 text-xs text-ctp-subtext1 outline-none focus:border-ctp-lavender transition-colors placeholder:text-ctp-overlay1'
+  'w-full bg-ctp-surface0 border border-ctp-surface2 rounded px-2 py-1.5 text-xs text-ctp-subtext1 outline-none focus:border-ctp-accent transition-colors placeholder:text-ctp-overlay1'
 
 type InsertionStrategy = 'constant' | 'normal' | 'vectorized'
 
@@ -104,7 +104,7 @@ function WideLayout({
           {contentField}
         </div>
         <div
-          className="h-1 shrink-0 cursor-row-resize bg-ctp-surface0 hover:bg-ctp-lavender transition-colors"
+          className="h-1 shrink-0 cursor-row-resize bg-ctp-surface0 hover:bg-ctp-accent transition-colors"
           onMouseDown={startRowDrag}
         />
         <div className="flex-1 min-h-0 border-t border-ctp-surface1">

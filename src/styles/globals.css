@@ -234,11 +234,8 @@ body {
 .cm-editor { outline: none; }
 .cm-editor.cm-focused { outline: none !important; }
 .cm-selectionBackground,
-.cm-focused .cm-selectionBackground { background: rgba(99,102,241,0.3) !important; }
-
-.theme-catppuccin-macchiato .cm-selectionBackground,
-.theme-catppuccin-macchiato .cm-focused .cm-selectionBackground {
-  background: rgba(139,173,244,0.25) !important;
+.cm-focused .cm-selectionBackground {
+  background: color-mix(in srgb, var(--edge-active) 25%, transparent) !important;
 }
 
 .cm-editor .cm-content {
@@ -249,8 +246,8 @@ body {
 
 /* Keyword highlight decorations */
 .cm-kw-normal {
-  background: rgba(99,102,241,0.18);
-  border-bottom: 2px solid rgba(129,140,248,0.75);
+  background: color-mix(in srgb, var(--edge-active) 18%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--edge-selected) 75%, transparent);
   border-radius: 2px;
   position: relative;
 }
@@ -259,12 +256,12 @@ body {
   position: absolute;
   top: -0.6em; right: -0.25em;
   font-size: 8px; font-weight: 700;
-  color: #a5b4fc; line-height: 1;
+  color: var(--edge-selected); line-height: 1;
   pointer-events: none;
 }
 .cm-kw-cycle {
-  background: rgba(239,68,68,0.15);
-  border-bottom: 2px solid rgba(252,165,165,0.75);
+  background: color-mix(in srgb, var(--color-ctp-red) 15%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--color-ctp-maroon) 75%, transparent);
   border-radius: 2px;
   position: relative;
 }
@@ -273,73 +270,9 @@ body {
   position: absolute;
   top: -0.6em; right: -0.25em;
   font-size: 8px; font-weight: 700;
-  color: #fca5a5; line-height: 1;
+  color: var(--color-ctp-maroon); line-height: 1;
   pointer-events: none;
 }
-
-/* Catppuccin Macchiato CodeMirror overrides */
-.theme-catppuccin-macchiato .cm-kw-normal {
-  background: rgba(138,173,244,0.18);
-  border-bottom: 2px solid rgba(183,189,248,0.75);
-}
-.theme-catppuccin-macchiato .cm-kw-normal::after {
-  color: #b7bdf8;
-}
-.theme-catppuccin-macchiato .cm-kw-cycle {
-  background: rgba(237,135,150,0.15);
-  border-bottom: 2px solid rgba(238,153,160,0.75);
-}
-.theme-catppuccin-macchiato .cm-kw-cycle::after {
-  color: #ee99a0;
-}
-
-/* Catppuccin Latte CodeMirror overrides */
-.theme-catppuccin-latte .cm-selectionBackground,
-.theme-catppuccin-latte .cm-focused .cm-selectionBackground {
-  background: rgba(30,102,245,0.15) !important;
-}
-.theme-catppuccin-latte .cm-kw-normal {
-  background: rgba(30,102,245,0.12);
-  border-bottom: 2px solid rgba(114,135,253,0.75);
-}
-.theme-catppuccin-latte .cm-kw-normal::after { color: #7287fd; }
-.theme-catppuccin-latte .cm-kw-cycle {
-  background: rgba(210,15,57,0.10);
-  border-bottom: 2px solid rgba(230,69,83,0.75);
-}
-.theme-catppuccin-latte .cm-kw-cycle::after { color: #e64553; }
-
-/* Catppuccin Frappé CodeMirror overrides */
-.theme-catppuccin-frappe .cm-selectionBackground,
-.theme-catppuccin-frappe .cm-focused .cm-selectionBackground {
-  background: rgba(140,170,238,0.25) !important;
-}
-.theme-catppuccin-frappe .cm-kw-normal {
-  background: rgba(140,170,238,0.18);
-  border-bottom: 2px solid rgba(186,187,241,0.75);
-}
-.theme-catppuccin-frappe .cm-kw-normal::after { color: #babbf1; }
-.theme-catppuccin-frappe .cm-kw-cycle {
-  background: rgba(231,130,132,0.15);
-  border-bottom: 2px solid rgba(234,153,156,0.75);
-}
-.theme-catppuccin-frappe .cm-kw-cycle::after { color: #ea999c; }
-
-/* Catppuccin Mocha CodeMirror overrides */
-.theme-catppuccin-mocha .cm-selectionBackground,
-.theme-catppuccin-mocha .cm-focused .cm-selectionBackground {
-  background: rgba(137,180,250,0.25) !important;
-}
-.theme-catppuccin-mocha .cm-kw-normal {
-  background: rgba(137,180,250,0.18);
-  border-bottom: 2px solid rgba(180,190,254,0.75);
-}
-.theme-catppuccin-mocha .cm-kw-normal::after { color: #b4befe; }
-.theme-catppuccin-mocha .cm-kw-cycle {
-  background: rgba(243,139,168,0.15);
-  border-bottom: 2px solid rgba(235,160,172,0.75);
-}
-.theme-catppuccin-mocha .cm-kw-cycle::after { color: #eba0ac; }
 
 /* ─── Nord ───────────────────────────────────────────────────────────────── */
 
@@ -384,21 +317,6 @@ body {
   --color-ctp-maroon:    #b05060;
 }
 
-.theme-nord .cm-selectionBackground,
-.theme-nord .cm-focused .cm-selectionBackground {
-  background: rgba(129,161,193,0.25) !important;
-}
-.theme-nord .cm-kw-normal {
-  background: rgba(129,161,193,0.18);
-  border-bottom: 2px solid rgba(136,192,208,0.75);
-}
-.theme-nord .cm-kw-normal::after { color: #88c0d0; }
-.theme-nord .cm-kw-cycle {
-  background: rgba(191,97,106,0.15);
-  border-bottom: 2px solid rgba(191,97,106,0.75);
-}
-.theme-nord .cm-kw-cycle::after { color: #bf616a; }
-
 /* ─── Nord Aurora (light) ────────────────────────────────────────────────── */
 
 :root.theme-nord-aurora {
@@ -441,21 +359,6 @@ body {
   --color-ctp-rosewater: #c48890;
   --color-ctp-maroon:    #a84858;
 }
-
-.theme-nord-aurora .cm-selectionBackground,
-.theme-nord-aurora .cm-focused .cm-selectionBackground {
-  background: rgba(94,129,172,0.15) !important;
-}
-.theme-nord-aurora .cm-kw-normal {
-  background: rgba(94,129,172,0.12);
-  border-bottom: 2px solid rgba(94,129,172,0.75);
-}
-.theme-nord-aurora .cm-kw-normal::after { color: #5e81ac; }
-.theme-nord-aurora .cm-kw-cycle {
-  background: rgba(191,97,106,0.10);
-  border-bottom: 2px solid rgba(191,97,106,0.75);
-}
-.theme-nord-aurora .cm-kw-cycle::after { color: #bf616a; }
 
 /* ─── One Dark ───────────────────────────────────────────────────────────── */
 
@@ -500,21 +403,6 @@ body {
   --color-ctp-maroon:    #be5046;
 }
 
-.theme-one-dark .cm-selectionBackground,
-.theme-one-dark .cm-focused .cm-selectionBackground {
-  background: rgba(97,175,239,0.22) !important;
-}
-.theme-one-dark .cm-kw-normal {
-  background: rgba(97,175,239,0.18);
-  border-bottom: 2px solid rgba(97,175,239,0.75);
-}
-.theme-one-dark .cm-kw-normal::after { color: #61afef; }
-.theme-one-dark .cm-kw-cycle {
-  background: rgba(224,108,117,0.15);
-  border-bottom: 2px solid rgba(224,108,117,0.75);
-}
-.theme-one-dark .cm-kw-cycle::after { color: #e06c75; }
-
 /* ─── Dracula ────────────────────────────────────────────────────────────── */
 
 :root.theme-dracula {
@@ -557,21 +445,6 @@ body {
   --color-ctp-maroon:    #ff5555;
   --color-ctp-pink:      #ff79c6;
 }
-
-.theme-dracula .cm-selectionBackground,
-.theme-dracula .cm-focused .cm-selectionBackground {
-  background: rgba(189,147,249,0.20) !important;
-}
-.theme-dracula .cm-kw-normal {
-  background: rgba(189,147,249,0.18);
-  border-bottom: 2px solid rgba(189,147,249,0.75);
-}
-.theme-dracula .cm-kw-normal::after { color: #bd93f9; }
-.theme-dracula .cm-kw-cycle {
-  background: rgba(255,85,85,0.15);
-  border-bottom: 2px solid rgba(255,85,85,0.75);
-}
-.theme-dracula .cm-kw-cycle::after { color: #ff5555; }
 
 /* ─── Dracula Soft ───────────────────────────────────────────────────────── */
 
@@ -616,21 +489,6 @@ body {
   --color-ctp-pink:      #ff92df;
 }
 
-.theme-dracula-soft .cm-selectionBackground,
-.theme-dracula-soft .cm-focused .cm-selectionBackground {
-  background: rgba(149,128,255,0.20) !important;
-}
-.theme-dracula-soft .cm-kw-normal {
-  background: rgba(149,128,255,0.18);
-  border-bottom: 2px solid rgba(149,128,255,0.75);
-}
-.theme-dracula-soft .cm-kw-normal::after { color: #9580ff; }
-.theme-dracula-soft .cm-kw-cycle {
-  background: rgba(255,149,128,0.15);
-  border-bottom: 2px solid rgba(255,149,128,0.75);
-}
-.theme-dracula-soft .cm-kw-cycle::after { color: #ff9580; }
-
 /* ─── Rosé Pine ──────────────────────────────────────────────────────────── */
 
 :root.theme-rose-pine {
@@ -673,21 +531,6 @@ body {
   --color-ctp-maroon:    #eb6f92;
   --color-ctp-pink:      #ebbcba;
 }
-
-.theme-rose-pine .cm-selectionBackground,
-.theme-rose-pine .cm-focused .cm-selectionBackground {
-  background: rgba(156,207,216,0.20) !important;
-}
-.theme-rose-pine .cm-kw-normal {
-  background: rgba(156,207,216,0.18);
-  border-bottom: 2px solid rgba(196,167,231,0.75);
-}
-.theme-rose-pine .cm-kw-normal::after { color: #c4a7e7; }
-.theme-rose-pine .cm-kw-cycle {
-  background: rgba(235,111,146,0.15);
-  border-bottom: 2px solid rgba(235,111,146,0.75);
-}
-.theme-rose-pine .cm-kw-cycle::after { color: #eb6f92; }
 
 /* ─── Rosé Pine Dawn ─────────────────────────────────────────────────────── */
 
@@ -732,21 +575,6 @@ body {
   --color-ctp-pink:      #d7827a;
 }
 
-.theme-rose-pine-dawn .cm-selectionBackground,
-.theme-rose-pine-dawn .cm-focused .cm-selectionBackground {
-  background: rgba(86,148,159,0.15) !important;
-}
-.theme-rose-pine-dawn .cm-kw-normal {
-  background: rgba(86,148,159,0.12);
-  border-bottom: 2px solid rgba(144,122,169,0.75);
-}
-.theme-rose-pine-dawn .cm-kw-normal::after { color: #907aa9; }
-.theme-rose-pine-dawn .cm-kw-cycle {
-  background: rgba(180,99,122,0.10);
-  border-bottom: 2px solid rgba(180,99,122,0.75);
-}
-.theme-rose-pine-dawn .cm-kw-cycle::after { color: #b4637a; }
-
 /* ─── Tokyo Night ────────────────────────────────────────────────────────── */
 
 :root.theme-tokyo-night {
@@ -789,21 +617,6 @@ body {
   --color-ctp-maroon:    #db4b4b;
   --color-ctp-pink:      #9d7cd8;
 }
-
-.theme-tokyo-night .cm-selectionBackground,
-.theme-tokyo-night .cm-focused .cm-selectionBackground {
-  background: rgba(122,162,247,0.20) !important;
-}
-.theme-tokyo-night .cm-kw-normal {
-  background: rgba(122,162,247,0.18);
-  border-bottom: 2px solid rgba(180,190,254,0.75);
-}
-.theme-tokyo-night .cm-kw-normal::after { color: #b4befe; }
-.theme-tokyo-night .cm-kw-cycle {
-  background: rgba(247,118,142,0.15);
-  border-bottom: 2px solid rgba(247,118,142,0.75);
-}
-.theme-tokyo-night .cm-kw-cycle::after { color: #f7768e; }
 
 /* ─── Tokyo Night Day ────────────────────────────────────────────────────── */
 
@@ -848,17 +661,3 @@ body {
   --color-ctp-pink:      #9854f1;
 }
 
-.theme-tokyo-night-day .cm-selectionBackground,
-.theme-tokyo-night-day .cm-focused .cm-selectionBackground {
-  background: rgba(46,125,233,0.15) !important;
-}
-.theme-tokyo-night-day .cm-kw-normal {
-  background: rgba(46,125,233,0.12);
-  border-bottom: 2px solid rgba(120,71,189,0.75);
-}
-.theme-tokyo-night-day .cm-kw-normal::after { color: #7847bd; }
-.theme-tokyo-night-day .cm-kw-cycle {
-  background: rgba(245,42,101,0.10);
-  border-bottom: 2px solid rgba(245,42,101,0.75);
-}
-.theme-tokyo-night-day .cm-kw-cycle::after { color: #f52a65; }

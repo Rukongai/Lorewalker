@@ -220,8 +220,8 @@ export function WorkspaceShell() {
       <div className="flex flex-1 overflow-hidden relative">
         {/* Drag overlay */}
         {isDragOver && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-ctp-lavender/15 border-2 border-dashed border-ctp-lavender">
-            <p className="text-lg font-medium text-ctp-lavender">Drop lorebook to open</p>
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-ctp-accent/15 border-2 border-dashed border-ctp-accent">
+            <p className="text-lg font-medium text-ctp-accent">Drop lorebook to open</p>
           </div>
         )}
 
