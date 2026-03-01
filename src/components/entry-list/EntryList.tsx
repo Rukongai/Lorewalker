@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Search, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react'
+import { Search, ChevronDown, ChevronUp } from 'lucide-react'
+import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
@@ -107,9 +108,7 @@ export function EntryList() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <span className="text-xs text-gray-400">Pin Constants</span>
-                <span title="Float constant (always-active) entries to the top, ignoring sort order.">
-                  <HelpCircle size={11} className="text-gray-600 cursor-help" />
-                </span>
+                <HelpTooltip text="Float constant (always-active) entries to the top, ignoring sort order." />
               </div>
               <button
                 role="switch"
@@ -125,9 +124,7 @@ export function EntryList() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <span className="text-xs text-gray-400">Display</span>
-                <span title="The number shown on each row — token count or insertion order.">
-                  <HelpCircle size={11} className="text-gray-600 cursor-help" />
-                </span>
+                <HelpTooltip text="The number shown on each row — token count or insertion order." />
               </div>
               <div className="flex items-center rounded overflow-hidden border border-gray-700 text-xs">
                 <button
@@ -150,9 +147,7 @@ export function EntryList() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <span className="text-xs text-gray-400">Sort</span>
-                <span title="Primary field to sort entries by.">
-                  <HelpCircle size={11} className="text-gray-600 cursor-help" />
-                </span>
+                <HelpTooltip text="Primary field to sort entries by." />
               </div>
               <div className="flex items-center gap-1">
                 <select
@@ -180,9 +175,7 @@ export function EntryList() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <span className="text-xs text-gray-400">Then</span>
-                <span title="Tiebreaker field used when two entries share the same primary sort value.">
-                  <HelpCircle size={11} className="text-gray-600 cursor-help" />
-                </span>
+                <HelpTooltip text="Tiebreaker field used when two entries share the same primary sort value." />
               </div>
               <div className="flex items-center gap-1">
                 <select
