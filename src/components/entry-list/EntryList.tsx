@@ -123,14 +123,14 @@ export function EntryList() {
               <div className="flex items-center rounded overflow-hidden border border-ctp-surface1 text-xs">
                 <button
                   onClick={() => setDisplayMetric('tokens')}
-                  className={`px-1.5 py-0.5 leading-none transition-colors ${displayMetric === 'tokens' ? 'text-ctp-lavender bg-ctp-crust' : 'text-ctp-overlay1 hover:text-ctp-subtext1'}`}
+                  className={`px-1.5 py-0.5 leading-none transition-colors ${displayMetric === 'tokens' ? 'text-ctp-accent bg-ctp-crust' : 'text-ctp-overlay1 hover:text-ctp-subtext1'}`}
                 >
                   Tokens
                 </button>
                 <span className="text-ctp-surface1 leading-none select-none">|</span>
                 <button
                   onClick={() => setDisplayMetric('order')}
-                  className={`px-1.5 py-0.5 leading-none transition-colors ${displayMetric === 'order' ? 'text-ctp-lavender bg-ctp-crust' : 'text-ctp-overlay1 hover:text-ctp-subtext1'}`}
+                  className={`px-1.5 py-0.5 leading-none transition-colors ${displayMetric === 'order' ? 'text-ctp-accent bg-ctp-crust' : 'text-ctp-overlay1 hover:text-ctp-subtext1'}`}
                 >
                   Order
                 </button>

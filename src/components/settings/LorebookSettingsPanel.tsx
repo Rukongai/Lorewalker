@@ -3,10 +3,10 @@ import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
 
 const inputClass =
-  'bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1 text-xs text-ctp-subtext1 outline-none focus:border-ctp-lavender transition-colors'
+  'bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1 text-xs text-ctp-subtext1 outline-none focus:border-ctp-accent transition-colors'
 
 const numericInputClass =
-  'bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1 text-xs text-ctp-subtext1 outline-none focus:border-ctp-lavender transition-colors w-20 text-right disabled:opacity-50 disabled:cursor-not-allowed'
+  'bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1 text-xs text-ctp-subtext1 outline-none focus:border-ctp-accent transition-colors w-20 text-right disabled:opacity-50 disabled:cursor-not-allowed'
 
 function SubcategoryHeader({ title }: { title: string }) {
   return (

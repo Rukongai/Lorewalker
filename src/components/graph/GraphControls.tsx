@@ -42,7 +42,7 @@ export function GraphControls({
       <button
         onClick={onAutoLayout}
         title="Auto Layout"
-        className="flex items-center gap-1.5 px-2 py-1.5 text-xs bg-ctp-surface0 border border-ctp-lavender/50 rounded text-ctp-lavender hover:bg-ctp-lavender/15 hover:border-ctp-lavender transition-colors"
+        className="flex items-center gap-1.5 px-2 py-1.5 text-xs bg-ctp-surface0 border border-ctp-accent/50 rounded text-ctp-accent hover:bg-ctp-accent/15 hover:border-ctp-accent transition-colors"
       >
         <LayoutGrid size={13} />
         Layout

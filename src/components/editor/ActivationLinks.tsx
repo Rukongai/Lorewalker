@@ -32,7 +32,7 @@ function LinkRow({ id, keywords, blocked, onNavigate, name }: LinkRowProps) {
         </span>
         <button
           onClick={() => onNavigate(id)}
-          className="shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-ctp-surface1 bg-ctp-surface0 text-ctp-overlay1 hover:border-ctp-lavender hover:text-ctp-lavender hover:bg-ctp-crust/40 transition-colors text-[10px]"
+          className="shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-ctp-surface1 bg-ctp-surface0 text-ctp-overlay1 hover:border-ctp-accent hover:text-ctp-accent hover:bg-ctp-crust/40 transition-colors text-[10px]"
           title={`Navigate to ${name}`}
         >
           Go <ArrowRight size={9} />
@@ -111,7 +111,7 @@ export function ActivationLinks({ entryId, graph, onNavigate }: ActivationLinksP
                 onClick={() => setHideBlockedLeft((v) => !v)}
                 className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${
                   hideBlockedLeft
-                    ? 'bg-ctp-lavender/35 border-ctp-lavender/60 text-ctp-lavender font-medium'
+                    ? 'bg-ctp-accent/35 border-ctp-accent/60 text-ctp-accent font-medium'
                     : 'bg-ctp-surface0 border-ctp-surface1 text-ctp-overlay0 hover:text-ctp-subtext0'
                 }`}
                 title={hideBlockedLeft ? 'Show blocked' : 'Hide blocked'}
@@ -150,7 +150,7 @@ export function ActivationLinks({ entryId, graph, onNavigate }: ActivationLinksP
                 onClick={() => setHideBlockedRight((v) => !v)}
                 className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${
                   hideBlockedRight
-                    ? 'bg-ctp-lavender/35 border-ctp-lavender/60 text-ctp-lavender font-medium'
+                    ? 'bg-ctp-accent/35 border-ctp-accent/60 text-ctp-accent font-medium'
                     : 'bg-ctp-surface0 border-ctp-surface1 text-ctp-overlay0 hover:text-ctp-subtext0'
                 }`}
                 title={hideBlockedRight ? 'Show blocked' : 'Hide blocked'}

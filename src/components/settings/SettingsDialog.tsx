@@ -7,7 +7,7 @@ import { LorebookSettingsPanel } from './LorebookSettingsPanel'
 import type { GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults } from '@/types'
 
 const inputClass =
-  'bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1 text-xs text-ctp-subtext1 outline-none focus:border-ctp-lavender transition-colors'
+  'bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1 text-xs text-ctp-subtext1 outline-none focus:border-ctp-accent transition-colors'
 
 
 function SubcategoryHeader({ title }: { title: string }) {
@@ -416,7 +416,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                 onClick={() => setActiveCategory(cat)}
                 className={`w-full text-left px-2 py-1.5 rounded text-xs font-medium ${
                   activeCategory === cat
-                    ? 'text-ctp-lavender bg-ctp-surface0'
+                    ? 'text-ctp-accent bg-ctp-surface0'
                     : 'text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0/50'
                 } transition-colors`}
               >
@@ -427,7 +427,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
           {/* Drag divider */}
           <div
-            className="w-1 shrink-0 cursor-col-resize bg-ctp-surface0 hover:bg-ctp-lavender transition-colors"
+            className="w-1 shrink-0 cursor-col-resize bg-ctp-surface0 hover:bg-ctp-accent transition-colors"
             onMouseDown={startDrag}
           />
 
