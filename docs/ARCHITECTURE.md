@@ -319,8 +319,10 @@ Created when a tab opens, destroyed when it closes.
 interface DocumentState {
   // Persisted state (included in undo history)
   entries: WorkingEntry[];
-  graphPositions: Map<string, { x: number; y: number }>;
   bookMeta: BookMeta;
+
+  // Layout state (persisted but NOT in undo history — cosmetic)
+  graphPositions: Map<string, { x: number; y: number }>;
 
   // UI state (not in undo history)
   selection: SelectionState;
@@ -374,7 +376,7 @@ interface SimulatorState {
 
 ### Undo/Redo Scoping
 
-Zundo (temporal middleware) wraps only the persisted state fields: `entries`, `graphPositions`, `bookMeta`. UI state (selection, filters, simulator state) and derived state (graph, findings) are excluded.
+Zundo (temporal middleware) wraps only the persisted state fields: `entries`, `bookMeta`. UI state (selection, filters, simulator state) and derived state (graph, findings) are excluded. Graph positions (`graphPositions`) are also excluded from undo history — they are cosmetic/layout state, not content. Position writes always use `store.setState(...)` to bypass temporal.
 
 The undo history stores state diffs, not full snapshots. For lorebooks in the typical size range (20-500 entries), this is memory-efficient.
 

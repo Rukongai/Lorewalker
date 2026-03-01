@@ -207,9 +207,10 @@ export function createDocumentStore(init: DocumentStoreInit) {
         // --- Graph position actions ---
 
         setGraphPosition(id, pos) {
-          set((state) => {
-            state.graphPositions.set(id, pos)
-          })
+          store.setState((state) => ({
+            ...state,
+            graphPositions: new Map(state.graphPositions).set(id, pos),
+          }))
         },
 
         // --- Selection actions (excluded from undo) ---
@@ -245,7 +246,6 @@ export function createDocumentStore(init: DocumentStoreInit) {
         // Only track persisted fields for undo/redo
         partialize: (state) => ({
           entries: state.entries,
-          graphPositions: state.graphPositions,
           bookMeta: state.bookMeta,
         }),
         limit: 100,    // max undo steps

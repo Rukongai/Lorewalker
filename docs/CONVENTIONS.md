@@ -302,10 +302,9 @@ Never swallow errors silently. If a function can fail, it either throws or retur
 
 Only these fields are tracked by zundo (undo/redo):
 - `entries`
-- `graphPositions`
 - `bookMeta`
 
-Everything else (selection, filters, simulator state) is excluded. Selection is excluded because undo-ing a selection is confusing. Simulator state is excluded because it's exploratory.
+Everything else (selection, filters, simulator state, graph positions) is excluded. Selection is excluded because undo-ing a selection is confusing. Simulator state is excluded because it's exploratory. Graph positions (`graphPositions`) are excluded because they are cosmetic/layout state — position writes always use `store.setState(...)` to bypass temporal.
 
 ### Batching
 
