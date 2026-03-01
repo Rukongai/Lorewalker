@@ -80,3 +80,19 @@ export interface EntriesListDefaults {
   sortDir2: 'asc' | 'desc'
   pinConstantsToTop: boolean
 }
+
+export interface LorebookDefaults {
+  scanDepth: number;              // 0–1000, SillyTavern default: 2
+  contextBudgetPercent: number;   // 0–100 %, SillyTavern default: 25
+  budgetCap: number;              // 0–65536, 0 = disabled, default: 0
+  minActivations: number;         // 0–100, 0 = disabled, default: 0
+  maxDepth: number;               // 0–100, 0 = unlimited, default: 0
+  maxRecursionSteps: number;      // 0–10, 0 = unlimited, default: 0
+  includeNames: boolean;          // default: true
+  recursiveScan: boolean;         // default: true
+  caseSensitive: boolean;         // default: false
+  matchWholeWords: boolean;       // default: true
+  useGroupScoring: boolean;       // default: false
+  alertOnOverflow: boolean;       // default: false
+  insertionStrategy: 'evenly' | 'character_lore_first' | 'global_lore_first'; // default: 'evenly'
+}

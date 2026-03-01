@@ -72,4 +72,5 @@ export type {
   EditorDefaults,
   EntriesListDefaults,
   SortKey,
+  LorebookDefaults,
 } from './ui'

@@ -14,6 +14,7 @@ import type {
   SelectiveLogic,
   EntryPosition,
   CharacterFilter,
+  LorebookDefaults,
 } from '@/types'
 
 // SillyTavern-specific fields stored in extensions.sillytavern after normalization
@@ -165,8 +166,9 @@ export type RawSTBook = {
  * inflate: CCv3CharacterBook → InflateResult
  *
  * Assigns stable UUIDs, computes token counts, flattens SillyTavern extensions.
+ * Optional defaults fill in missing book-level fields from the imported file.
  */
-export function inflate(book: CCv3CharacterBook): InflateResult {
+export function inflate(book: CCv3CharacterBook, defaults?: LorebookDefaults): InflateResult {
   const entries: WorkingEntry[] = book.entries.map((raw, index) => {
     // Pull SillyTavern-specific extensions if present
     const stExt = (raw.extensions?.['sillytavern'] ?? {}) as STExtensions
@@ -242,24 +244,25 @@ export function inflate(book: CCv3CharacterBook): InflateResult {
   const bookMeta: BookMeta = {
     name: book.name ?? '',
     description: book.description ?? '',
-    scanDepth: book.scan_depth ?? 4,
+    scanDepth: book.scan_depth ?? defaults?.scanDepth ?? 4,
     tokenBudget: book.token_budget ?? 4096,
-    recursiveScan: book.recursive_scanning ?? false,
-    caseSensitive: (stBookExt['case_sensitive'] as boolean | undefined) ?? false,
-    matchWholeWords: (stBookExt['match_whole_words'] as boolean | undefined) ?? false,
-    minActivations: (stBookExt['min_activations'] as number | undefined) ?? 0,
-    maxDepth: (stBookExt['max_depth'] as number | undefined) ?? 0,
-    maxRecursionSteps: (stBookExt['max_recursion_steps'] as number | undefined) ?? 0,
+    recursiveScan: book.recursive_scanning ?? defaults?.recursiveScan ?? false,
+    caseSensitive: (stBookExt['case_sensitive'] as boolean | undefined) ?? defaults?.caseSensitive ?? false,
+    matchWholeWords: (stBookExt['match_whole_words'] as boolean | undefined) ?? defaults?.matchWholeWords ?? false,
+    minActivations: (stBookExt['min_activations'] as number | undefined) ?? defaults?.minActivations ?? 0,
+    maxDepth: (stBookExt['max_depth'] as number | undefined) ?? defaults?.maxDepth ?? 0,
+    maxRecursionSteps: (stBookExt['max_recursion_steps'] as number | undefined) ?? defaults?.maxRecursionSteps ?? 0,
     insertionStrategy: (() => {
       const s = stBookExt['insertion_strategy'] as string | undefined
       if (s === 'character_lore_first') return 'character_lore_first'
       if (s === 'global_lore_first') return 'global_lore_first'
-      return 'evenly'
+      if (s !== undefined) return 'evenly'
+      return defaults?.insertionStrategy ?? 'evenly'
     })(),
-    includeNames: (stBookExt['include_names'] as boolean | undefined) ?? false,
-    useGroupScoring: (stBookExt['use_group_scoring'] as boolean | undefined) ?? false,
-    alertOnOverflow: (stBookExt['alert_on_overflow'] as boolean | undefined) ?? false,
-    budgetCap: (stBookExt['budget_cap'] as number | undefined) ?? 0,
+    includeNames: (stBookExt['include_names'] as boolean | undefined) ?? defaults?.includeNames ?? false,
+    useGroupScoring: (stBookExt['use_group_scoring'] as boolean | undefined) ?? defaults?.useGroupScoring ?? false,
+    alertOnOverflow: (stBookExt['alert_on_overflow'] as boolean | undefined) ?? defaults?.alertOnOverflow ?? false,
+    budgetCap: (stBookExt['budget_cap'] as number | undefined) ?? defaults?.budgetCap ?? 0,
     extensions: book.extensions ?? {},
   }
 
@@ -271,8 +274,9 @@ export function inflate(book: CCv3CharacterBook): InflateResult {
  *
  * Parses a SillyTavern lorebook JSON directly, bypassing parseLorebook() normalization.
  * Avoids lossy position mapping and missing-field gaps in character-foundry's ST normalizer.
+ * Optional defaults fill in missing book-level fields from the imported file.
  */
-export function inflateFromRawST(raw: RawSTBook): InflateResult {
+export function inflateFromRawST(raw: RawSTBook, defaults?: LorebookDefaults): InflateResult {
   const rawEntries = raw.entries ?? {}
   const entries: WorkingEntry[] = Object.values(rawEntries).map((e, index) => {
     const content = e.content ?? ''
@@ -344,24 +348,25 @@ export function inflateFromRawST(raw: RawSTBook): InflateResult {
   const bookMeta: BookMeta = {
     name: raw.name ?? '',
     description: raw.description ?? '',
-    scanDepth: raw.scan_depth ?? 4,
+    scanDepth: raw.scan_depth ?? defaults?.scanDepth ?? 4,
     tokenBudget: raw.token_budget ?? 4096,
-    recursiveScan: raw.recursive_scanning ?? false,
-    caseSensitive: (stBookExt['case_sensitive'] as boolean | undefined) ?? false,
-    matchWholeWords: (stBookExt['match_whole_words'] as boolean | undefined) ?? false,
-    minActivations: (stBookExt['min_activations'] as number | undefined) ?? 0,
-    maxDepth: (stBookExt['max_depth'] as number | undefined) ?? 0,
-    maxRecursionSteps: (stBookExt['max_recursion_steps'] as number | undefined) ?? 0,
+    recursiveScan: raw.recursive_scanning ?? defaults?.recursiveScan ?? false,
+    caseSensitive: (stBookExt['case_sensitive'] as boolean | undefined) ?? defaults?.caseSensitive ?? false,
+    matchWholeWords: (stBookExt['match_whole_words'] as boolean | undefined) ?? defaults?.matchWholeWords ?? false,
+    minActivations: (stBookExt['min_activations'] as number | undefined) ?? defaults?.minActivations ?? 0,
+    maxDepth: (stBookExt['max_depth'] as number | undefined) ?? defaults?.maxDepth ?? 0,
+    maxRecursionSteps: (stBookExt['max_recursion_steps'] as number | undefined) ?? defaults?.maxRecursionSteps ?? 0,
     insertionStrategy: (() => {
       const s = stBookExt['insertion_strategy'] as string | undefined
       if (s === 'character_lore_first') return 'character_lore_first'
       if (s === 'global_lore_first') return 'global_lore_first'
-      return 'evenly'
+      if (s !== undefined) return 'evenly'
+      return defaults?.insertionStrategy ?? 'evenly'
     })(),
-    includeNames: (stBookExt['include_names'] as boolean | undefined) ?? false,
-    useGroupScoring: (stBookExt['use_group_scoring'] as boolean | undefined) ?? false,
-    alertOnOverflow: (stBookExt['alert_on_overflow'] as boolean | undefined) ?? false,
-    budgetCap: (stBookExt['budget_cap'] as number | undefined) ?? 0,
+    includeNames: (stBookExt['include_names'] as boolean | undefined) ?? defaults?.includeNames ?? false,
+    useGroupScoring: (stBookExt['use_group_scoring'] as boolean | undefined) ?? defaults?.useGroupScoring ?? false,
+    alertOnOverflow: (stBookExt['alert_on_overflow'] as boolean | undefined) ?? defaults?.alertOnOverflow ?? false,
+    budgetCap: (stBookExt['budget_cap'] as number | undefined) ?? defaults?.budgetCap ?? 0,
     extensions: raw.extensions ?? {},
   }
 

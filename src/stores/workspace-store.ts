@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { TabMeta, FileMeta, GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults } from '@/types'
+import type { TabMeta, FileMeta, GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults, LorebookDefaults } from '@/types'
 
 const DEFAULT_GRAPH_SETTINGS: GraphLayoutSettings = {
   acyclicer: 'greedy',
@@ -28,6 +28,22 @@ const DEFAULT_ENTRIES_LIST_DEFAULTS: EntriesListDefaults = {
   pinConstantsToTop: true,
 }
 
+const DEFAULT_LOREBOOK_DEFAULTS: LorebookDefaults = {
+  scanDepth: 2,
+  contextBudgetPercent: 25,
+  budgetCap: 0,
+  minActivations: 0,
+  maxDepth: 0,
+  maxRecursionSteps: 0,
+  includeNames: true,
+  recursiveScan: true,
+  caseSensitive: false,
+  matchWholeWords: true,
+  useGroupScoring: false,
+  alertOnOverflow: false,
+  insertionStrategy: 'evenly',
+}
+
 interface WorkspaceState {
   tabs: TabMeta[]
   activeTabId: string | null
@@ -37,6 +53,7 @@ interface WorkspaceState {
   graphDisplayDefaults: GraphDisplayDefaults
   editorDefaults: EditorDefaults
   entriesListDefaults: EntriesListDefaults
+  lorebookDefaults: LorebookDefaults
 
   // Actions
   openTab(tabId: string, name: string, fileMeta: FileMeta): void
@@ -49,6 +66,7 @@ interface WorkspaceState {
   setGraphDisplayDefaults(settings: GraphDisplayDefaults): void
   setEditorDefaults(settings: EditorDefaults): void
   setEntriesListDefaults(settings: EntriesListDefaults): void
+  setLorebookDefaults(patch: Partial<LorebookDefaults>): void
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -61,6 +79,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     graphDisplayDefaults: DEFAULT_GRAPH_DISPLAY_DEFAULTS,
     editorDefaults: DEFAULT_EDITOR_DEFAULTS,
     entriesListDefaults: DEFAULT_ENTRIES_LIST_DEFAULTS,
+    lorebookDefaults: DEFAULT_LOREBOOK_DEFAULTS,
 
     openTab(tabId, name, fileMeta) {
       set((state) => {
@@ -129,6 +148,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
     setEntriesListDefaults(settings) {
       set((state) => { state.entriesListDefaults = settings })
+    },
+
+    setLorebookDefaults(patch) {
+      set((state) => { state.lorebookDefaults = { ...state.lorebookDefaults, ...patch } })
     },
   }))
 )

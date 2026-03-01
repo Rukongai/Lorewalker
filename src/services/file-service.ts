@@ -85,7 +85,8 @@ export async function importFile(file: File): Promise<string> {
         )
       }
 
-      const { entries, bookMeta } = inflate(book)
+      const { lorebookDefaults } = useWorkspaceStore.getState()
+      const { entries, bookMeta } = inflate(book, lorebookDefaults)
       const tabId = generateId()
       const fileMeta: FileMeta = {
         fileName: file.name,
@@ -104,16 +105,18 @@ export async function importFile(file: File): Promise<string> {
 
       let entries, bookMeta, originalFormat: LorebookFormat
 
+      const { lorebookDefaults } = useWorkspaceStore.getState()
+
       if (rawJson.entries !== null && typeof rawJson.entries === 'object' && !Array.isArray(rawJson.entries)) {
         // SillyTavern format: entries is a keyed object, not an array
-        const stResult = inflateFromRawST(rawJson as RawSTBook)
+        const stResult = inflateFromRawST(rawJson as RawSTBook, lorebookDefaults)
         entries = stResult.entries
         bookMeta = stResult.bookMeta
         originalFormat = 'sillytavern'
       } else {
         // CCv3 and other formats: use parseLorebook normalization
         const result = parseLorebook(buffer)
-        const inflated = inflate(result.book)
+        const inflated = inflate(result.book, lorebookDefaults)
         entries = inflated.entries
         bookMeta = inflated.bookMeta
         originalFormat = resolveFormat(result.lorebookFormat)

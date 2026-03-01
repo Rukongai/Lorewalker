@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
+import { LorebookSettingsPanel } from './LorebookSettingsPanel'
 import type { GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults } from '@/types'
 
 const inputClass =
@@ -332,7 +333,7 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
-  const [activeCategory, setActiveCategory] = useState<'general' | 'graph' | 'editor' | 'entries'>('general')
+  const [activeCategory, setActiveCategory] = useState<'general' | 'graph' | 'editor' | 'entries' | 'lorebook'>('general')
   const [leftWidth, setLeftWidth] = useState(140)
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null)
 
@@ -380,7 +381,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         <div className="flex flex-1 overflow-hidden">
           {/* Left: category list */}
           <div className="shrink-0 border-r border-gray-800 p-2 overflow-y-auto" style={{ width: leftWidth }}>
-            {(['general', 'graph', 'editor', 'entries'] as const).map((cat) => (
+            {(['general', 'graph', 'editor', 'entries', 'lorebook'] as const).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
@@ -390,7 +391,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                     : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
                 } transition-colors`}
               >
-                {cat === 'general' ? 'General' : cat === 'graph' ? 'Workspace Settings' : cat === 'editor' ? 'Editor' : 'Entries'}
+                {cat === 'general' ? 'General' : cat === 'graph' ? 'Workspace Settings' : cat === 'editor' ? 'Editor' : cat === 'entries' ? 'Entries' : 'Lorebook'}
               </button>
             ))}
           </div>
@@ -407,6 +408,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
             {activeCategory === 'graph' && <GraphSettingsPanel />}
             {activeCategory === 'editor' && <EditorSettingsPanel />}
             {activeCategory === 'entries' && <EntriesSettingsPanel />}
+            {activeCategory === 'lorebook' && <LorebookSettingsPanel />}
           </div>
         </div>
       </div>
