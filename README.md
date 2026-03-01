@@ -12,9 +12,9 @@ Lorewalker is a local-first lorebook editor, visualizer, and analysis tool for A
 
 ---
 
-![Lorewalker](docs/lorewalker.png)
+![Lorewalker](docs/lorewalker-ss.png)
 
-![Entry Editor](docs/editor-modal.png)
+![Entry Editor](docs/editor-modal-ss.png)
 
 ## What's Working Now (Phases 0–2)
 
