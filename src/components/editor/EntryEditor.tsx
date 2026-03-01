@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, Maximize2 } from 'lucide-react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
@@ -9,23 +9,29 @@ import { ContentEditor } from './ContentEditor'
 import { KeywordInput } from './KeywordInput'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
-function FieldGroup({ label, stOnly, defaultCollapsed = false, children }: {
+function FieldGroup({ label, stOnly, defaultCollapsed = false, labelSuffix, headerRight, children }: {
   label: string
   stOnly?: boolean
   defaultCollapsed?: boolean
+  labelSuffix?: React.ReactNode
+  headerRight?: React.ReactNode
   children: React.ReactNode
 }) {
   const [open, setOpen] = useState(!defaultCollapsed)
   return (
     <div className="mb-4">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full text-left text-[10px] font-semibold tracking-wider text-gray-500 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-gray-400 transition-colors"
-      >
-        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-        {label}
-        {stOnly && <span className="text-[9px] font-semibold bg-amber-900/40 text-amber-400 border border-amber-700/50 rounded px-1 py-0.5 normal-case tracking-normal">ST</span>}
-      </button>
+      <div className="flex items-center">
+        <button
+          onClick={() => setOpen(o => !o)}
+          className="flex-1 min-w-0 text-left text-[10px] font-semibold tracking-wider text-gray-500 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-gray-400 transition-colors"
+        >
+          {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
+          <span className="truncate">{label}</span>
+          {stOnly && <span className="text-[9px] font-semibold bg-amber-900/40 text-amber-400 border border-amber-700/50 rounded px-1 py-0.5 normal-case tracking-normal shrink-0">ST</span>}
+          {labelSuffix}
+        </button>
+        {headerRight}
+      </div>
       {open && <div className="px-3 space-y-2 pb-2">{children}</div>}
     </div>
   )
@@ -48,6 +54,8 @@ const inputClass =
 
 const checkboxClass = 'w-3.5 h-3.5 accent-indigo-500'
 
+type InsertionStrategy = 'constant' | 'normal' | 'vectorized'
+
 interface EntryEditorProps {
   entryId: string
 }
@@ -63,16 +71,34 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
     <K extends keyof WorkingEntry>(field: K, value: WorkingEntry[K]) => {
       if (!realStore) return
       const changes: Partial<WorkingEntry> = { [field]: value }
-      // Recompute token count when content changes
       if (field === 'content') {
         changes.tokenCount = estimateTokenCount(String(value))
       }
       realStore.getState().updateEntry(entryId, changes)
-      // Mark the tab dirty
       if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
     },
     [realStore, entryId, activeTabId]
   )
+
+  const handleSecondaryKeysChange = useCallback((v: string[]) => {
+    if (!realStore) return
+    const changes: Partial<WorkingEntry> = { secondaryKeys: v }
+    if (v.length === 0) changes.selective = false
+    realStore.getState().updateEntry(entryId, changes)
+    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
+  }, [realStore, entryId, activeTabId])
+
+  const handleStrategyChange = useCallback((strategy: InsertionStrategy) => {
+    if (!realStore) return
+    const changes: Partial<WorkingEntry> =
+      strategy === 'constant'
+        ? { constant: true, vectorized: false }
+        : strategy === 'vectorized'
+          ? { constant: false, vectorized: true }
+          : { constant: false, vectorized: false }
+    realStore.getState().updateEntry(entryId, changes)
+    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
+  }, [realStore, entryId, activeTabId])
 
   if (!entry) {
     return (
@@ -82,10 +108,22 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
     )
   }
 
+  const strategy: InsertionStrategy = entry.constant ? 'constant' : entry.vectorized ? 'vectorized' : 'normal'
+
   return (
     <div className="flex-1 overflow-y-auto text-sm">
-      {/* Identity */}
-      <FieldGroup label="Identity">
+      {/* Entry */}
+      <FieldGroup
+        label={entry.name || 'Entry'}
+        headerRight={
+          <button
+            className="text-gray-600 hover:text-gray-400 transition-colors px-2 pt-2 pb-1"
+            title="Expand editor"
+          >
+            <Maximize2 size={10} />
+          </button>
+        }
+      >
         <Field label="Name" help="Display label for this entry in the lorebook editor. Not injected into the AI's context.">
           <input
             type="text"
@@ -106,29 +144,33 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
             graph={graph}
             onChange={(v) => handleChange('content', v)}
             inputClass={inputClass}
+            preventRecursion={entry.preventRecursion}
           />
         </div>
       </FieldGroup>
 
       {/* Activation */}
       <FieldGroup label="Activation">
-        <Field label="Keys" help="Primary trigger keywords. When any key appears in the scan window, this entry may activate. Supports plain text or /regex/ patterns.">
-          <KeywordInput
-            value={entry.keys}
-            onChange={(v) => handleChange('keys', v)}
-            placeholder="keyword, keyword…"
-          />
+        <Field
+          label="Insertion Strategy"
+          help="Controls how this entry activates. Constant = always active; Normal = keyword-triggered; Vectorized = semantic similarity search."
+        >
+          <div className="flex rounded border border-gray-700 overflow-hidden">
+            {(['constant', 'normal', 'vectorized'] as InsertionStrategy[]).map((s) => (
+              <button
+                key={s}
+                onClick={() => handleStrategyChange(s)}
+                className={`flex-1 px-2 py-1 text-xs capitalize transition-colors
+                  ${strategy === s
+                    ? 'bg-indigo-700/50 border-indigo-500 text-indigo-200'
+                    : 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700'
+                  }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </Field>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={entry.constant}
-            onChange={(e) => handleChange('constant', e.target.checked)}
-            className={checkboxClass}
-          />
-          Constant (always active)
-          <HelpTooltip text="Entry is always active regardless of keyword matching. Counts against the token budget unless Ignore Budget is enabled." />
-        </label>
         <label className="flex items-center gap-2 text-xs text-gray-400">
           <input
             type="checkbox"
@@ -139,15 +181,15 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
           Selective (requires secondary key match)
           <HelpTooltip text="When checked, the entry only activates if secondary keys also match according to the Selective Logic rule." />
         </label>
+        <Field label="Keys" help="Primary trigger keywords. When any key appears in the scan window, this entry may activate. Supports plain text or /regex/ patterns.">
+          <KeywordInput
+            value={entry.keys}
+            onChange={(v) => handleChange('keys', v)}
+            placeholder="keyword, keyword…"
+          />
+        </Field>
         {entry.selective && (
           <>
-            <Field label="Optional Filter (Secondary Keys)" help="Additional keywords evaluated after a primary key match. Activation depends on the Selective Logic setting.">
-              <KeywordInput
-                value={entry.secondaryKeys}
-                onChange={(v) => handleChange('secondaryKeys', v)}
-                placeholder="secondary, secondary…"
-              />
-            </Field>
             <Field label="Selective Logic" help="How secondary keys interact with primary keys: AND ANY (any secondary matches), AND ALL (all must match), NOT ANY (blocks if any secondary matches), NOT ALL (blocks only if all match).">
               <select
                 value={entry.selectiveLogic}
@@ -160,21 +202,18 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
                 <option value={3}>NOT ALL (primary, not all secondary)</option>
               </select>
             </Field>
+            <Field label="Secondary Keys (Optional Filter)" help="Additional keywords evaluated after a primary key match. Activation depends on the Selective Logic setting.">
+              <KeywordInput
+                value={entry.secondaryKeys}
+                onChange={handleSecondaryKeysChange}
+                placeholder="secondary, secondary…"
+              />
+            </Field>
           </>
         )}
-        <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={entry.enabled}
-            onChange={(e) => handleChange('enabled', e.target.checked)}
-            className={checkboxClass}
-          />
-          Enabled
-          <HelpTooltip text="When unchecked, this entry is completely disabled and will never activate." />
-        </label>
       </FieldGroup>
 
-      {/* Priority */}
+      {/* Insertion */}
       <FieldGroup label="Insertion">
         <Field label="Insertion Position" help="Where the entry's content is injected in the final prompt. 'Before/After Char Defs' frames the character card; '@ Depth' places content at a specific chat position; 'Author's Note' inserts into the AN block; 'Outlet' skips auto-injection and lets you place content manually via template macro.">
           <select
@@ -193,15 +232,7 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
           </select>
         </Field>
         {entry.position === 4 && (
-          <>
-            <Field label="Context Depth" help="Chat depth at which this entry is injected. Depth 0 = bottom of the prompt (most recent); higher values insert further up in the conversation history.">
-              <input
-                type="number"
-                value={entry.depth}
-                onChange={(e) => handleChange('depth', Number(e.target.value))}
-                className={inputClass}
-              />
-            </Field>
+          <div className="grid grid-cols-2 gap-2">
             <Field label="Role" help="Whether this entry is injected as a system, user, or assistant message.">
               <select
                 value={entry.role}
@@ -213,7 +244,15 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
                 <option value={2}>Assistant</option>
               </select>
             </Field>
-          </>
+            <Field label="Context Depth" help="Chat depth at which this entry is injected. Depth 0 = bottom of the prompt (most recent); higher values insert further up in the conversation history.">
+              <input
+                type="number"
+                value={entry.depth}
+                onChange={(e) => handleChange('depth', Number(e.target.value))}
+                className={inputClass}
+              />
+            </Field>
+          </div>
         )}
         {entry.position === 7 && (
           <Field label="Outlet Name" help="The named outlet this entry's content is stored under. Reference it in your prompt template with {{outlet::Name}}.">
@@ -565,16 +604,6 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
             />
           </Field>
         </div>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={entry.vectorized}
-            onChange={(e) => handleChange('vectorized', e.target.checked)}
-            className={checkboxClass}
-          />
-          Vectorized
-          <HelpTooltip text="Allows this entry to be activated through semantic similarity search (via the Vector Storage extension), in addition to keyword matching." />
-        </label>
         <label className="flex items-center gap-2 text-xs text-gray-400">
           <input
             type="checkbox"

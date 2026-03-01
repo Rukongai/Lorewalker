@@ -102,11 +102,13 @@ interface ContentEditorProps {
   graph: RecursionGraph
   onChange: (value: string) => void
   inputClass: string
+  preventRecursion?: boolean
 }
 
-export function ContentEditor({ value, entryId, graph, onChange }: ContentEditorProps) {
+export function ContentEditor({ value, entryId, graph, onChange, preventRecursion = false }: ContentEditorProps) {
   const showKeywordHighlightsByDefault = useWorkspaceStore((s) => s.editorDefaults.showKeywordHighlights)
   const [highlight, setHighlight] = useState(showKeywordHighlightsByDefault)
+  const effectiveHighlight = highlight && !preventRecursion
   const containerRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const onChangeRef = useRef(onChange)
@@ -202,9 +204,9 @@ export function ContentEditor({ value, entryId, graph, onChange }: ContentEditor
     const view = viewRef.current
     if (!view) return
     view.dispatch({
-      effects: setKeywordEffect.of(highlight ? keywordMeta : new Map()),
+      effects: setKeywordEffect.of(effectiveHighlight ? keywordMeta : new Map()),
     })
-  }, [highlight, keywordMeta])
+  }, [effectiveHighlight, keywordMeta])
 
   return (
     <div className="relative" onClick={(e) => e.stopPropagation()}>
@@ -215,14 +217,15 @@ export function ContentEditor({ value, entryId, graph, onChange }: ContentEditor
 
       <button
         type="button"
-        onClick={() => setHighlight((v) => !v)}
-        title={highlight ? 'Hide keyword highlights' : 'Show keyword highlights'}
-        className="absolute top-1.5 right-1.5 p-1 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-700 transition-colors z-10"
+        onClick={() => !preventRecursion && setHighlight((v) => !v)}
+        title={preventRecursion ? 'Keyword highlighting disabled: Prevent Further Recursion is enabled' : effectiveHighlight ? 'Hide keyword highlights' : 'Show keyword highlights'}
+        disabled={preventRecursion}
+        className={`absolute top-1.5 right-1.5 p-1 rounded transition-colors z-10 ${preventRecursion ? 'text-gray-700 cursor-not-allowed' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-700'}`}
       >
-        {highlight ? <Eye size={11} /> : <EyeOff size={11} />}
+        {effectiveHighlight ? <Eye size={11} /> : <EyeOff size={11} />}
       </button>
 
-      {highlight && hasMatches && (
+      {effectiveHighlight && hasMatches && (
         <div className="mt-1 flex flex-wrap gap-1">
           {Array.from(keywordMeta.entries()).map(([kw, m]) => (
             <span
@@ -242,7 +245,7 @@ export function ContentEditor({ value, entryId, graph, onChange }: ContentEditor
         </div>
       )}
 
-      {highlight && !hasMatches && (
+      {effectiveHighlight && !hasMatches && (
         <p className="mt-1 text-[10px] text-gray-600 italic">
           No outgoing keyword matches found for this entry.
         </p>

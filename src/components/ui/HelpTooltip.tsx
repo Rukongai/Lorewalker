@@ -10,7 +10,14 @@ export function HelpTooltip({ text }: { text: string }) {
   function handleMouseEnter() {
     if (iconRef.current) {
       const rect = iconRef.current.getBoundingClientRect()
-      setPos({ top: rect.top, left: rect.left + rect.width / 2 })
+      const tooltipWidth = 224 // w-56 = 14rem × 16px
+      const margin = 8
+      const centerX = rect.left + rect.width / 2
+      const clampedLeft = Math.min(
+        Math.max(centerX, tooltipWidth / 2 + margin),
+        window.innerWidth - tooltipWidth / 2 - margin
+      )
+      setPos({ top: rect.top, left: clampedLeft })
     }
     setVisible(true)
   }

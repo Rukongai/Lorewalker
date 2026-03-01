@@ -35,6 +35,11 @@ export function WorkspaceShell() {
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
   const selectedEntryId = activeStore((s) => s.selection.selectedEntryId)
+  const selectedEntry = activeStore((s) => {
+    const id = s.selection.selectedEntryId
+    if (!id) return null
+    return s.entries.find((e) => e.id === id) ?? null
+  })
   // zundo exposes temporal state on the store instance (not via state selector)
   const temporalState = realStore?.temporal.getState()
   const canUndo = (temporalState?.pastStates.length ?? 0) > 0
@@ -81,6 +86,12 @@ export function WorkspaceShell() {
   function handleSave() {
     if (!activeTabId || !activeTab) return
     exportFile(activeTabId, activeTab.fileMeta.fileName)
+  }
+
+  function handleToggleEnabled() {
+    if (!realStore || !selectedEntry) return
+    realStore.getState().updateEntry(selectedEntry.id, { enabled: !selectedEntry.enabled })
+    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
   }
 
   function handleUndo() {
@@ -332,10 +343,22 @@ export function WorkspaceShell() {
                   <div className="flex items-center border-b border-gray-800 shrink-0">
                     <button
                       onClick={() => setEditorOpen(o => !o)}
-                      className="flex-1 px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-400 transition-colors text-left"
+                      className={`flex-1 px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-gray-500 hover:text-gray-400 transition-colors text-left ${selectedEntry ? '' : 'uppercase'}`}
                     >
                       {editorOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                      Entry
+                      <span className="truncate">{selectedEntry ? (selectedEntry.name || 'Untitled') : 'Entry'}</span>
+                      {selectedEntry && (
+                        <button
+                          role="switch"
+                          aria-checked={selectedEntry.enabled}
+                          onClick={(e) => { e.stopPropagation(); handleToggleEnabled() }}
+                          className={`relative inline-flex h-4 w-7 shrink-0 rounded-full border border-gray-600 transition-colors ml-1
+                            ${selectedEntry.enabled ? 'bg-indigo-600' : 'bg-gray-700'}`}
+                        >
+                          <span className={`inline-block h-3 w-3 mt-[1px] rounded-full bg-white shadow transition-transform
+                            ${selectedEntry.enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+                        </button>
+                      )}
                     </button>
                     {selectedEntryId && (
                       <button
