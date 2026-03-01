@@ -262,6 +262,8 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
           }}
           maskColor="rgba(0,0,0,0.6)"
           className="!bg-ctp-mantle !border-ctp-surface1"
+          pannable
+          zoomable
         />
         <Controls className="!bg-ctp-surface0 !border-ctp-surface1 [&_button]:!bg-ctp-surface0 [&_button]:!border-ctp-overlay0 [&_button]:!text-ctp-subtext0 [&_button:hover]:!bg-ctp-surface1" />
         <GraphAddButton onAdd={handleAddEntry} />
