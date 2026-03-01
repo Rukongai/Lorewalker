@@ -736,5 +736,5 @@ Modal. Tabs for:
 | 15 | Edges for blocked recursion links shown as dashed | Users need to see links that exist but are prevented, not just active links | Design phase |
 | 16 | ThemeId as a union of named theme strings (not just dark/light) | Supports user-selectable themes via CSS variable swap. Catppuccin Macchiato is the base dark palette. Light themes identified by a `LIGHT_THEMES` constant. | Phase 2 |
 | 17 | Graph display preferences (connectionVisibility, showBlockedEdges, edgeStyle) in WorkspaceStore | These are presentation choices, not content. Belongs in workspace-level prefs, not per-document state. | Phase 2 |
-| 18 | Panel layout (widths, collapse state) stored in component local state | Cosmetic UI state. Will be persisted to IndexedDB in Phase 5 (PersistenceService). Not needed in Zustand. | Phase 2 |
+| 18 | Panel layout (widths, collapse state) persisted to IndexedDB via PersistenceService | Cosmetic UI state — not in Zustand. Stored as PersistedWorkspace.panelLayout (leftPanelWidth, rightPanelWidth, leftCollapsed, rightCollapsed, rightPanelTab). Restored on mount in WorkspaceShell. | Phase 5 |
 | 19 | EMPTY_STORE for unconditional hook calls | React's Rules of Hooks prohibit conditional hook calls. A stable fallback store lets components subscribe unconditionally even when no tab is active. | Phase 2 |

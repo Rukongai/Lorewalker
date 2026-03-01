@@ -1,8 +1,6 @@
 > [!WARNING]
 > **This is early alpha software — here be dragons.**
-> There is **no persistence yet**. If you refresh the page, **your work is gone**. This is the most important thing to know before you use it.
->
-> That said — if the idea appeals to you, please try it! Open issues when you find bugs. Real-world use cases help more than anything.
+> Analysis and simulation features are rough drafts and not yet fully reliable. Open issues when you find problems. Real-world use cases help more than anything.
 
 ---
 
@@ -16,7 +14,7 @@ Lorewalker is a local-first lorebook editor, visualizer, and analysis tool for A
 
 ![Entry Editor](docs/editor-modal-ss.png)
 
-## What's Working Now (Phases 0–2)
+## What's Working Now (Phases 0–5)
 
 - **Import / Export** — drag-and-drop or file picker; full SillyTavern lorebook JSON round-trip
 - **Entry editor** — all CCv3 lorebook entry fields with live token counting
@@ -27,18 +25,18 @@ Lorewalker is a local-first lorebook editor, visualizer, and analysis tool for A
   - Bidirectional selection: click a node to highlight the entry in the list, and vice versa
   - Double-click a node to jump straight to editing that entry
 - **Theme system** — 14+ themes including Catppuccin variants, Nord, One Dark, Dracula, Rosé Pine, Tokyo Night, and light variants
+- **Deterministic health analysis** *(rough draft, not yet reliable)* — 28 rules across structure, config, keywords, recursion, and budget categories; real-time scoring 0–100 with error/warning/suggestion severities; AnalysisPanel, FindingItem, InspectorPanel
+- **Activation simulator** *(rough draft, not yet reliable)* — SillyTavern engine, multi-message conversation replay, step-by-step recursion trace, sticky/cooldown/probability effects; SimulatorPanel, ActivationResults, RecursionTrace
+- **Autosave & crash recovery** — IndexedDB-backed autosave (2s debounce), workspace persistence, RecoveryDialog on relaunch, tab-close dirty confirmation, stale doc cleanup
 
 ---
 
-## What's Coming (Phases 3–8)
+## What's Coming (Phases 6–8)
 
 | Phase | Feature |
 |-------|---------|
-| 3 | **Deterministic health analysis** — 28 built-in rules across structure, configuration, keywords, recursion, and budget categories; real-time health scoring |
-| 4 | **Activation simulator** — simulate SillyTavern's entry activation logic against mock messages, with step-by-step recursion trace |
-| 5 | **Autosave & crash recovery** — IndexedDB-backed autosave; restore your session after a browser crash *(this is when the "refresh = data loss" problem goes away)* |
 | 6 | **LLM-powered deep analysis** — BYOK qualitative review via any OpenAI-compatible endpoint or Anthropic; content quality, keyword suggestions, splitting recommendations |
-| 7 | **Graph editing** — create and delete recursion links by dragging edges directly on the graph canvas |
+| 7 | **Graph editing + UX polish** — drag-drop edge creation, keyboard shortcuts, multi-select operations |
 | 8 | **Desktop app** — Tauri-based native wrapper with native file dialogs and system keychain for API keys |
 
 ---

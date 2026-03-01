@@ -135,7 +135,7 @@
 
 ---
 
-## Phase 5: Persistence and Recovery
+## Phase 5: Persistence and Recovery ✓ Complete
 **Goal:** Autosave, crash recovery, and preferences.
 
 **Tasks:**
@@ -199,7 +199,7 @@
 10. Welcome/empty state: guidance when no file is open
 11. Error boundaries and user-facing error messages
 12. Responsive panel resizing
-13. Persistent panel state (widths, collapse) via PersistenceService — light mode themes are already implemented; Phase 7 focus is persisting user panel layout preferences
+13. Panel state persistence (widths, collapse) was completed in Phase 5. Phase 7 focus: keyboard shortcuts, multi-select operations, welcome/empty state UX
 
 **Delivers:** A polished, productive editor. The graph becomes a real editing surface, not just a viewer.
 
