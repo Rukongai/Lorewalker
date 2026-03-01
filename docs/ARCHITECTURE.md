@@ -109,7 +109,7 @@ This document is the source of truth for Lorewalker's design. Implementation age
 
 **Dependencies:** None (pure computation, receives data as arguments)
 
-**Shared logic:** The keyword matching functions (matchKeyword, matchKeywordInContent) are defined in GraphService and imported by SimulatorService. This prevents duplicate matching implementations.
+**Shared logic:** The keyword matching functions (matchKeyword, matchKeywordInContent) are defined in `services/simulator/keyword-matching.ts` and imported by both GraphService and SimulatorService. This prevents duplicate matching implementations and ensures "what the graph shows" and "what the simulator does" are always in sync.
 
 ---
 
@@ -286,14 +286,26 @@ Global singleton. Not included in any undo history.
 interface WorkspaceState {
   tabs: TabMeta[];
   activeTabId: string | null;
-  recentFiles: FileMeta[];
-  theme: 'dark' | 'light';
+  theme: ThemeId;
+  graphSettings: GraphLayoutSettings;       // dagre layout config
+  checkRecursionLoops: boolean;             // whether to compute cycle detection
+  graphDisplayDefaults: GraphDisplayDefaults;
+  editorDefaults: EditorDefaults;
+  entriesListDefaults: EntriesListDefaults;
+  lorebookDefaults: LorebookDefaults;       // default book-level settings
 
   // Actions
-  openTab(file: ImportedFile): string;  // returns tabId
+  openTab(tabId: string, name: string, fileMeta: FileMeta): void;
   closeTab(tabId: string): void;
   switchTab(tabId: string): void;
-  setTheme(theme: 'dark' | 'light'): void;
+  markDirty(tabId: string, isDirty: boolean): void;
+  setTheme(theme: ThemeId): void;
+  setGraphSettings(settings: GraphLayoutSettings): void;
+  setCheckRecursionLoops(value: boolean): void;
+  setGraphDisplayDefaults(settings: GraphDisplayDefaults): void;
+  setEditorDefaults(settings: EditorDefaults): void;
+  setEntriesListDefaults(settings: EntriesListDefaults): void;
+  setLorebookDefaults(patch: Partial<LorebookDefaults>): void;
 }
 
 interface TabMeta {
@@ -322,6 +334,7 @@ interface DocumentState {
   bookMeta: BookMeta;
 
   // Layout state (persisted but NOT in undo history — cosmetic)
+  // graphPositions is excluded from zundo's partialize option. All writes use store.setState(...) directly.
   graphPositions: Map<string, { x: number; y: number }>;
 
   // UI state (not in undo history)
@@ -373,6 +386,18 @@ interface SimulatorState {
   conversationHistory: ConversationStep[];  // for multi-message replay
 }
 ```
+
+### EMPTY_STORE Pattern
+
+Components that need a DocumentStore but must handle the "no active tab" case use a module-level `EMPTY_STORE` constant exported from `src/hooks/useDerivedState.ts`. This is a real DocumentStore instance initialized with empty defaults. It is used as a fallback so that Zustand `useStore` hooks are always called unconditionally (Rules of Hooks).
+
+```typescript
+const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
+const activeStore = realStore ?? EMPTY_STORE
+const entries = activeStore((s) => s.entries)  // always safe — never conditional
+```
+
+**Important:** Never use `EMPTY_STORE` as a real store for mutations. Always check that the active tab has a real store before writing.
 
 ### Undo/Redo Scoping
 
@@ -636,7 +661,7 @@ Left panel. Filterable, sortable list of all entries in the active document. Eac
 ### GraphCanvas
 Center panel. The @xyflow/react node editor surface.
 
-**Custom node:** EntryNode — displays entry name, type badge (color-coded by entity type), health indicator, constant/keyword badge, token count. Compact enough to show many at once but informative enough to be useful without selecting.
+**Custom node:** EntryNode — displays entry name, type badge (color-coded by activation type), health indicator, constant/keyword badge, token count. Compact enough to show many at once but informative enough to be useful without selecting.
 
 **Edges:** Directed arrows from triggering entry to triggered entry. Styling:
 - Solid lines: active recursion links
@@ -644,10 +669,15 @@ Center panel. The @xyflow/react node editor surface.
 - Red highlight: part of a circular reference
 - Colored by source entry type (locations trigger NPCs → specific color scheme)
 
-**Controls:** Minimap, zoom, fit-to-view, auto-layout button, filter by entry type, search/highlight.
+**Controls:** Minimap (pannable + zoomable), zoom, fit-to-view, auto-layout button, filter by entry type, search/highlight.
+
+**EMPTY_STORE fallback:** GraphCanvas uses `EMPTY_STORE` from `useDerivedState.ts` when the active tab has no document store yet. This keeps Zustand hook calls unconditional. See the EMPTY_STORE Pattern section below.
+
+### GraphAddButton
+Floating button on the graph canvas for creating new entries directly from the graph view.
 
 ### EntryEditor
-Right panel (or modal, TBD during implementation). Form-based editor for the selected entry. All WorkingEntry fields organized in logical groups:
+Right panel. Form-based editor for the selected entry. All WorkingEntry fields organized in logical groups:
 - Identity: name, content (with token counter)
 - Activation: keys, secondaryKeys, selective, selectiveLogic, constant
 - Priority: position, order, depth
@@ -667,8 +697,18 @@ Right panel tab. Message input area (add user/assistant messages), settings cont
 ### Inspector
 Right panel tab. Shows computed metadata for the selected entry: incoming edges (what triggers this entry), outgoing edges (what this entry triggers), full activation chain analysis, token count breakdown, all findings for this entry.
 
+### EntryEditorModal
+Modal variant of the entry editor. Opened by double-clicking an EntryNode on the graph canvas. Contains the same fields as EntryEditor.
+
+### BookMetaEditor
+Form for book-level metadata (scanDepth, budget, caseSensitive, matchWholeWords, recursiveScan, etc.). Displayed in a settings panel tab.
+
+### ActivationLinks
+Inline component shown within EntryEditor displaying the entry's incoming edges (what triggers this entry) and outgoing edges (what this entry triggers) based on the computed RecursionGraph.
+
 ### SettingsDialog
 Modal. Tabs for:
+- Lorebook defaults (LorebookSettingsPanel)
 - LLM Providers (add/edit/remove, test connection)
 - Preferences (theme, autosave interval, default simulator settings)
 - About / version info
@@ -694,3 +734,7 @@ Modal. Tabs for:
 | 13 | Tauri for desktop, deferred | Web-first. Tauri wraps it later. Architecture is wrapper-agnostic. | Design phase |
 | 14 | Autosave to IndexedDB, explicit save to file | Recovery protection without changing the file-based mental model | Design phase |
 | 15 | Edges for blocked recursion links shown as dashed | Users need to see links that exist but are prevented, not just active links | Design phase |
+| 16 | ThemeId as a union of named theme strings (not just dark/light) | Supports user-selectable themes via CSS variable swap. Catppuccin Macchiato is the base dark palette. Light themes identified by a `LIGHT_THEMES` constant. | Phase 2 |
+| 17 | Graph display preferences (connectionVisibility, showBlockedEdges, edgeStyle) in WorkspaceStore | These are presentation choices, not content. Belongs in workspace-level prefs, not per-document state. | Phase 2 |
+| 18 | Panel layout (widths, collapse state) stored in component local state | Cosmetic UI state. Will be persisted to IndexedDB in Phase 5 (PersistenceService). Not needed in Zustand. | Phase 2 |
+| 19 | EMPTY_STORE for unconditional hook calls | React's Rules of Hooks prohibit conditional hook calls. A stable fallback store lets components subscribe unconditionally even when no tab is active. | Phase 2 |

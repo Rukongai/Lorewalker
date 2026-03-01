@@ -13,6 +13,9 @@ lorewalker/
 ├── src/
 │   ├── main.tsx                          # App entry point
 │   ├── App.tsx                           # Root component, workspace shell
+│   ├── App.css                           # App-level styles
+│   ├── index.css                         # Root styles
+│   ├── test-setup.ts                     # Vitest global setup
 │   │
 │   ├── types/                            # Canonical type definitions
 │   │   ├── index.ts                      # Re-exports everything
@@ -22,7 +25,7 @@ lorewalker/
 │   │   ├── simulator.ts                  # SimulationContext, ActivationResult, engine types
 │   │   ├── llm.ts                        # LLMProvider, CompletionRequest/Response
 │   │   ├── persistence.ts                # Persisted* types
-│   │   └── ui.ts                         # FileMeta, TabMeta, filters, layout
+│   │   └── ui.ts                         # FileMeta, TabMeta, filters, layout, graph settings
 │   │
 │   ├── services/                         # Business logic, no React dependencies
 │   │   ├── file-service.ts
@@ -47,7 +50,7 @@ lorewalker/
 │   ├── services/simulator/               # Activation engines
 │   │   ├── engines/
 │   │   │   └── sillytavern-engine.ts
-│   │   └── keyword-matching.ts           # Shared matching logic
+│   │   └── keyword-matching.ts           # Shared matching logic (used by GraphService + SimulatorService)
 │   │
 │   ├── services/llm/                     # LLM provider implementations
 │   │   ├── providers/
@@ -58,72 +61,74 @@ lorewalker/
 │   ├── stores/                           # Zustand stores
 │   │   ├── workspace-store.ts
 │   │   ├── document-store.ts             # Factory function, creates per-tab stores
+│   │   ├── document-store-registry.ts    # Map of tabId → DocumentStore
 │   │   └── hooks.ts                      # Custom hooks for store access
 │   │
 │   ├── components/                       # React components
-│   │   ├── workspace/                    # Shell, tab bar, menu
+│   │   ├── workspace/                    # Shell and tab bar
 │   │   │   ├── WorkspaceShell.tsx
-│   │   │   ├── TabBar.tsx
-│   │   │   └── GlobalActions.tsx
+│   │   │   └── TabBar.tsx
 │   │   │
 │   │   ├── entry-list/                   # Left panel
 │   │   │   ├── EntryList.tsx
-│   │   │   ├── EntryListItem.tsx
-│   │   │   └── EntryListFilter.tsx
+│   │   │   └── EntryListItem.tsx
 │   │   │
 │   │   ├── graph/                        # Center panel
 │   │   │   ├── GraphCanvas.tsx
 │   │   │   ├── EntryNode.tsx             # Custom xyflow node
 │   │   │   ├── RecursionEdge.tsx         # Custom xyflow edge
-│   │   │   └── GraphControls.tsx
+│   │   │   ├── GraphControls.tsx
+│   │   │   └── GraphAddButton.tsx        # Add-entry button on graph canvas
 │   │   │
 │   │   ├── editor/                       # Entry form editor
 │   │   │   ├── EntryEditor.tsx
+│   │   │   ├── EntryEditorModal.tsx      # Modal variant (opened by double-clicking a node)
+│   │   │   ├── BookMetaEditor.tsx        # Book-level metadata form
+│   │   │   ├── ActivationLinks.tsx       # Inline incoming/outgoing edge display
 │   │   │   ├── KeywordInput.tsx
-│   │   │   ├── ContentEditor.tsx
-│   │   │   └── FieldGroup.tsx
+│   │   │   └── ContentEditor.tsx
 │   │   │
-│   │   ├── analysis/                     # Analysis panel
+│   │   ├── analysis/                     # Analysis panel (Phase 3)
 │   │   │   ├── AnalysisPanel.tsx
 │   │   │   ├── HealthBadge.tsx
 │   │   │   ├── FindingList.tsx
 │   │   │   └── FindingItem.tsx
 │   │   │
-│   │   ├── simulator/                    # Simulator panel
+│   │   ├── simulator/                    # Simulator panel (Phase 4)
 │   │   │   ├── SimulatorPanel.tsx
 │   │   │   ├── MessageInput.tsx
 │   │   │   ├── SimulatorSettings.tsx
 │   │   │   ├── ActivationResults.tsx
 │   │   │   └── RecursionTrace.tsx
 │   │   │
-│   │   ├── inspector/                    # Inspector panel
+│   │   ├── inspector/                    # Inspector panel (Phase 3)
 │   │   │   └── InspectorPanel.tsx
 │   │   │
 │   │   ├── settings/                     # Settings dialog
 │   │   │   ├── SettingsDialog.tsx
-│   │   │   ├── ProviderSettings.tsx
-│   │   │   └── PreferenceSettings.tsx
+│   │   │   └── LorebookSettingsPanel.tsx
 │   │   │
-│   │   └── shared/                       # Reusable UI primitives
-│   │       ├── SeverityBadge.tsx
-│   │       ├── TokenCounter.tsx
-│   │       └── ConfirmDialog.tsx
+│   │   ├── shared/                       # Reusable UI primitives
+│   │   │   └── Toggle.tsx
+│   │   │
+│   │   └── ui/                           # Low-level UI components
+│   │       └── HelpTooltip.tsx
 │   │
 │   ├── hooks/                            # Custom React hooks
 │   │   ├── useAutosave.ts
 │   │   ├── useFileImport.ts
 │   │   ├── useFileExport.ts
-│   │   ├── useDerivedState.ts            # Graph + analysis recomputation
+│   │   ├── useDerivedState.ts            # Graph recomputation + EMPTY_STORE export
 │   │   └── useKeyboardShortcuts.ts
 │   │
 │   ├── lib/                              # Pure utility functions
 │   │   ├── uuid.ts
 │   │   ├── debounce.ts
-│   │   └── token-estimate.ts
+│   │   ├── token-estimate.ts
+│   │   └── cn.ts                         # Tailwind class merging utility
 │   │
-│   └── styles/                           # Global styles, theme
-│       ├── globals.css
-│       └── theme.ts
+│   └── styles/                           # Global styles and theme tokens
+│       └── globals.css
 │
 ├── index.html
 ├── vite.config.ts
@@ -298,6 +303,16 @@ Never swallow errors silently. If a function can fail, it either throws or retur
 - File system state → FileService (ephemeral)
 - Transient UI state (dropdown open, tooltip visible) → Component-local useState
 
+### EMPTY_STORE Pattern
+
+When a component subscribes to a DocumentStore but must handle the case where no tab is active, use the exported `EMPTY_STORE` from `src/hooks/useDerivedState.ts` as a fallback. This ensures Zustand hook calls remain unconditional (Rules of Hooks). Never write to `EMPTY_STORE`.
+
+```typescript
+const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
+const activeStore = realStore ?? EMPTY_STORE
+const entries = activeStore((s) => s.entries)  // always safe to call
+```
+
 ### Undo Boundary
 
 Only these fields are tracked by zundo (undo/redo):
@@ -359,6 +374,15 @@ entry-keyword:   badge color for keyword entries
 entry-selective: badge color for selective entries
 entry-disabled:  badge color for disabled entries
 ```
+
+### Theme Token Naming
+
+CSS variables follow two naming schemes:
+
+- **Catppuccin palette tokens:** `--ctp-<name>` (e.g., `--ctp-base`, `--ctp-mantle`, `--ctp-text`, `--ctp-subtext0`, `--ctp-overlay0`, `--ctp-surface0`, `--ctp-lavender`, `--ctp-red`, etc.). Catppuccin Macchiato is the base "dark" palette. These are defined per theme in `globals.css`.
+- **Semantic graph tokens:** `--edge-active`, `--edge-blocked`, `--edge-cycle`, `--edge-incoming`, `--edge-selected`, `--node-constant`, `--node-keyword`, `--node-selective`, `--node-disabled`. These are overridden per theme.
+
+In Tailwind classNames, use `bg-ctp-base`, `text-ctp-text`, `border-ctp-surface1`, etc. — Catppuccin tokens are registered as Tailwind theme extensions.
 
 ### Spacing
 
@@ -437,7 +461,7 @@ import { buildGraph } from '@/services/graph-service';
 
 Format: `<scope>: <description>`
 
-Scopes: `file`, `transform`, `graph`, `analysis`, `simulator`, `llm`, `persist`, `ui`, `types`, `config`, `docs`, `test`
+Scopes: `file`, `transform`, `graph`, `analysis`, `simulator`, `llm`, `persist`, `ui`, `types`, `config`, `docs`, `test`, `theme`
 
 Examples:
 - `graph: implement cycle detection`

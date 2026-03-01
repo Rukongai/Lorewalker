@@ -1,6 +1,6 @@
 # Lorewalker — Implementation Plan
 
-## Phase 0: Project Scaffold
+## Phase 0: Project Scaffold ✓ Complete
 **Goal:** Buildable, runnable shell with all tooling configured.
 
 **Tasks:**
@@ -18,7 +18,7 @@
 
 ---
 
-## Phase 1: Core Pipeline (File → Model → File)
+## Phase 1: Core Pipeline (File → Model → File) ✓ Complete
 **Goal:** Import a SillyTavern lorebook JSON, see entries in a list, edit one, export back. The minimal end-to-end proof that the architecture works.
 
 **Tasks:**
@@ -41,7 +41,7 @@
 
 ---
 
-## Phase 2: Graph Visualization
+## Phase 2: Graph Visualization ✓ Complete
 **Goal:** See the recursion graph. Entries are nodes, keyword-triggered links are edges.
 
 **Tasks:**
@@ -62,6 +62,18 @@
 **Dependencies:** Phase 1 (entries and stores exist), keyword matching (shared with Phase 4).
 
 **Milestone check:** Open a lorebook with known recursion links. Verify the graph shows the expected edges. Verify a known circular reference is highlighted red.
+
+**Also built in Phase 2 (beyond original spec):**
+- Theme system: ThemeId union with 14 themes (Catppuccin variants, Nord, Nord Aurora, One Dark, Dracula, Dracula Soft, Rosé Pine, Tokyo Night + light variants). CSS variable swap approach.
+- GraphDisplayDefaults (connectionVisibility, showBlockedEdges, edgeStyle) in WorkspaceStore
+- GraphLayoutSettings (dagre ranker, acyclicer, align, rankdir, edgeDirection) in WorkspaceStore
+- EMPTY_STORE pattern (exported from useDerivedState.ts) for unconditional Zustand hook calls
+- EntryEditorModal (double-click node to edit)
+- BookMetaEditor (book-level metadata form)
+- ActivationLinks (inline edge display within editor)
+- GraphAddButton (add entry from graph canvas)
+- LorebookDefaults in WorkspaceStore
+- document-store-registry.ts (Map of tabId → DocumentStore)
 
 ---
 
@@ -87,7 +99,7 @@
 
 **Delivers:** Real-time health scoring as you edit. Structural issues, configuration mistakes, keyword problems, and recursion architecture issues are all surfaced with actionable messages.
 
-**Dependencies:** Phase 2 (graph queries).
+**Dependencies:** Phase 2 (graph queries — already complete; keyword matching and findCycles/findOrphans/findDeadLinks queries implemented).
 
 **Milestone check:** Open a lorebook with a known circular reference, a selective:true entry with empty keysecondary, and an entry over 200 tokens. Verify all three are detected as findings with correct severities.
 
@@ -187,7 +199,7 @@
 10. Welcome/empty state: guidance when no file is open
 11. Error boundaries and user-facing error messages
 12. Responsive panel resizing
-13. Light mode theme
+13. Persistent panel state (widths, collapse) via PersistenceService — light mode themes are already implemented; Phase 7 focus is persisting user panel layout preferences
 
 **Delivers:** A polished, productive editor. The graph becomes a real editing surface, not just a viewer.
 

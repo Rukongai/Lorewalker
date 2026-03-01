@@ -392,13 +392,156 @@ interface TokenUsage {
 
 ---
 
+## Workspace Types
+
+### ThemeId
+
+```typescript
+type ThemeId =
+  | 'dark'
+  | 'catppuccin-macchiato'
+  | 'catppuccin-latte'
+  | 'catppuccin-frappe'
+  | 'catppuccin-mocha'
+  | 'nord'
+  | 'nord-aurora'
+  | 'one-dark'
+  | 'dracula'
+  | 'dracula-soft'
+  | 'rose-pine'
+  | 'rose-pine-dawn'
+  | 'tokyo-night'
+  | 'tokyo-night-day';
+
+// Light themes — affect colorMode in React Flow, MiniMap mask colors, etc.
+const LIGHT_THEMES: ThemeId[] = [
+  'catppuccin-latte', 'nord-aurora', 'rose-pine-dawn', 'tokyo-night-day'
+];
+```
+
+### GraphLayoutSettings
+
+```typescript
+interface GraphLayoutSettings {
+  acyclicer: 'greedy' | 'none';
+  ranker: 'network-simplex' | 'tight-tree' | 'longest-path';
+  align: 'UL' | 'UR' | 'DL' | 'DR';
+  rankdir: 'LR' | 'TB' | 'RL' | 'BT';
+  edgeDirection: 'LR' | 'TB';  // used by EntryNode to orient handles
+}
+```
+
+### GraphDisplayDefaults
+
+```typescript
+interface GraphDisplayDefaults {
+  connectionVisibility: 'all' | 'selected' | 'none';
+  showBlockedEdges: boolean;
+  edgeStyle: 'bezier' | 'straight' | 'smoothstep';
+}
+```
+
+### EditorDefaults
+
+```typescript
+interface EditorDefaults {
+  showKeywordHighlights: boolean;
+}
+```
+
+### EntriesListDefaults
+
+```typescript
+type SortKey = 'uid' | 'name' | 'tokenCount' | 'order' | 'displayIndex';
+
+interface EntriesListDefaults {
+  sortBy: SortKey;
+  sortDirection: 'asc' | 'desc';
+  sortBy2: SortKey | null;
+  sortDir2: 'asc' | 'desc';
+  pinConstantsToTop: boolean;
+}
+```
+
+### LorebookDefaults
+
+Workspace-level default settings applied when creating new lorebooks or as fallback values in the simulator.
+
+```typescript
+interface LorebookDefaults {
+  scanDepth: number;              // 0–1000, default: 2
+  contextBudgetPercent: number;   // 0–100%, default: 25
+  budgetCap: number;              // 0 = disabled, default: 0
+  minActivations: number;         // 0 = disabled, default: 0
+  maxDepth: number;               // 0 = unlimited, default: 0
+  maxRecursionSteps: number;      // 0 = unlimited, default: 0
+  includeNames: boolean;          // default: true
+  recursiveScan: boolean;         // default: true
+  caseSensitive: boolean;         // default: false
+  matchWholeWords: boolean;       // default: true
+  useGroupScoring: boolean;       // default: false
+  alertOnOverflow: boolean;       // default: false
+  insertionStrategy: 'evenly' | 'character_lore_first' | 'global_lore_first';
+}
+```
+
+### WorkspaceState
+
+The actual shape of WorkspaceStore (Zustand).
+
+```typescript
+interface WorkspaceState {
+  tabs: TabMeta[];
+  activeTabId: string | null;
+  theme: ThemeId;
+  graphSettings: GraphLayoutSettings;
+  checkRecursionLoops: boolean;    // whether to compute cycle detection
+  graphDisplayDefaults: GraphDisplayDefaults;
+  editorDefaults: EditorDefaults;
+  entriesListDefaults: EntriesListDefaults;
+  lorebookDefaults: LorebookDefaults;
+
+  // Actions
+  openTab(tabId: string, name: string, fileMeta: FileMeta): void;
+  closeTab(tabId: string): void;
+  switchTab(tabId: string): void;
+  markDirty(tabId: string, isDirty: boolean): void;
+  setTheme(theme: ThemeId): void;
+  setGraphSettings(settings: GraphLayoutSettings): void;
+  setCheckRecursionLoops(value: boolean): void;
+  setGraphDisplayDefaults(settings: GraphDisplayDefaults): void;
+  setEditorDefaults(settings: EditorDefaults): void;
+  setEntriesListDefaults(settings: EntriesListDefaults): void;
+  setLorebookDefaults(patch: Partial<LorebookDefaults>): void;
+}
+```
+
+---
+
+## Graph Component Types
+
+### EntryNodeData
+
+Data shape for the `EntryNode` React Flow custom node.
+
+```typescript
+interface EntryNodeData {
+  entry: WorkingEntry;
+  isCyclic: boolean;
+  edgeDirection: 'LR' | 'TB';
+  [key: string]: unknown;  // React Flow requires open indexer on node data
+}
+```
+
+---
+
 ## Persistence Types
 
 ```typescript
 interface PersistedWorkspace {
   tabs: TabMeta[];
   activeTabId: string | null;
-  theme: 'dark' | 'light';
+  theme: ThemeId;
   panelLayout: PanelLayout;
 }
 
@@ -494,7 +637,7 @@ interface KeywordMatch {
   isRegex: boolean;         // Whether this was a regex match
 }
 
-// Function signatures (implemented in GraphService, imported by SimulatorService)
+// Function signatures (implemented in services/simulator/keyword-matching.ts, imported by both GraphService and SimulatorService)
 type MatchKeywordsInText = (
   text: string,
   entries: WorkingEntry[],
