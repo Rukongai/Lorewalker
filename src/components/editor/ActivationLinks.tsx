@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import type { RecursionGraph } from '@/types'
+import { HelpTooltip } from '@/components/ui/HelpTooltip'
 
 interface ActivationLinksProps {
   entryId: string
@@ -23,30 +25,30 @@ function LinkRow({ id, keywords, blocked, onNavigate, name }: LinkRowProps) {
     <div className="mb-1.5">
       <div className="flex items-center justify-between gap-1">
         <span
-          className={`text-xs truncate ${blocked ? 'text-gray-500 line-through' : 'text-gray-200'}`}
+          className={`text-xs truncate ${blocked ? 'text-ctp-overlay0 line-through' : 'text-ctp-subtext1'}`}
           title={name}
         >
           {name}
         </span>
         <button
           onClick={() => onNavigate(id)}
-          className="shrink-0 p-0.5 rounded text-gray-500 hover:text-indigo-400 transition-colors"
+          className="shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-ctp-surface1 bg-ctp-surface0 text-ctp-overlay1 hover:border-ctp-lavender hover:text-ctp-lavender hover:bg-ctp-crust/40 transition-colors text-[10px]"
           title={`Navigate to ${name}`}
         >
-          <ArrowRight size={10} />
+          Go <ArrowRight size={9} />
         </button>
       </div>
       <div className="flex flex-wrap gap-1 mt-0.5">
         {keywords.map((kw, i) => (
           <span
             key={i}
-            className="text-[10px] bg-gray-800 border border-gray-700 rounded px-1 text-gray-400"
+            className="text-[10px] bg-ctp-surface0 border border-ctp-surface1 rounded px-1 text-ctp-overlay1"
           >
             {kw}
           </span>
         ))}
         {blocked && (
-          <span className="text-[9px] text-amber-400">blocked</span>
+          <span className="text-[9px] text-ctp-yellow">blocked</span>
         )}
       </div>
     </div>
@@ -58,6 +60,9 @@ export function ActivationLinks({ entryId, graph, onNavigate }: ActivationLinksP
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
   const entries = activeStore((s) => s.entries)
+
+  const [hideBlockedLeft, setHideBlockedLeft] = useState(false)
+  const [hideBlockedRight, setHideBlockedRight] = useState(false)
 
   const entryMap = new Map(entries.map((e) => [e.id, e.name]))
 
@@ -82,23 +87,47 @@ export function ActivationLinks({ entryId, graph, onNavigate }: ActivationLinksP
   const activatesThisRows = buildLinkRows(activatesThisIds, true)
   const thisActivatesRows = buildLinkRows(thisActivatesIds, false)
 
+  const hasBlockedLeft = activatesThisRows.some((r) => r.blocked)
+  const hasBlockedRight = thisActivatesRows.some((r) => r.blocked)
+
+  const visibleLeft = hideBlockedLeft ? activatesThisRows.filter((r) => !r.blocked) : activatesThisRows
+  const visibleRight = hideBlockedRight ? thisActivatesRows.filter((r) => !r.blocked) : thisActivatesRows
+
   return (
     <div className="flex h-full">
       {/* Activates This */}
-      <div className="flex-1 min-w-0 flex flex-col border-r border-gray-700">
-        <div className="px-3 py-1.5 border-b border-gray-700 shrink-0">
-          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+      <div className="flex-1 min-w-0 flex flex-col border-r border-ctp-surface1">
+        <div className="px-3 py-1.5 border-b border-ctp-surface1 shrink-0 flex items-center justify-between">
+          <span className="text-[10px] font-semibold text-ctp-overlay1 uppercase tracking-wider">
             Activates This{' '}
-            <span className="text-gray-600 normal-case font-normal tracking-normal">
-              [{activatesThisRows.length}]
+            <span className="text-ctp-overlay0 normal-case font-normal tracking-normal">
+              [{hideBlockedLeft ? `${visibleLeft.length}/${activatesThisRows.length}` : activatesThisRows.length}]
             </span>
           </span>
+          {hasBlockedLeft && (
+            <span className="flex items-center gap-0.5">
+              <HelpTooltip text="Blocked entries are links prevented by 'Prevent Further Recursion' or 'Non-recursable' flags. They appear struck through. Toggle to hide them." />
+              <button
+                onClick={() => setHideBlockedLeft((v) => !v)}
+                className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${
+                  hideBlockedLeft
+                    ? 'bg-ctp-lavender/15 border-ctp-lavender/20 text-ctp-lavender'
+                    : 'bg-ctp-surface0 border-ctp-surface1 text-ctp-overlay0 hover:text-ctp-subtext0'
+                }`}
+                title={hideBlockedLeft ? 'Show blocked' : 'Hide blocked'}
+              >
+                {hideBlockedLeft ? 'Blocked: Visible' : 'Blocked: Hide'}
+              </button>
+            </span>
+          )}
         </div>
         <div className="flex-1 overflow-y-auto px-3 py-2">
-          {activatesThisRows.length === 0 ? (
-            <span className="text-[10px] text-gray-600 italic">None</span>
+          {visibleLeft.length === 0 ? (
+            <span className="text-[10px] text-ctp-overlay0 italic">
+              {hideBlockedLeft && activatesThisRows.length > 0 ? 'All blocked (hidden)' : 'None'}
+            </span>
           ) : (
-            activatesThisRows.map((row) => (
+            visibleLeft.map((row) => (
               <LinkRow key={row.id} {...row} onNavigate={onNavigate} />
             ))
           )}
@@ -107,19 +136,37 @@ export function ActivationLinks({ entryId, graph, onNavigate }: ActivationLinksP
 
       {/* This Activates */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <div className="px-3 py-1.5 border-b border-gray-700 shrink-0">
-          <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+        <div className="px-3 py-1.5 border-b border-ctp-surface1 shrink-0 flex items-center justify-between">
+          <span className="text-[10px] font-semibold text-ctp-overlay1 uppercase tracking-wider">
             This Activates{' '}
-            <span className="text-gray-600 normal-case font-normal tracking-normal">
-              [{thisActivatesRows.length}]
+            <span className="text-ctp-overlay0 normal-case font-normal tracking-normal">
+              [{hideBlockedRight ? `${visibleRight.length}/${thisActivatesRows.length}` : thisActivatesRows.length}]
             </span>
           </span>
+          {hasBlockedRight && (
+            <span className="flex items-center gap-0.5">
+              <HelpTooltip text="Blocked entries are links prevented by 'Prevent Further Recursion' or 'Non-recursable' flags. They appear struck through. Toggle to hide them." />
+              <button
+                onClick={() => setHideBlockedRight((v) => !v)}
+                className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${
+                  hideBlockedRight
+                    ? 'bg-ctp-lavender/15 border-ctp-lavender/20 text-ctp-lavender'
+                    : 'bg-ctp-surface0 border-ctp-surface1 text-ctp-overlay0 hover:text-ctp-subtext0'
+                }`}
+                title={hideBlockedRight ? 'Show blocked' : 'Hide blocked'}
+              >
+                {hideBlockedRight ? 'Blocked: Visible' : 'Blocked: Hide'}
+              </button>
+            </span>
+          )}
         </div>
         <div className="flex-1 overflow-y-auto px-3 py-2">
-          {thisActivatesRows.length === 0 ? (
-            <span className="text-[10px] text-gray-600 italic">None</span>
+          {visibleRight.length === 0 ? (
+            <span className="text-[10px] text-ctp-overlay0 italic">
+              {hideBlockedRight && thisActivatesRows.length > 0 ? 'All blocked (hidden)' : 'None'}
+            </span>
           ) : (
-            thisActivatesRows.map((row) => (
+            visibleRight.map((row) => (
               <LinkRow key={row.id} {...row} onNavigate={onNavigate} />
             ))
           )}

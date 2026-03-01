@@ -29,7 +29,7 @@ export function HelpTooltip({ text }: { text: string }) {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setVisible(false)}
     >
-      <HelpCircle size={12} className="text-gray-500 hover:text-gray-300" />
+      <HelpCircle size={12} className="text-ctp-overlay0 hover:text-ctp-subtext0" />
       {visible && createPortal(
         <div
           style={{
@@ -39,7 +39,7 @@ export function HelpTooltip({ text }: { text: string }) {
             transform: 'translate(-50%, calc(-100% - 6px))',
             zIndex: 9999,
           }}
-          className="w-56 px-2 py-1.5 text-xs bg-gray-800 border border-gray-700 rounded text-gray-300 pointer-events-none whitespace-normal leading-relaxed shadow-lg"
+          className="w-56 px-2 py-1.5 text-xs bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext0 pointer-events-none whitespace-normal leading-relaxed shadow-lg"
         >
           {text}
         </div>,

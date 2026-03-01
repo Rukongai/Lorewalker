@@ -215,7 +215,7 @@ export function ContentEditor({ value, entryId, graph, onChange, preventRecursio
     <div className="relative" onClick={(e) => e.stopPropagation()}>
       <div
         ref={containerRef}
-        className="w-full bg-gray-800 border border-gray-700 rounded focus-within:border-indigo-500 transition-colors"
+        className="w-full bg-ctp-surface0 border border-ctp-surface1 rounded focus-within:border-ctp-lavender transition-colors"
       />
 
       <button
@@ -223,7 +223,7 @@ export function ContentEditor({ value, entryId, graph, onChange, preventRecursio
         onClick={() => !preventRecursion && setHighlight((v) => !v)}
         title={preventRecursion ? 'Keyword highlighting disabled: Prevent Further Recursion is enabled' : effectiveHighlight ? 'Hide keyword highlights' : 'Show keyword highlights'}
         disabled={preventRecursion}
-        className={`absolute top-1.5 right-1.5 p-1 rounded transition-colors z-10 ${preventRecursion ? 'text-gray-700 cursor-not-allowed' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-700'}`}
+        className={`absolute top-1.5 right-1.5 p-1 rounded transition-colors z-10 ${preventRecursion ? 'text-ctp-surface1 cursor-not-allowed' : 'text-ctp-overlay0 hover:text-ctp-subtext0 hover:bg-ctp-surface1'}`}
       >
         {effectiveHighlight ? <Eye size={11} /> : <EyeOff size={11} />}
       </button>
@@ -235,11 +235,11 @@ export function ContentEditor({ value, entryId, graph, onChange, preventRecursio
               key={kw}
               className={
                 m.isCycle
-                  ? 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-red-500/15 border border-red-400/50 text-red-200'
-                  : 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-indigo-500/15 border border-indigo-400/50 text-indigo-200'
+                  ? 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-ctp-red/15 border border-ctp-red/50 text-ctp-maroon'
+                  : 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-ctp-lavender/15 border border-ctp-lavender/50 text-ctp-lavender'
               }
             >
-              <span className={m.isCycle ? 'text-red-300 font-bold' : 'text-indigo-300 font-bold'}>
+              <span className={m.isCycle ? 'text-ctp-red font-bold' : 'text-ctp-lavender font-bold'}>
                 ×{m.count}
               </span>
               {kw}
@@ -249,7 +249,7 @@ export function ContentEditor({ value, entryId, graph, onChange, preventRecursio
       )}
 
       {effectiveHighlight && !hasMatches && (
-        <p className="mt-1 text-[10px] text-gray-600 italic">
+        <p className="mt-1 text-[10px] text-ctp-overlay0 italic">
           No outgoing keyword matches found for this entry.
         </p>
       )}

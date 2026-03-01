@@ -10,21 +10,21 @@ const config: Config = {
       },
       colors: {
         // Health severity colors
-        'health-error': 'rgb(239 68 68)',       // red-500
-        'health-warning': 'rgb(245 158 11)',    // amber-500
-        'health-ok': 'rgb(34 197 94)',          // green-500
-        'health-info': 'rgb(59 130 246)',       // blue-500
+        'health-error':   'var(--color-ctp-red)',
+        'health-warning': 'var(--color-ctp-yellow)',
+        'health-ok':      'var(--color-ctp-green)',
+        'health-info':    'var(--color-ctp-blue)',
 
         // Graph edge colors
-        'edge-active': 'rgb(99 102 241)',       // indigo-500
-        'edge-blocked': 'rgb(107 114 128)',     // gray-500
-        'edge-cycle': 'rgb(239 68 68)',         // red-500
+        'edge-active':  'var(--color-ctp-blue)',
+        'edge-blocked': 'var(--color-ctp-overlay0)',
+        'edge-cycle':   'var(--color-ctp-red)',
 
         // Entry type badge colors
-        'entry-constant': 'rgb(168 85 247)',    // purple-500
-        'entry-keyword': 'rgb(59 130 246)',     // blue-500
-        'entry-selective': 'rgb(20 184 166)',   // teal-500
-        'entry-disabled': 'rgb(107 114 128)',   // gray-500
+        'entry-constant':  'var(--color-ctp-mauve)',
+        'entry-keyword':   'var(--color-ctp-blue)',
+        'entry-selective': 'var(--color-ctp-teal)',
+        'entry-disabled':  'var(--color-ctp-overlay0)',
       },
     },
   },

@@ -3,14 +3,14 @@ import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
 
 const inputClass =
-  'bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors'
+  'bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1 text-xs text-ctp-subtext1 outline-none focus:border-ctp-lavender transition-colors'
 
 const numericInputClass =
-  'bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors w-20 text-right disabled:opacity-50 disabled:cursor-not-allowed'
+  'bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1 text-xs text-ctp-subtext1 outline-none focus:border-ctp-lavender transition-colors w-20 text-right disabled:opacity-50 disabled:cursor-not-allowed'
 
 function SubcategoryHeader({ title }: { title: string }) {
   return (
-    <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-3">
+    <p className="text-[10px] font-semibold text-ctp-overlay0 uppercase tracking-widest mb-3">
       {title}
     </p>
   )
@@ -29,7 +29,7 @@ export function LorebookSettingsPanel() {
 
       {/* Scan Depth */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Scan Depth
           <HelpTooltip text="Number of recent chat messages to scan for keyword matches. Applied when the imported file doesn't specify a value." />
         </div>
@@ -45,7 +45,7 @@ export function LorebookSettingsPanel() {
 
       {/* Recursive Scan */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Recursive Scan
           <HelpTooltip text="Allow lorebook entries activated by other entries to trigger further keyword matching." />
         </div>
@@ -57,7 +57,7 @@ export function LorebookSettingsPanel() {
 
       {/* Include Names */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Include Names
           <HelpTooltip text="Include character and persona names in keyword scanning." />
         </div>
@@ -69,7 +69,7 @@ export function LorebookSettingsPanel() {
 
       {/* Case Sensitive */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Case-Sensitive
           <HelpTooltip text="Require keyword matches to match the exact letter case." />
         </div>
@@ -81,7 +81,7 @@ export function LorebookSettingsPanel() {
 
       {/* Match Whole Words */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Match Whole Words
           <HelpTooltip text="Only match keywords that appear as whole words, not as substrings inside other words." />
         </div>
@@ -91,12 +91,12 @@ export function LorebookSettingsPanel() {
         />
       </div>
 
-      <div className="border-t border-gray-800 my-2" />
+      <div className="border-t border-ctp-surface0 my-2" />
       <SubcategoryHeader title="Budget" />
 
       {/* Context % */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Context %
           <HelpTooltip text="Percentage of the context window to reserve for lorebook entries." />
         </div>
@@ -109,13 +109,13 @@ export function LorebookSettingsPanel() {
             value={lorebookDefaults.contextBudgetPercent}
             onChange={(e) => setLorebookDefaults({ contextBudgetPercent: Math.max(0, Math.min(100, Number(e.target.value))) })}
           />
-          <span className="text-xs text-gray-500">%</span>
+          <span className="text-xs text-ctp-overlay0">%</span>
         </div>
       </div>
 
       {/* Budget Cap */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Budget Cap
           <HelpTooltip text="Maximum token budget for lorebook entries. 0 = disabled." />
         </div>
@@ -129,12 +129,12 @@ export function LorebookSettingsPanel() {
         />
       </div>
 
-      <div className="border-t border-gray-800 my-2" />
+      <div className="border-t border-ctp-surface0 my-2" />
       <SubcategoryHeader title="Activation" />
 
       {/* Min Activations */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Minimum Activations
           <HelpTooltip text="Minimum number of entries to activate per turn. 0 = disabled. Mutually exclusive with Max Recursion Steps." />
         </div>
@@ -150,12 +150,12 @@ export function LorebookSettingsPanel() {
         />
       </div>
       {minActivationsDisabled && (
-        <p className="text-[10px] text-gray-500 -mt-2">Disabled when Max Recursion Steps are used</p>
+        <p className="text-[10px] text-ctp-overlay0 -mt-2">Disabled when Max Recursion Steps are used</p>
       )}
 
       {/* Max Recursion Steps */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Max Recursion Steps
           <HelpTooltip text="Maximum number of recursive scanning passes. 0 = unlimited. Mutually exclusive with Minimum Activations." />
         </div>
@@ -171,12 +171,12 @@ export function LorebookSettingsPanel() {
         />
       </div>
       {maxRecursionStepsDisabled && (
-        <p className="text-[10px] text-gray-500 -mt-2">Disabled when Minimum Activations are used</p>
+        <p className="text-[10px] text-ctp-overlay0 -mt-2">Disabled when Minimum Activations are used</p>
       )}
 
       {/* Max Depth */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Max Depth
           <HelpTooltip text="Maximum recursion depth for lorebook scanning. 0 = unlimited." />
         </div>
@@ -190,12 +190,12 @@ export function LorebookSettingsPanel() {
         />
       </div>
 
-      <div className="border-t border-gray-800 my-2" />
+      <div className="border-t border-ctp-surface0 my-2" />
       <SubcategoryHeader title="Grouping" />
 
       {/* Use Group Scoring */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Use Group Scoring
           <HelpTooltip text="Use weighted scoring to select entries from groups instead of random selection." />
         </div>
@@ -207,7 +207,7 @@ export function LorebookSettingsPanel() {
 
       {/* Alert on Overflow */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Alert on Overflow
           <HelpTooltip text="Show a warning when the lorebook budget is exceeded." />
         </div>
@@ -217,12 +217,12 @@ export function LorebookSettingsPanel() {
         />
       </div>
 
-      <div className="border-t border-gray-800 my-2" />
+      <div className="border-t border-ctp-surface0 my-2" />
       <SubcategoryHeader title="Insertion" />
 
       {/* Insertion Strategy */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Insertion Strategy
           <HelpTooltip text="Order in which lorebook entries are inserted into the context when multiple are active." />
         </div>

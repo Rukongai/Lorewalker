@@ -47,7 +47,7 @@ const DEFAULT_LOREBOOK_DEFAULTS: LorebookDefaults = {
 interface WorkspaceState {
   tabs: TabMeta[]
   activeTabId: string | null
-  theme: 'dark' | 'light'
+  theme: 'dark' | 'catppuccin-macchiato'
   graphSettings: GraphLayoutSettings
   checkRecursionLoops: boolean
   graphDisplayDefaults: GraphDisplayDefaults
@@ -60,7 +60,7 @@ interface WorkspaceState {
   closeTab(tabId: string): void
   switchTab(tabId: string): void
   markDirty(tabId: string, isDirty: boolean): void
-  setTheme(theme: 'dark' | 'light'): void
+  setTheme(theme: 'dark' | 'catppuccin-macchiato'): void
   setGraphSettings(settings: GraphLayoutSettings): void
   setCheckRecursionLoops(value: boolean): void
   setGraphDisplayDefaults(settings: GraphDisplayDefaults): void

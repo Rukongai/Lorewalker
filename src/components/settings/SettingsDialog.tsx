@@ -6,12 +6,12 @@ import { LorebookSettingsPanel } from './LorebookSettingsPanel'
 import type { GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults } from '@/types'
 
 const inputClass =
-  'bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors'
+  'bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1 text-xs text-ctp-subtext1 outline-none focus:border-ctp-lavender transition-colors'
 
 
 function SubcategoryHeader({ title }: { title: string }) {
   return (
-    <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-3">
+    <p className="text-[10px] font-semibold text-ctp-overlay0 uppercase tracking-widest mb-3">
       {title}
     </p>
   )
@@ -20,11 +20,27 @@ function SubcategoryHeader({ title }: { title: string }) {
 function GeneralSettingsPanel() {
   const checkRecursionLoops = useWorkspaceStore((s) => s.checkRecursionLoops)
   const setCheckRecursionLoops = useWorkspaceStore((s) => s.setCheckRecursionLoops)
+  const theme = useWorkspaceStore((s) => s.theme)
+  const setTheme = useWorkspaceStore((s) => s.setTheme)
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
+          Color Theme
+          <HelpTooltip text="Color scheme for the entire application." />
+        </div>
+        <select
+          className={inputClass}
+          value={theme}
+          onChange={(e) => setTheme(e.target.value as 'dark' | 'catppuccin-macchiato')}
+        >
+          <option value="dark">Default Dark</option>
+          <option value="catppuccin-macchiato">Catppuccin Macchiato</option>
+        </select>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Check for recursion loops
           <HelpTooltip text="Highlights circular references in the graph. SillyTavern breaks loops automatically, so this is off by default." />
         </div>
@@ -54,7 +70,7 @@ function GraphSettingsPanel() {
 
       {/* Acyclicer */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Acyclicer
           <HelpTooltip text="How dagre handles cycles. Greedy removes feedback edges before layout; Disabled may produce unexpected results with circular graphs." />
         </div>
@@ -70,7 +86,7 @@ function GraphSettingsPanel() {
 
       {/* Ranker */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Ranker
           <HelpTooltip text="Algorithm for assigning nodes to ranks. Network Simplex gives compact results; Tight Tree is faster; Longest Path pushes nodes as far right as possible." />
         </div>
@@ -87,7 +103,7 @@ function GraphSettingsPanel() {
 
       {/* Align */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Align
           <HelpTooltip text="Alignment of nodes within their rank. U=Up, D=Down, L=Left, R=Right. Controls which corner nodes snap toward within their rank slot." />
         </div>
@@ -105,7 +121,7 @@ function GraphSettingsPanel() {
 
       {/* Rank Direction */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Rank Direction
           <HelpTooltip text="Direction the graph flows. LR=Left→Right, TB=Top→Bottom, RL=Right→Left, BT=Bottom→Top." />
         </div>
@@ -123,7 +139,7 @@ function GraphSettingsPanel() {
 
       {/* Edge Direction */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Edges
           <HelpTooltip text="Where edges attach to nodes. LR uses left/right handles (pair with LR or RL rank direction); TB uses top/bottom handles (pair with TB or BT)." />
         </div>
@@ -137,12 +153,12 @@ function GraphSettingsPanel() {
         </select>
       </div>
 
-      <div className="border-t border-gray-800 my-2" />
+      <div className="border-t border-ctp-surface0 my-2" />
       <SubcategoryHeader title="Workspace Defaults" />
 
       {/* Connections */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Connections
           <HelpTooltip text="Default connection visibility when opening a graph. 'Show for Selected Node' only shows edges connected to the selected entry." />
         </div>
@@ -159,7 +175,7 @@ function GraphSettingsPanel() {
 
       {/* Blocked Edges */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Blocked Edges
           <HelpTooltip text="Whether to show edges blocked by prevent_recursion or exclude_recursion by default." />
         </div>
@@ -175,7 +191,7 @@ function GraphSettingsPanel() {
 
       {/* Edge Style */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Style
           <HelpTooltip text="Default edge rendering style. Bezier uses curved noodle paths; Straight uses direct lines; Smoothed Paths uses rounded corner paths." />
         </div>
@@ -207,7 +223,7 @@ function EditorSettingsPanel() {
 
       {/* Keyword Highlights */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Keyword Highlights
           <HelpTooltip text="Whether the keyword highlight toggle in the content editor starts on or off by default." />
         </div>
@@ -238,7 +254,7 @@ function EntriesSettingsPanel() {
 
       {/* Sort By */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Sort By
           <HelpTooltip text="Default sort order for the entries list." />
         </div>
@@ -257,7 +273,7 @@ function EntriesSettingsPanel() {
 
       {/* Sort Direction */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Sort Direction
           <HelpTooltip text="Default sort direction for the entries list." />
         </div>
@@ -273,7 +289,7 @@ function EntriesSettingsPanel() {
 
       {/* Secondary Sort By */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Secondary Sort
           <HelpTooltip text="Tiebreak key applied when the primary sort produces a tie. Set to None to disable." />
         </div>
@@ -293,7 +309,7 @@ function EntriesSettingsPanel() {
 
       {/* Secondary Sort Direction */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Secondary Direction
           <HelpTooltip text="Sort direction for the secondary sort key." />
         </div>
@@ -310,7 +326,7 @@ function EntriesSettingsPanel() {
 
       {/* Pin Constants to Top */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center text-xs text-gray-300">
+        <div className="flex items-center text-xs text-ctp-subtext0">
           Pin Constants to Top
           <HelpTooltip text="Always show Constant (always-active) entries at the top of the list, regardless of sort order." />
         </div>
@@ -362,16 +378,16 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
       onClick={onClose}
     >
       <div
-        className="bg-gray-900 border border-gray-700 rounded-lg shadow-xl flex flex-col"
+        className="bg-ctp-mantle border border-ctp-surface1 rounded-lg shadow-xl flex flex-col"
         style={{ width: 'min(640px, 80vw)', height: 'min(540px, 75vw)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800">
-          <span className="text-sm font-semibold text-gray-200">Settings</span>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-ctp-surface0">
+          <span className="text-sm font-semibold text-ctp-subtext1">Settings</span>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-300 transition-colors text-lg leading-none"
+            className="text-ctp-overlay0 hover:text-ctp-subtext0 transition-colors text-lg leading-none"
           >
             ✕
           </button>
@@ -380,15 +396,15 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         {/* Body */}
         <div className="flex flex-1 overflow-hidden">
           {/* Left: category list */}
-          <div className="shrink-0 border-r border-gray-800 p-2 overflow-y-auto" style={{ width: leftWidth }}>
+          <div className="shrink-0 border-r border-ctp-surface0 p-2 overflow-y-auto" style={{ width: leftWidth }}>
             {(['general', 'graph', 'editor', 'entries', 'lorebook'] as const).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={`w-full text-left px-2 py-1.5 rounded text-xs font-medium ${
                   activeCategory === cat
-                    ? 'text-indigo-400 bg-gray-800'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                    ? 'text-ctp-lavender bg-ctp-surface0'
+                    : 'text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0/50'
                 } transition-colors`}
               >
                 {cat === 'general' ? 'General' : cat === 'graph' ? 'Workspace Settings' : cat === 'editor' ? 'Editor' : cat === 'entries' ? 'Entries' : 'Lorebook'}
@@ -398,7 +414,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
           {/* Drag divider */}
           <div
-            className="w-1 shrink-0 cursor-col-resize bg-gray-800 hover:bg-indigo-600 transition-colors"
+            className="w-1 shrink-0 cursor-col-resize bg-ctp-surface0 hover:bg-ctp-lavender transition-colors"
             onMouseDown={startDrag}
           />
 

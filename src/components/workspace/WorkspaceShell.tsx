@@ -135,17 +135,17 @@ export function WorkspaceShell() {
 
   return (
     <div
-      className="flex flex-col h-screen w-screen bg-gray-950 text-gray-100"
+      className="flex flex-col h-screen w-screen bg-ctp-base text-ctp-text"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800 shrink-0">
+      <header className="flex items-center justify-between px-4 py-2 bg-ctp-mantle border-b border-ctp-surface0 shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-lg font-semibold text-indigo-400">Lorewalker</span>
+          <span className="text-lg font-semibold text-ctp-lavender">Lorewalker</span>
           {activeTab && (
-            <span className="text-xs text-gray-500">{activeTab.fileMeta.fileName}</span>
+            <span className="text-xs text-ctp-overlay0">{activeTab.fileMeta.fileName}</span>
           )}
         </div>
 
@@ -155,7 +155,7 @@ export function WorkspaceShell() {
             onClick={handleUndo}
             disabled={!canUndo}
             title="Undo (Ctrl+Z)"
-            className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 disabled:opacity-50 transition-colors"
+            className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 disabled:opacity-50 transition-colors"
           >
             <Undo2 size={16} />
           </button>
@@ -165,7 +165,7 @@ export function WorkspaceShell() {
             onClick={handleRedo}
             disabled={!canRedo}
             title="Redo"
-            className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 disabled:opacity-50 transition-colors"
+            className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 disabled:opacity-50 transition-colors"
           >
             <Redo2 size={16} />
           </button>
@@ -175,7 +175,7 @@ export function WorkspaceShell() {
             onClick={handleSave}
             disabled={!activeTabId}
             title="Save (Ctrl+S)"
-            className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 disabled:opacity-50 transition-colors"
+            className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 disabled:opacity-50 transition-colors"
           >
             <Save size={16} />
           </button>
@@ -183,7 +183,7 @@ export function WorkspaceShell() {
           {/* Open file */}
           <label
             title="Open file"
-            className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 cursor-pointer transition-colors"
+            className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 cursor-pointer transition-colors"
           >
             <Upload size={16} />
             <input
@@ -198,7 +198,7 @@ export function WorkspaceShell() {
           <button
             onClick={() => setSettingsOpen(true)}
             title="Settings"
-            className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
           >
             <Settings size={16} />
           </button>
@@ -210,9 +210,9 @@ export function WorkspaceShell() {
 
       {/* Error banner */}
       {importError && (
-        <div className="px-4 py-2 bg-red-900/40 border-b border-red-800 text-xs text-red-300 flex items-center justify-between">
+        <div className="px-4 py-2 bg-ctp-red/15 border-b border-ctp-red/40 text-xs text-ctp-red flex items-center justify-between">
           <span>{importError}</span>
-          <button onClick={() => setImportError(null)} className="text-red-400 hover:text-red-200 ml-4">✕</button>
+          <button onClick={() => setImportError(null)} className="text-ctp-red hover:text-ctp-maroon ml-4">✕</button>
         </div>
       )}
 
@@ -220,14 +220,14 @@ export function WorkspaceShell() {
       <div className="flex flex-1 overflow-hidden relative">
         {/* Drag overlay */}
         {isDragOver && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-indigo-900/40 border-2 border-dashed border-indigo-400">
-            <p className="text-lg font-medium text-indigo-300">Drop lorebook to open</p>
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-ctp-lavender/15 border-2 border-dashed border-ctp-lavender">
+            <p className="text-lg font-medium text-ctp-lavender">Drop lorebook to open</p>
           </div>
         )}
 
         {/* Left panel: entry list */}
         <aside
-          className="shrink-0 border-r border-gray-800 bg-gray-950 flex flex-col overflow-hidden"
+          className="shrink-0 border-r border-ctp-surface0 bg-ctp-base flex flex-col overflow-hidden"
           style={{
             width: leftCollapsed ? COLLAPSED_WIDTH : leftWidth,
             transition: isResizing ? 'none' : 'width 200ms ease-in-out',
@@ -235,7 +235,7 @@ export function WorkspaceShell() {
         >
           {leftCollapsed ? (
             <button
-              className="flex-1 flex items-center justify-center text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+              className="flex-1 flex items-center justify-center text-ctp-overlay0 hover:text-ctp-subtext0 hover:bg-ctp-surface0 transition-colors"
               onClick={() => setLeftCollapsed(false)}
               title="Expand entries panel"
             >
@@ -243,13 +243,13 @@ export function WorkspaceShell() {
             </button>
           ) : (
             <>
-              <div className="p-3 border-b border-gray-800 shrink-0 flex items-center justify-between">
-                <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Entries</span>
+              <div className="p-3 border-b border-ctp-surface0 shrink-0 flex items-center justify-between">
+                <span className="text-xs font-medium text-ctp-overlay1 uppercase tracking-wider">Entries</span>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setLeftCollapsed(true)}
                     title="Collapse panel"
-                    className="p-1 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+                    className="p-1 rounded text-ctp-overlay0 hover:text-ctp-subtext0 hover:bg-ctp-surface0 transition-colors"
                   >
                     <ChevronLeft size={14} />
                   </button>
@@ -263,19 +263,19 @@ export function WorkspaceShell() {
         {/* Drag divider: left ↔ center */}
         {!leftCollapsed && (
           <div
-            className="w-1 shrink-0 cursor-col-resize bg-gray-800 hover:bg-indigo-600 transition-colors"
+            className="w-1 shrink-0 cursor-col-resize bg-ctp-surface0 hover:bg-ctp-lavender transition-colors"
             onMouseDown={(e) => startDrag(e, 'left')}
           />
         )}
 
         {/* Center panel: graph canvas */}
-        <main className="flex-1 bg-gray-950 flex overflow-hidden">
+        <main className="flex-1 bg-ctp-base flex overflow-hidden">
           {!activeTabId ? (
             <div className="flex-1 flex items-center justify-center pointer-events-none">
               <div className="text-center space-y-3">
-                <div className="text-5xl text-gray-700">&#x2B21;</div>
-                <p className="text-sm text-gray-500">Drag a SillyTavern JSON file here</p>
-                <p className="text-xs text-gray-500">or click the upload icon above</p>
+                <div className="text-5xl text-ctp-surface1">&#x2B21;</div>
+                <p className="text-sm text-ctp-overlay0">Drag a SillyTavern JSON file here</p>
+                <p className="text-xs text-ctp-overlay0">or click the upload icon above</p>
               </div>
             </div>
           ) : (
@@ -290,14 +290,14 @@ export function WorkspaceShell() {
         {/* Drag divider: center ↔ right */}
         {!rightCollapsed && (
           <div
-            className="w-1 shrink-0 cursor-col-resize bg-gray-800 hover:bg-indigo-600 transition-colors"
+            className="w-1 shrink-0 cursor-col-resize bg-ctp-surface0 hover:bg-ctp-lavender transition-colors"
             onMouseDown={(e) => startDrag(e, 'right')}
           />
         )}
 
         {/* Right panel: entry editor */}
         <aside
-          className="shrink-0 border-l border-gray-800 bg-gray-950 flex flex-col overflow-hidden"
+          className="shrink-0 border-l border-ctp-surface0 bg-ctp-base flex flex-col overflow-hidden"
           style={{
             width: rightCollapsed ? COLLAPSED_WIDTH : rightWidth,
             transition: isResizing ? 'none' : 'width 200ms ease-in-out',
@@ -305,7 +305,7 @@ export function WorkspaceShell() {
         >
           {rightCollapsed ? (
             <button
-              className="flex-1 flex items-center justify-center text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+              className="flex-1 flex items-center justify-center text-ctp-overlay0 hover:text-ctp-subtext0 hover:bg-ctp-surface0 transition-colors"
               onClick={() => setRightCollapsed(false)}
               title="Expand editor panel"
             >
@@ -313,14 +313,14 @@ export function WorkspaceShell() {
             </button>
           ) : (
             <>
-              <div className="p-3 border-b border-gray-800 shrink-0 flex items-center justify-between">
-                <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <div className="p-3 border-b border-ctp-surface0 shrink-0 flex items-center justify-between">
+                <span className="text-xs font-medium text-ctp-overlay1 uppercase tracking-wider">
                   Entry
                 </span>
                 <button
                   onClick={() => setRightCollapsed(true)}
                   title="Collapse panel"
-                  className="p-1 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+                  className="p-1 rounded text-ctp-overlay0 hover:text-ctp-subtext0 hover:bg-ctp-surface0 transition-colors"
                 >
                   <ChevronRight size={14} />
                 </button>
@@ -328,10 +328,10 @@ export function WorkspaceShell() {
 
               {/* Lorebook Settings section — always shown when a book is open */}
               {activeTabId && (
-                <div className="border-b border-gray-800 shrink-0">
+                <div className="border-b border-ctp-surface0 shrink-0">
                   <button
                     onClick={() => setLorebookSettingsOpen(o => !o)}
-                    className="w-full px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-400 transition-colors"
+                    className="w-full px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay0 hover:text-ctp-overlay1 transition-colors"
                   >
                     {lorebookSettingsOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
                     Lorebook
@@ -343,14 +343,14 @@ export function WorkspaceShell() {
               {/* Editor section */}
               <div className="flex flex-col flex-1 overflow-hidden">
                 {activeTabId && (
-                  <div className="flex items-center border-b border-gray-800 shrink-0">
+                  <div className="flex items-center border-b border-ctp-surface0 shrink-0">
                     <div
                       onClick={() => setEditorOpen(o => !o)}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setEditorOpen(o => !o) }}
                       tabIndex={0}
                       role="button"
                       aria-expanded={editorOpen}
-                      className={`flex-1 px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-gray-500 hover:text-gray-400 transition-colors cursor-default ${selectedEntry ? '' : 'uppercase'}`}
+                      className={`flex-1 px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-ctp-overlay0 hover:text-ctp-overlay1 transition-colors cursor-default ${selectedEntry ? '' : 'uppercase'}`}
                     >
                       {editorOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
                       <span className="truncate">{selectedEntry ? (selectedEntry.name || 'Untitled') : 'Entry'}</span>
@@ -368,7 +368,7 @@ export function WorkspaceShell() {
                       <button
                         onClick={() => setEditorModalOpen(true)}
                         title="Open in full editor"
-                        className="p-1.5 mr-2 rounded text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
+                        className="p-1.5 mr-2 rounded text-ctp-overlay0 hover:text-ctp-subtext0 hover:bg-ctp-surface0 transition-colors"
                       >
                         <Maximize2 size={12} />
                       </button>
@@ -380,11 +380,11 @@ export function WorkspaceShell() {
                     <EntryEditor entryId={selectedEntryId} />
                   ) : activeTabId ? (
                     <div className="flex-1 flex items-center justify-center">
-                      <p className="text-xs text-gray-500">Select an entry to edit</p>
+                      <p className="text-xs text-ctp-overlay0">Select an entry to edit</p>
                     </div>
                   ) : (
                     <div className="flex-1 flex items-center justify-center">
-                      <p className="text-xs text-gray-500">No file open</p>
+                      <p className="text-xs text-ctp-overlay0">No file open</p>
                     </div>
                   )
                 )}

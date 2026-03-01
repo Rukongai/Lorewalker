@@ -37,18 +37,18 @@ export function KeywordInput({ value, onChange, placeholder }: KeywordInputProps
   return (
     <div
       onClick={() => inputRef.current?.focus()}
-      className="w-full bg-gray-800 border border-gray-700 rounded px-1.5 py-1 flex flex-wrap gap-1 items-center focus-within:border-indigo-500 transition-colors cursor-text min-h-[30px]"
+      className="w-full bg-ctp-surface0 border border-ctp-surface1 rounded px-1.5 py-1 flex flex-wrap gap-1 items-center focus-within:border-ctp-lavender transition-colors cursor-text min-h-[30px]"
     >
       {value.map((kw, i) => (
         <span
           key={kw}
-          className="inline-flex items-center gap-0.5 pl-1.5 pr-0.5 py-0.5 rounded text-[10px] bg-indigo-500/15 border border-indigo-400/60 text-indigo-200 select-none"
+          className="inline-flex items-center gap-0.5 pl-1.5 pr-0.5 py-0.5 rounded text-[10px] bg-ctp-lavender/15 border border-ctp-lavender/60 text-ctp-lavender select-none"
         >
           {kw}
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); removeAt(i) }}
-            className="text-indigo-400 hover:text-indigo-200 hover:bg-indigo-500/20 rounded px-0.5 leading-none"
+            className="text-ctp-lavender hover:text-ctp-lavender hover:bg-ctp-lavender/20 rounded px-0.5 leading-none"
           >
             ×
           </button>
@@ -61,7 +61,7 @@ export function KeywordInput({ value, onChange, placeholder }: KeywordInputProps
         onKeyDown={handleKeyDown}
         onBlur={commitInput}
         placeholder={value.length === 0 ? placeholder : undefined}
-        className="bg-transparent outline-none text-xs text-gray-200 placeholder-gray-600 flex-1 min-w-[80px]"
+        className="bg-transparent outline-none text-xs text-ctp-subtext1 placeholder-ctp-overlay0 flex-1 min-w-[80px]"
       />
     </div>
   )

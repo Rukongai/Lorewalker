@@ -11,11 +11,11 @@ interface EntryListItemProps {
 }
 
 function getTypeBadge(entry: WorkingEntry): { label: string; color: string } {
-  if (!entry.enabled) return { label: 'OFF', color: 'bg-gray-700 text-gray-400' }
-  if (entry.constant) return { label: 'CONST', color: 'bg-purple-900/80 text-purple-300' }
-  if (entry.selective) return { label: 'SEL', color: 'bg-teal-900/80 text-teal-300' }
-  if (entry.sticky > 0) return { label: 'STICKY', color: 'bg-blue-900/80 text-blue-300' }
-  return { label: 'KW', color: 'bg-indigo-900/80 text-indigo-300' }
+  if (!entry.enabled) return { label: 'OFF', color: 'bg-ctp-surface1 text-ctp-overlay1' }
+  if (entry.constant) return { label: 'CONST', color: 'bg-ctp-mauve/20 text-ctp-mauve' }
+  if (entry.selective) return { label: 'SEL', color: 'bg-ctp-teal/20 text-ctp-teal' }
+  if (entry.sticky > 0) return { label: 'STICKY', color: 'bg-ctp-blue/20 text-ctp-blue' }
+  return { label: 'KW', color: 'bg-ctp-lavender/20 text-ctp-lavender' }
 }
 
 export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, displayMetric }: EntryListItemProps) {
@@ -29,10 +29,10 @@ export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, di
       role="option"
       aria-selected={isSelected}
       className={cn(
-        'w-full flex items-center gap-2 px-3 py-2 text-left border-b border-gray-800/50 transition-colors text-sm cursor-default',
+        'w-full flex items-center gap-2 px-3 py-2 text-left border-b border-ctp-surface0/50 transition-colors text-sm cursor-default',
         isSelected
-          ? 'bg-indigo-900/30 text-gray-100'
-          : 'text-gray-300 hover:bg-gray-800/50',
+          ? 'bg-ctp-lavender/15 text-ctp-text'
+          : 'text-ctp-subtext0 hover:bg-ctp-surface0/50',
         !entry.enabled && 'opacity-50'
       )}
     >
@@ -46,7 +46,7 @@ export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, di
       </span>
 
       {/* Name */}
-      <span className="flex-1 truncate text-xs">{entry.name || <em className="text-gray-500">Untitled</em>}</span>
+      <span className="flex-1 truncate text-xs">{entry.name || <em className="text-ctp-overlay0">Untitled</em>}</span>
 
       {/* Type badge */}
       <span className={cn('text-[10px] font-mono px-1 py-0.5 rounded shrink-0', badge.color)}>
@@ -54,7 +54,7 @@ export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, di
       </span>
 
       {/* Metric */}
-      <span className="text-[10px] text-gray-500 shrink-0">
+      <span className="text-[10px] text-ctp-overlay0 shrink-0">
         {displayMetric === 'tokens' ? `${entry.tokenCount}t` : `${entry.order}`}
       </span>
     </div>

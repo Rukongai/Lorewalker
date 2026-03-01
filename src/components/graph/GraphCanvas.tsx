@@ -224,7 +224,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
 
   if (entries.length === 0) {
     return (
-      <div className="relative flex-1 flex items-center justify-center text-gray-500 text-sm">
+      <div className="relative flex-1 flex items-center justify-center text-ctp-overlay0 text-sm">
         <GraphAddButton onAdd={handleAddEntry} disabled={!realStore} />
         No entries to display
       </div>
@@ -261,9 +261,9 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
             return 'var(--node-keyword)'
           }}
           maskColor="rgba(0,0,0,0.6)"
-          className="!bg-gray-900 !border-gray-700"
+          className="!bg-ctp-mantle !border-ctp-surface1"
         />
-        <Controls className="!bg-gray-800 !border-gray-700 [&_button]:!bg-gray-800 [&_button]:!border-gray-600 [&_button]:!text-gray-300 [&_button:hover]:!bg-gray-700" />
+        <Controls className="!bg-ctp-surface0 !border-ctp-surface1 [&_button]:!bg-ctp-surface0 [&_button]:!border-ctp-overlay0 [&_button]:!text-ctp-subtext0 [&_button:hover]:!bg-ctp-surface1" />
         <GraphAddButton onAdd={handleAddEntry} />
         <GraphControls
           onAutoLayout={handleAutoLayout}

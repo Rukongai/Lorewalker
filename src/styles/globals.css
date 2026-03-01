@@ -2,20 +2,99 @@
 
 /* Dark mode is the default — applied via the 'dark' class on <html> */
 
-:root {
-  /* Graph edge colors */
+/* ─── Graph / Node CSS vars ─────────────────────────────────────────────── */
+
+:root,
+:root.theme-default {
   --edge-active: #818cf8;
-  --edge-selected: #c7d2fe;  /* indigo-200, matches keyword highlight text color */
-  --edge-incoming: #2dd4bf;  /* teal-400: edges flowing INTO selected node */
+  --edge-selected: #c7d2fe;
+  --edge-incoming: #2dd4bf;
   --edge-blocked: #6b7280;
   --edge-cycle: #ef4444;
 
-  /* Node activation type colors */
   --node-constant: #a855f7;
   --node-keyword: #6366f1;
   --node-selective: #2dd4bf;
   --node-disabled: #6b7280;
 }
+
+:root.theme-catppuccin-macchiato {
+  --edge-active: #8aadf4;
+  --edge-selected: #b7bdf8;
+  --edge-incoming: #8bd5ca;
+  --edge-blocked: #6e738d;
+  --edge-cycle: #ed8796;
+
+  --node-constant: #c6a0f6;
+  --node-keyword: #8aadf4;
+  --node-selective: #8bd5ca;
+  --node-disabled: #6e738d;
+}
+
+/* ─── Catppuccin semantic tokens ─────────────────────────────────────────── */
+/* @theme inline makes these available as Tailwind utilities (bg-ctp-*, text-ctp-*, etc.) */
+
+@theme inline {
+  /* Default Dark (maps current grays/indigos to CTP concepts) */
+  --color-ctp-base:      #030712;
+  --color-ctp-mantle:    #111827;
+  --color-ctp-crust:     #030712;
+  --color-ctp-surface0:  #1f2937;
+  --color-ctp-surface1:  #374151;
+  --color-ctp-surface2:  #4b5563;
+  --color-ctp-overlay0:  #6b7280;
+  --color-ctp-overlay1:  #9ca3af;
+  --color-ctp-overlay2:  #d1d5db;
+  --color-ctp-subtext0:  #d1d5db;
+  --color-ctp-subtext1:  #e5e7eb;
+  --color-ctp-text:      #f3f4f6;
+  --color-ctp-lavender:  #818cf8;
+  --color-ctp-blue:      #6366f1;
+  --color-ctp-teal:      #2dd4bf;
+  --color-ctp-green:     #22c55e;
+  --color-ctp-yellow:    #fbbf24;
+  --color-ctp-peach:     #f59e0b;
+  --color-ctp-red:       #ef4444;
+  --color-ctp-mauve:     #a855f7;
+  --color-ctp-sky:       #38bdf8;
+  --color-ctp-sapphire:  #0ea5e9;
+  --color-ctp-flamingo:  #fca5a5;
+  --color-ctp-rosewater: #fecdd3;
+  --color-ctp-maroon:    #f87171;
+  --color-ctp-pink:      #f0abfc;
+}
+
+/* Catppuccin Macchiato overrides */
+:root.theme-catppuccin-macchiato {
+  --color-ctp-base:      #24273a;
+  --color-ctp-mantle:    #1e2030;
+  --color-ctp-crust:     #181926;
+  --color-ctp-surface0:  #363a4f;
+  --color-ctp-surface1:  #494d64;
+  --color-ctp-surface2:  #5b6078;
+  --color-ctp-overlay0:  #6e738d;
+  --color-ctp-overlay1:  #8087a2;
+  --color-ctp-overlay2:  #939ab7;
+  --color-ctp-subtext0:  #a5adcb;
+  --color-ctp-subtext1:  #b8c0e0;
+  --color-ctp-text:      #cad3f5;
+  --color-ctp-lavender:  #b7bdf8;
+  --color-ctp-blue:      #8aadf4;
+  --color-ctp-teal:      #8bd5ca;
+  --color-ctp-green:     #a6da95;
+  --color-ctp-yellow:    #eed49f;
+  --color-ctp-peach:     #f5a97f;
+  --color-ctp-red:       #ed8796;
+  --color-ctp-mauve:     #c6a0f6;
+  --color-ctp-sky:       #91d7e3;
+  --color-ctp-sapphire:  #7dc4e4;
+  --color-ctp-flamingo:  #f0c6c6;
+  --color-ctp-rosewater: #f4dbd6;
+  --color-ctp-maroon:    #ee99a0;
+  --color-ctp-pink:      #f5bde6;
+}
+
+/* ─── Base styles ─────────────────────────────────────────────────────────── */
 
 body {
   font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
@@ -23,11 +102,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* CodeMirror editor resets */
+/* ─── CodeMirror editor resets ───────────────────────────────────────────── */
 .cm-editor { outline: none; }
 .cm-editor.cm-focused { outline: none !important; }
 .cm-selectionBackground,
 .cm-focused .cm-selectionBackground { background: rgba(99,102,241,0.3) !important; }
+
+.theme-catppuccin-macchiato .cm-selectionBackground,
+.theme-catppuccin-macchiato .cm-focused .cm-selectionBackground {
+  background: rgba(139,173,244,0.25) !important;
+}
 
 .cm-editor .cm-content {
   font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
@@ -63,4 +147,20 @@ body {
   font-size: 8px; font-weight: 700;
   color: #fca5a5; line-height: 1;
   pointer-events: none;
+}
+
+/* Catppuccin Macchiato CodeMirror overrides */
+.theme-catppuccin-macchiato .cm-kw-normal {
+  background: rgba(138,173,244,0.18);
+  border-bottom: 2px solid rgba(183,189,248,0.75);
+}
+.theme-catppuccin-macchiato .cm-kw-normal::after {
+  color: #b7bdf8;
+}
+.theme-catppuccin-macchiato .cm-kw-cycle {
+  background: rgba(237,135,150,0.15);
+  border-bottom: 2px solid rgba(238,153,160,0.75);
+}
+.theme-catppuccin-macchiato .cm-kw-cycle::after {
+  color: #ee99a0;
 }

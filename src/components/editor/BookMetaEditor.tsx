@@ -17,7 +17,7 @@ function FieldGroup({ label, defaultCollapsed = false, children }: {
     <div className="mb-4">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full text-left text-[10px] font-semibold tracking-wider text-gray-500 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-gray-400 transition-colors"
+        className="w-full text-left text-[10px] font-semibold tracking-wider text-ctp-overlay0 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-ctp-overlay1 transition-colors"
       >
         {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         {label}
@@ -30,7 +30,7 @@ function FieldGroup({ label, defaultCollapsed = false, children }: {
 function Field({ label, help, children }: { label: string; help?: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[10px] text-gray-500 flex items-center">
+      <span className="text-[10px] text-ctp-overlay0 flex items-center">
         {label}
         {help && <HelpTooltip text={help} />}
       </span>
@@ -40,7 +40,7 @@ function Field({ label, help, children }: { label: string; help?: string; childr
 }
 
 const inputClass =
-  'w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors'
+  'w-full bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1 text-xs text-ctp-subtext1 outline-none focus:border-ctp-lavender transition-colors'
 
 export function BookMetaEditor() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
@@ -60,7 +60,7 @@ export function BookMetaEditor() {
   if (!activeTabId) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-xs text-gray-500">No book open</p>
+        <p className="text-xs text-ctp-overlay0">No book open</p>
       </div>
     )
   }
@@ -99,17 +99,17 @@ export function BookMetaEditor() {
             className={inputClass}
           />
         </Field>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle checked={bookMeta.includeNames} onChange={(val) => handleChange('includeNames', val)} />
           Include Names
           <HelpTooltip text="Also scans message author names (user/character) for trigger keywords." />
         </label>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle checked={bookMeta.caseSensitive} onChange={(val) => handleChange('caseSensitive', val)} />
           Case-sensitive Keys
           <HelpTooltip text="When on, keywords must match exact letter casing ('Dragon' won't match 'dragon'). Off by default." />
         </label>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle checked={bookMeta.matchWholeWords} onChange={(val) => handleChange('matchWholeWords', val)} />
           Match Whole Words
           <HelpTooltip text="When on, keywords only match complete words ('ring' won't match 'spring'). Off by default." />
@@ -136,7 +136,7 @@ export function BookMetaEditor() {
             className={inputClass}
           />
         </Field>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle checked={bookMeta.alertOnOverflow} onChange={(val) => handleChange('alertOnOverflow', val)} />
           Alert on Overflow
           <HelpTooltip text="Triggers a warning when lorebook content exceeds the configured token budget." />
@@ -156,7 +156,7 @@ export function BookMetaEditor() {
 
       {/* Activation */}
       <FieldGroup label="Activation" defaultCollapsed>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle checked={bookMeta.recursiveScan} onChange={(val) => handleChange('recursiveScan', val)} />
           Recursive Scan
           <HelpTooltip text="When on, newly activated entries are also scanned for keywords, allowing chains of entries to activate each other." />
@@ -192,7 +192,7 @@ export function BookMetaEditor() {
 
       {/* Groups */}
       <FieldGroup label="Groups" defaultCollapsed>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle checked={bookMeta.useGroupScoring} onChange={(val) => handleChange('useGroupScoring', val)} />
           Use Group Scoring
           <HelpTooltip text="Global default for how entries compete within inclusion groups. When on, the entry with the most keyword matches wins; when off, entries are chosen by random weight rolling. Individual entries can override this setting." />

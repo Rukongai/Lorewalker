@@ -25,11 +25,11 @@ function FieldGroup({ label, stOnly, defaultCollapsed = false, labelSuffix, head
       <div className="flex items-center">
         <button
           onClick={() => setOpen(o => !o)}
-          className="flex-1 min-w-0 text-left text-[11px] font-semibold tracking-wider text-gray-400 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-gray-300 transition-colors"
+          className="flex-1 min-w-0 text-left text-[11px] font-semibold tracking-wider text-ctp-overlay1 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-ctp-subtext0 transition-colors"
         >
           {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
           <span className="truncate">{label}</span>
-          {stOnly && <span className="text-[9px] font-semibold bg-amber-900/40 text-amber-400 border border-amber-700/50 rounded px-1 py-0.5 normal-case tracking-normal shrink-0">ST</span>}
+          {stOnly && <span className="text-[9px] font-semibold bg-ctp-peach/15 text-ctp-yellow border border-ctp-peach/30 rounded px-1 py-0.5 normal-case tracking-normal shrink-0">ST</span>}
           {labelSuffix}
         </button>
         {headerRight}
@@ -42,7 +42,7 @@ function FieldGroup({ label, stOnly, defaultCollapsed = false, labelSuffix, head
 function Field({ label, help, children }: { label: string; help?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[11px] text-gray-400 flex items-center">
+      <span className="text-[11px] text-ctp-overlay1 flex items-center">
         {label}
         {help && <HelpTooltip text={help} />}
       </span>
@@ -52,7 +52,7 @@ function Field({ label, help, children }: { label: string; help?: string; childr
 }
 
 const inputClass =
-  'w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors placeholder:text-gray-500'
+  'w-full bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1.5 text-xs text-ctp-subtext1 outline-none focus:border-ctp-lavender transition-colors placeholder:text-ctp-overlay0'
 
 type InsertionStrategy = 'constant' | 'normal' | 'vectorized'
 
@@ -60,6 +60,67 @@ interface EntryEditorProps {
   entryId: string
   layout?: 'single' | 'wide'
   onNavigate?: (entryId: string) => void
+}
+
+function WideLayout({
+  entryId,
+  graph,
+  onNavigate,
+  nameField,
+  contentField,
+  fieldGroups,
+}: {
+  entryId: string
+  graph: import('@/types').RecursionGraph
+  onNavigate?: (entryId: string) => void
+  nameField: React.ReactNode
+  contentField: React.ReactNode
+  fieldGroups: React.ReactNode
+}) {
+  const [topHeight, setTopHeight] = useState(260)
+
+  const startRowDrag = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    const startY = e.clientY
+    const startHeight = topHeight
+    const onMove = (mv: MouseEvent) => {
+      const delta = mv.clientY - startY
+      setTopHeight(Math.max(120, Math.min(startHeight + delta, 600)))
+    }
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }, [topHeight])
+
+  return (
+    <div className="flex flex-row h-full text-sm">
+      {/* Left panel: drag-split between fields and activation links */}
+      <div className="w-[60%] flex flex-col border-r border-ctp-surface1 h-full">
+        <div style={{ height: topHeight }} className="shrink-0 overflow-y-auto p-3 space-y-3">
+          {nameField}
+          {contentField}
+        </div>
+        <div
+          className="h-1 shrink-0 cursor-row-resize bg-ctp-surface0 hover:bg-ctp-lavender transition-colors"
+          onMouseDown={startRowDrag}
+        />
+        <div className="flex-1 min-h-0 border-t border-ctp-surface1">
+          <ActivationLinks
+            entryId={entryId}
+            graph={graph}
+            onNavigate={onNavigate ?? (() => {})}
+          />
+        </div>
+      </div>
+      {/* Right panel: all field groups */}
+      <div className="w-[40%] overflow-y-auto">
+        {fieldGroups}
+      </div>
+    </div>
+  )
 }
 
 export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEditorProps) {
@@ -106,7 +167,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
   if (!entry) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-xs text-gray-500">Select an entry to edit</p>
+        <p className="text-xs text-ctp-overlay0">Select an entry to edit</p>
       </div>
     )
   }
@@ -127,7 +188,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
 
   const contentField = (
     <div className="flex flex-col gap-1">
-      <span className="text-[11px] text-gray-400 flex items-center">
+      <span className="text-[11px] text-ctp-overlay1 flex items-center">
         {`Content (${entry.tokenCount} tokens)`}
         <HelpTooltip text="The text injected into the AI's context when this entry activates. Supports Markdown-style formatting depending on your AI platform." />
       </span>
@@ -151,15 +212,15 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
           label="Insertion Strategy"
           help="Controls how this entry activates. Constant = always active; Normal = keyword-triggered; Vectorized = semantic similarity search."
         >
-          <div className="flex rounded border border-gray-700 overflow-hidden">
+          <div className="flex rounded border border-ctp-surface1 overflow-hidden">
             {(['constant', 'normal', 'vectorized'] as InsertionStrategy[]).map((s) => (
               <button
                 key={s}
                 onClick={() => handleStrategyChange(s)}
                 className={`flex-1 px-2 py-1 text-xs capitalize transition-colors
                   ${strategy === s
-                    ? 'bg-indigo-700/50 border-indigo-500 text-indigo-200'
-                    : 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700'
+                    ? 'bg-ctp-lavender/20 border-ctp-lavender text-ctp-lavender'
+                    : 'bg-ctp-surface0 text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface1'
                   }`}
               >
                 {s}
@@ -167,7 +228,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
             ))}
           </div>
         </Field>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle checked={entry.selective} onChange={(val) => handleChange('selective', val)} />
           Selective (requires secondary key match)
           <HelpTooltip text="When checked, the entry only activates if secondary keys also match according to the Selective Logic rule." />
@@ -314,12 +375,12 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
 
       {/* Recursion */}
       <FieldGroup label="Recursion" stOnly defaultCollapsed>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle checked={entry.preventRecursion} onChange={(val) => handleChange('preventRecursion', val)} />
           Prevent Further Recursion
           <HelpTooltip text="When active, this entry won't trigger other entries through recursion. Stops unintended cascading activation chains." />
         </label>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle checked={entry.excludeRecursion} onChange={(val) => handleChange('excludeRecursion', val)} />
           Non-recursable
           <HelpTooltip text="This entry can only be activated by direct keyword matches in chat. Other entries cannot recursively trigger it." />
@@ -328,7 +389,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
 
       {/* Budget */}
       <FieldGroup label="Budget" stOnly defaultCollapsed>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle checked={entry.ignoreBudget} onChange={(val) => handleChange('ignoreBudget', val)} />
           Ignore Budget
           <HelpTooltip text="Entry bypasses the token budget limit, ensuring it's always inserted regardless of how much context is used. Use sparingly for critical lore." />
@@ -366,7 +427,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
             <option value="false">No</option>
           </select>
         </Field>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle checked={entry.groupOverride} onChange={(val) => handleChange('groupOverride', val)} />
           Prioritize Inclusion
           <HelpTooltip text="Forces deterministic selection — picks the entry with the highest Insertion Order instead of random weight rolling." />
@@ -411,32 +472,32 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
       {/* Match Sources */}
       <FieldGroup label="Match Sources" stOnly defaultCollapsed>
         <div className="grid grid-cols-2 gap-2">
-          <label className="flex items-center gap-2 text-xs text-gray-400">
+          <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
             <Toggle checked={entry.matchPersonaDescription} onChange={(val) => handleChange('matchPersonaDescription', val)} />
             Persona Description
             <HelpTooltip text="Scan the user's persona description for trigger keywords." />
           </label>
-          <label className="flex items-center gap-2 text-xs text-gray-400">
+          <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
             <Toggle checked={entry.matchCharacterDescription} onChange={(val) => handleChange('matchCharacterDescription', val)} />
             Char Description
             <HelpTooltip text="Scan the character's description field for trigger keywords." />
           </label>
-          <label className="flex items-center gap-2 text-xs text-gray-400">
+          <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
             <Toggle checked={entry.matchCharacterPersonality} onChange={(val) => handleChange('matchCharacterPersonality', val)} />
             Char Personality
             <HelpTooltip text="Scan the character's personality field for trigger keywords." />
           </label>
-          <label className="flex items-center gap-2 text-xs text-gray-400">
+          <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
             <Toggle checked={entry.matchCharacterDepthPrompt} onChange={(val) => handleChange('matchCharacterDepthPrompt', val)} />
             Depth Prompt
             <HelpTooltip text="Scan the character's depth prompt / author's note field for trigger keywords." />
           </label>
-          <label className="flex items-center gap-2 text-xs text-gray-400">
+          <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
             <Toggle checked={entry.matchScenario} onChange={(val) => handleChange('matchScenario', val)} />
             Scenario
             <HelpTooltip text="Scan the scenario field for trigger keywords." />
           </label>
-          <label className="flex items-center gap-2 text-xs text-gray-400">
+          <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
             <Toggle checked={entry.matchCreatorNotes} onChange={(val) => handleChange('matchCreatorNotes', val)} />
             Creator Notes
             <HelpTooltip text="Scan the creator notes field for trigger keywords." />
@@ -467,7 +528,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
 
       {/* Character Filter */}
       <FieldGroup label="Character Filter" stOnly defaultCollapsed>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle
             checked={entry.characterFilter.isExclude}
             onChange={(val) => handleChange('characterFilter', { ...entry.characterFilter, isExclude: val })}
@@ -541,12 +602,12 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
             />
           </Field>
         </div>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle checked={entry.useProbability} onChange={(val) => handleChange('useProbability', val)} />
           Use Probability
           <HelpTooltip text="When enabled, the Trigger % value applies; when disabled, the entry always inserts if its keys match." />
         </label>
-        <label className="flex items-center gap-2 text-xs text-gray-400">
+        <label className="flex items-center gap-2 text-xs text-ctp-overlay1">
           <Toggle checked={entry.addMemo} onChange={(val) => handleChange('addMemo', val)} />
           Add Memo
           <HelpTooltip text="Attaches a reference note to this entry visible in SillyTavern's editor. Not injected into context." />
@@ -557,26 +618,14 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
 
   if (layout === 'wide') {
     return (
-      <div className="flex flex-row h-full text-sm">
-        {/* Left panel: Identity (top) + Activation Links (bottom) */}
-        <div className="w-[60%] flex flex-col border-r border-gray-700 min-h-0">
-          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
-            {nameField}
-            {contentField}
-          </div>
-          <div className="shrink-0 h-52 border-t border-gray-700">
-            <ActivationLinks
-              entryId={entryId}
-              graph={graph}
-              onNavigate={onNavigate ?? (() => {})}
-            />
-          </div>
-        </div>
-        {/* Right panel: all field groups */}
-        <div className="w-[40%] overflow-y-auto">
-          {fieldGroups}
-        </div>
-      </div>
+      <WideLayout
+        entryId={entryId}
+        graph={graph}
+        onNavigate={onNavigate}
+        nameField={nameField}
+        contentField={contentField}
+        fieldGroups={fieldGroups}
+      />
     )
   }
 

@@ -18,8 +18,8 @@ export function Toggle({ checked, onChange, disabled, 'aria-label': ariaLabel }:
       onClick={() => onChange(!checked)}
       className={cn(
         'relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
-        checked ? 'bg-indigo-500' : 'bg-gray-700',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-ctp-lavender',
+        checked ? 'bg-ctp-lavender' : 'bg-ctp-surface1',
         disabled && 'opacity-50 cursor-not-allowed'
       )}
     >

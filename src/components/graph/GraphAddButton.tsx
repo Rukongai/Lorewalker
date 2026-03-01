@@ -12,7 +12,7 @@ export function GraphAddButton({ onAdd, disabled }: GraphAddButtonProps) {
         onClick={onAdd}
         disabled={disabled}
         title="Add new entry"
-        className="flex items-center justify-center w-7 h-7 bg-gray-800 border border-gray-700 rounded text-gray-400 hover:bg-gray-700 hover:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center justify-center w-7 h-7 bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-overlay1 hover:bg-ctp-surface1 hover:text-ctp-subtext1 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
       >
         <Plus size={13} />
       </button>
