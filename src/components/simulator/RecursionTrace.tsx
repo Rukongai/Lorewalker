@@ -100,7 +100,7 @@ function StepDetail({ step, entries }: { step: RecursionStep; entries: WorkingEn
             const keywords = step.matchDetails.filter((m) => m.entryId === id).map((m) => m.keyword)
             return (
               <div key={id} className="flex items-start gap-1.5">
-                <span className="text-[10px] text-ctp-overlay1 mt-0.5">→</span>
+                <span className="text-[10px] text-ctp-overlay1">→</span>
                 <div>
                   <span className="text-[10px] text-ctp-green font-medium">{entryName(entries, id)}</span>
                   <div className="flex flex-wrap gap-1 mt-0.5">

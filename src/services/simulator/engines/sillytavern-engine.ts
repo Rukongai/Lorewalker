@@ -221,8 +221,6 @@ function simulate(
       const matchDetails: { entryId: string; keyword: string }[] = []
 
       for (const candidate of notYetActivated()) {
-        if (candidate.preventRecursion) continue
-
         const matches = doesEntryMatchText(candidate, contentText, matchOpts)
         if (matches.length === 0) continue
 

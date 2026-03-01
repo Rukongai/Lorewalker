@@ -89,7 +89,7 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
       <SimulatorSettings settings={settings} onChange={handleUpdateSettings} />
 
       {/* Message composer */}
-      <div className="flex flex-col gap-2 p-3 overflow-y-auto flex-1">
+      <div className="flex flex-col gap-2 p-3 overflow-y-auto flex-1 min-h-0">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1">Messages</p>
         <MessageInput messages={localMessages} onChange={setLocalMessages} />
 
