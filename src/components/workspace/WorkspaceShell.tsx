@@ -343,9 +343,13 @@ export function WorkspaceShell() {
               <div className="flex flex-col flex-1 overflow-hidden">
                 {activeTabId && (
                   <div className="flex items-center border-b border-gray-800 shrink-0">
-                    <button
+                    <div
                       onClick={() => setEditorOpen(o => !o)}
-                      className={`flex-1 px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-gray-500 hover:text-gray-400 transition-colors text-left ${selectedEntry ? '' : 'uppercase'}`}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setEditorOpen(o => !o) }}
+                      tabIndex={0}
+                      role="button"
+                      aria-expanded={editorOpen}
+                      className={`flex-1 px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-gray-500 hover:text-gray-400 transition-colors cursor-default ${selectedEntry ? '' : 'uppercase'}`}
                     >
                       {editorOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
                       <span className="truncate">{selectedEntry ? (selectedEntry.name || 'Untitled') : 'Entry'}</span>
@@ -361,7 +365,7 @@ export function WorkspaceShell() {
                             ${selectedEntry.enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
                         </button>
                       )}
-                    </button>
+                    </div>
                     {selectedEntryId && (
                       <button
                         onClick={() => setEditorModalOpen(true)}

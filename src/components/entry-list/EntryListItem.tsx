@@ -21,10 +21,14 @@ export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, di
   const badge = getTypeBadge(entry)
 
   return (
-    <button
+    <div
       onClick={() => onSelect(entry.id)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(entry.id) }}
+      tabIndex={0}
+      role="option"
+      aria-selected={isSelected}
       className={cn(
-        'w-full flex items-center gap-2 px-3 py-2 text-left border-b border-gray-800/50 transition-colors text-sm',
+        'w-full flex items-center gap-2 px-3 py-2 text-left border-b border-gray-800/50 transition-colors text-sm cursor-default',
         isSelected
           ? 'bg-indigo-900/30 text-gray-100'
           : 'text-gray-300 hover:bg-gray-800/50',
@@ -58,6 +62,6 @@ export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, di
       <span className="text-[10px] text-gray-600 shrink-0">
         {displayMetric === 'tokens' ? `${entry.tokenCount}t` : `${entry.order}`}
       </span>
-    </button>
+    </div>
   )
 }
