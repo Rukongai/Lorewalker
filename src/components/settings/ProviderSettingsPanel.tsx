@@ -205,6 +205,7 @@ function ProviderForm({ initial, onSave, onCancel }: ProviderFormProps) {
         <input
           className={inputClass}
           type="password"
+          autoComplete="off"
           value={form.apiKey}
           onChange={(e) => update('apiKey', e.target.value)}
           placeholder="Leave empty for keyless endpoints"
