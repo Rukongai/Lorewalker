@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { inflate, deflate, inflateFromRawST } from './transform-service'
-import type { RawSTBook } from './transform-service'
+import type { RawSTBook, RawSTEntry } from './transform-service'
 import type { CCv3CharacterBook } from '@character-foundry/character-foundry/loader'
 
 function makeBook(overrides: Partial<CCv3CharacterBook> = {}): CCv3CharacterBook {
@@ -243,7 +243,7 @@ describe('TransformService', () => {
   })
 
 describe('inflateFromRawST', () => {
-  function makeRawSTBook(entryOverrides: Partial<RawSTBook['entries']>[0] = {}): RawSTBook {
+  function makeRawSTBook(entryOverrides: Partial<RawSTEntry> = {}): RawSTBook {
     return {
       name: 'ST Book',
       description: 'A SillyTavern lorebook',

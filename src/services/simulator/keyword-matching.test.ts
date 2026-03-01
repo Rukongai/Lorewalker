@@ -4,11 +4,11 @@ import type { WorkingEntry } from '@/types'
 
 function makeEntry(overrides: Partial<WorkingEntry> = {}): WorkingEntry {
   return {
-    id: overrides.id ?? 'test-id',
+    id: 'test-id',
     uid: 0,
     name: 'Test Entry',
     content: '',
-    keys: overrides.keys ?? [],
+    keys: [],
     secondaryKeys: [],
     constant: false,
     selective: false,
@@ -24,10 +24,33 @@ function makeEntry(overrides: Partial<WorkingEntry> = {}): WorkingEntry {
     preventRecursion: false,
     excludeRecursion: false,
     ignoreBudget: false,
+    group: '',
+    groupOverride: false,
+    groupWeight: 100,
+    useGroupScoring: null,
+    scanDepth: null,
+    caseSensitive: null,
+    matchWholeWords: null,
+    matchPersonaDescription: false,
+    matchCharacterDescription: false,
+    matchCharacterPersonality: false,
+    matchCharacterDepthPrompt: false,
+    matchScenario: false,
+    matchCreatorNotes: false,
+    role: 0,
+    automationId: '',
+    outletName: '',
+    vectorized: false,
+    useProbability: true,
+    addMemo: false,
+    displayIndex: null,
+    delayUntilRecursion: 0,
+    triggers: [],
+    characterFilter: { isExclude: false, names: [], tags: [] },
     tokenCount: 0,
     extensions: {},
     ...overrides,
-  }
+  } as WorkingEntry
 }
 
 const DEFAULT_OPTS = { caseSensitive: false, matchWholeWords: false }

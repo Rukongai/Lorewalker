@@ -22,8 +22,8 @@ import { useDerivedState, EMPTY_STORE } from '@/hooks/useDerivedState'
 import { computeLayout, findCycles } from '@/services/graph-service'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import type { EntryNodeData } from './EntryNode'
-import type { RecursionEdgeData } from './RecursionEdge'
+import type { EntryNodeData, EntryNodeType } from './EntryNode'
+import type { RecursionEdgeData, RecursionEdgeType } from './RecursionEdge'
 import type { FindingSeverity } from '@/types'
 
 const nodeTypes = { entryNode: EntryNode }
@@ -217,12 +217,12 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
   )
 
   const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => { onNodesChange(changes) },
+    (changes: NodeChange<EntryNodeType>[]) => { onNodesChange(changes) },
     [onNodesChange],
   )
 
   const handleEdgesChange = useCallback(
-    (changes: EdgeChange[]) => { onEdgesChange(changes) },
+    (changes: EdgeChange<RecursionEdgeType>[]) => { onEdgesChange(changes) },
     [onEdgesChange],
   )
 

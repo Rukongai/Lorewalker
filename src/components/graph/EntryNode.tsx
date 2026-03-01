@@ -1,7 +1,9 @@
 import { Handle, Position } from '@xyflow/react'
-import type { NodeProps } from '@xyflow/react'
+import type { Node, NodeProps } from '@xyflow/react'
 import type { WorkingEntry, FindingSeverity } from '@/types'
 import { severityColor } from '@/lib/severity-color'
+
+export type EntryNodeType = Node<EntryNodeData>
 
 export interface EntryNodeData {
   entry: WorkingEntry
@@ -34,7 +36,7 @@ const ACTIVATION_BADGE: Record<ActivationType, string> = {
   disabled: 'D',
 }
 
-export function EntryNode({ data, selected }: NodeProps<EntryNodeData>) {
+export function EntryNode({ data, selected }: NodeProps<EntryNodeType>) {
   const { entry, isCyclic, edgeDirection, severity } = data
   const activationType = getActivationType(entry)
   const accentColor = ACTIVATION_COLORS[activationType]

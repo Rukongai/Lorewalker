@@ -49,6 +49,14 @@ export const EMPTY_STORE: DocumentStore = createDocumentStore({
     caseSensitive: false,
     matchWholeWords: false,
     extensions: {},
+    minActivations: 0,
+    maxDepth: 0,
+    maxRecursionSteps: 0,
+    insertionStrategy: 'evenly',
+    includeNames: false,
+    useGroupScoring: false,
+    alertOnOverflow: false,
+    budgetCap: 0,
   },
 })
 
