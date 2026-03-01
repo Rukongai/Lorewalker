@@ -17,6 +17,7 @@ import { EntryNode } from './EntryNode'
 import { RecursionEdge } from './RecursionEdge'
 import { GraphControls } from './GraphControls'
 import type { ConnectionVisibility } from './GraphControls'
+import { GraphAddButton } from './GraphAddButton'
 import { useDerivedState, EMPTY_STORE } from '@/hooks/useDerivedState'
 import { computeLayout, findCycles } from '@/services/graph-service'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
@@ -32,9 +33,10 @@ const VISIBILITY_CYCLE: ConnectionVisibility[] = ['all', 'selected', 'none']
 interface GraphCanvasInnerProps {
   tabId: string
   onNodeDoubleClick?: (entryId: string) => void
+  onAddEntry?: () => void
 }
 
-function GraphCanvasInner({ tabId, onNodeDoubleClick }: GraphCanvasInnerProps) {
+function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasInnerProps) {
   const graphSettings = useWorkspaceStore((s) => s.graphSettings)
   const checkRecursionLoops = useWorkspaceStore((s) => s.checkRecursionLoops)
   const realStore = documentStoreRegistry.get(tabId)
@@ -214,9 +216,16 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick }: GraphCanvasInnerProps) {
     })
   }, [])
 
+  const handleAddEntry = useCallback(() => {
+    const id = store.getState().addEntry()
+    store.getState().selectEntry(id)
+    onAddEntry?.()
+  }, [store, onAddEntry])
+
   if (entries.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-600 text-sm">
+      <div className="relative flex-1 flex items-center justify-center text-gray-600 text-sm">
+        <GraphAddButton onAdd={handleAddEntry} disabled={!realStore} />
         No entries to display
       </div>
     )
@@ -255,6 +264,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick }: GraphCanvasInnerProps) {
           className="!bg-gray-900 !border-gray-700"
         />
         <Controls className="!bg-gray-800 !border-gray-700 [&_button]:!bg-gray-800 [&_button]:!border-gray-600 [&_button]:!text-gray-300 [&_button:hover]:!bg-gray-700" />
+        <GraphAddButton onAdd={handleAddEntry} />
         <GraphControls
           onAutoLayout={handleAutoLayout}
           showBlockedEdges={showBlockedEdges}
@@ -272,12 +282,13 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick }: GraphCanvasInnerProps) {
 interface GraphCanvasProps {
   tabId: string
   onNodeDoubleClick?: (entryId: string) => void
+  onAddEntry?: () => void
 }
 
-export function GraphCanvas({ tabId, onNodeDoubleClick }: GraphCanvasProps) {
+export function GraphCanvas({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasProps) {
   return (
     <ReactFlowProvider>
-      <GraphCanvasInner tabId={tabId} onNodeDoubleClick={onNodeDoubleClick} />
+      <GraphCanvasInner tabId={tabId} onNodeDoubleClick={onNodeDoubleClick} onAddEntry={onAddEntry} />
     </ReactFlowProvider>
   )
 }

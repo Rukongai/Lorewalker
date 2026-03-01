@@ -71,7 +71,7 @@ export interface EditorDefaults {
   showKeywordHighlights: boolean
 }
 
-export type SortKey = 'uid' | 'name' | 'tokenCount' | 'order'
+export type SortKey = 'uid' | 'name' | 'tokenCount' | 'order' | 'displayIndex'
 
 export interface EntriesListDefaults {
   sortBy: SortKey

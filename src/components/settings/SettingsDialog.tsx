@@ -254,6 +254,7 @@ function EntriesSettingsPanel() {
           <option value="name">Name</option>
           <option value="tokenCount">Tokens</option>
           <option value="order">Order</option>
+          <option value="displayIndex">Display Index</option>
         </select>
       </div>
 
@@ -289,6 +290,7 @@ function EntriesSettingsPanel() {
           <option value="name">Name</option>
           <option value="tokenCount">Tokens</option>
           <option value="order">Order</option>
+          <option value="displayIndex">Display Index</option>
         </select>
       </div>
 

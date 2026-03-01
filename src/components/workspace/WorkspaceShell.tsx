@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import { useStore } from 'zustand'
 import { Upload, Save, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, ChevronDown, Maximize2 } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { EntryList } from '@/components/entry-list/EntryList'
@@ -40,10 +41,10 @@ export function WorkspaceShell() {
     if (!id) return null
     return s.entries.find((e) => e.id === id) ?? null
   })
-  // zundo exposes temporal state on the store instance (not via state selector)
-  const temporalState = realStore?.temporal.getState()
-  const canUndo = (temporalState?.pastStates.length ?? 0) > 0
-  const canRedo = (temporalState?.futureStates.length ?? 0) > 0
+  // Reactively subscribe to temporal state using useStore (temporal is a vanilla Zustand store)
+  const temporalStore = realStore?.temporal ?? EMPTY_STORE.temporal
+  const canUndo = useStore(temporalStore, s => s.pastStates.length > 0)
+  const canRedo = useStore(temporalStore, s => s.futureStates.length > 0)
 
   const handleImportFile = useCallback(async (file: File) => {
     setImportError(null)
@@ -280,6 +281,7 @@ export function WorkspaceShell() {
             <GraphCanvas
               tabId={activeTabId}
               onNodeDoubleClick={() => setEditorModalOpen(true)}
+              onAddEntry={() => setEditorModalOpen(true)}
             />
           )}
         </main>

@@ -43,7 +43,7 @@ function makeEntry(overrides: Partial<WorkingEntry> = {}): WorkingEntry {
     vectorized: false,
     useProbability: false,
     addMemo: false,
-    displayIndex: 0,
+    displayIndex: null,
     delayUntilRecursion: 0,
     triggers: [],
     characterFilter: { isExclude: false, names: [], tags: [] },

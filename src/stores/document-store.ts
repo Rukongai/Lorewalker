@@ -107,7 +107,7 @@ function makeDefaultEntry(partial: Partial<WorkingEntry> = {}): WorkingEntry {
     vectorized: partial.vectorized ?? false,
     useProbability: partial.useProbability ?? true,
     addMemo: partial.addMemo ?? true,
-    displayIndex: partial.displayIndex ?? 0,
+    displayIndex: partial.displayIndex ?? null,
     delayUntilRecursion: partial.delayUntilRecursion ?? 0,
     triggers: partial.triggers ?? [],
     characterFilter: partial.characterFilter ?? { isExclude: false, names: [], tags: [] },

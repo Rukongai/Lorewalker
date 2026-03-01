@@ -89,7 +89,7 @@ export interface WorkingEntry {
   vectorized: boolean;
   useProbability: boolean;
   addMemo: boolean;
-  displayIndex: number;
+  displayIndex: number | null;
   delayUntilRecursion: number;
   triggers: string[];
   characterFilter: CharacterFilter;

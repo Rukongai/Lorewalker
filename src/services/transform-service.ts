@@ -43,7 +43,7 @@ interface STExtensions {
   role?: number
   automationId?: string
   outletName?: string
-  displayIndex?: number
+  displayIndex?: number | null
   delayUntilRecursion?: number
   triggers?: string[]
   characterFilter?: CharacterFilter
@@ -141,7 +141,7 @@ export type RawSTEntry = {
   role?: number
   automationId?: string
   outletName?: string
-  displayIndex?: number
+  displayIndex?: number | null
   delayUntilRecursion?: number
   triggers?: string[]
   characterFilter?: { isExclude: boolean; names: string[]; tags: string[] }
@@ -223,7 +223,7 @@ export function inflate(book: CCv3CharacterBook): InflateResult {
       vectorized: stExt.vectorized ?? false,
       useProbability: stExt.useProbability ?? true,
       addMemo: stExt.addMemo ?? false,
-      displayIndex: stExt.displayIndex ?? 0,
+      displayIndex: stExt.displayIndex ?? null,
       delayUntilRecursion: stExt.delayUntilRecursion ?? 0,
       triggers: Array.isArray(stExt.triggers) ? stExt.triggers : [],
       characterFilter: stExt.characterFilter ?? { isExclude: false, names: [], tags: [] },
@@ -327,7 +327,7 @@ export function inflateFromRawST(raw: RawSTBook): InflateResult {
       vectorized: e.vectorized ?? false,
       useProbability: e.useProbability ?? true,
       addMemo: e.addMemo ?? false,
-      displayIndex: e.displayIndex ?? 0,
+      displayIndex: e.displayIndex ?? null,
       delayUntilRecursion: e.delayUntilRecursion ?? 0,
       triggers: Array.isArray(e.triggers) ? e.triggers : [],
       characterFilter: e.characterFilter ?? { isExclude: false, names: [], tags: [] },

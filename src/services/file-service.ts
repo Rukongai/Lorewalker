@@ -226,7 +226,7 @@ export function exportFile(tabId: string, fileName?: string): void {
       role: stExt.role ?? 0,
       automationId: stExt.automationId ?? '',
       outletName: stExt.outletName ?? '',
-      displayIndex: stExt.displayIndex ?? 0,
+      displayIndex: (stExt.displayIndex as number | null | undefined) ?? null,
       delayUntilRecursion: stExt.delayUntilRecursion ?? 0,
       triggers: stExt.triggers ?? [],
       characterFilter: stExt.characterFilter ?? { isExclude: false, names: [], tags: [] },

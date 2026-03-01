@@ -579,8 +579,8 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
           <Field label="Display Index" help="Controls the visual sort order of this entry in SillyTavern's World Info editor. Does not affect activation or injection.">
             <input
               type="number"
-              value={entry.displayIndex}
-              onChange={(e) => handleChange('displayIndex', Number(e.target.value))}
+              value={entry.displayIndex ?? ''}
+              onChange={(e) => handleChange('displayIndex', e.target.value === '' ? null : Number(e.target.value))}
               className={inputClass}
             />
           </Field>
