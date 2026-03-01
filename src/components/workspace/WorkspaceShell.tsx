@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { modKey } from '@/lib/platform'
 import { useStore } from 'zustand'
 import { Upload, Save, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
 import { TabBar } from './TabBar'
@@ -310,7 +311,7 @@ export function WorkspaceShell() {
           <button
             onClick={handleUndo}
             disabled={!canUndo}
-            title="Undo (Ctrl+Z)"
+            title={`Undo (${modKey}+Z)`}
             className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
           >
             <Undo2 size={16} />
@@ -320,7 +321,7 @@ export function WorkspaceShell() {
           <button
             onClick={handleRedo}
             disabled={!canRedo}
-            title="Redo (Ctrl+Shift+Z)"
+            title={`Redo (${modKey}+Shift+Z)`}
             className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
           >
             <Redo2 size={16} />
@@ -330,7 +331,7 @@ export function WorkspaceShell() {
           <button
             onClick={handleSave}
             disabled={!activeTabId}
-            title="Save (Ctrl+S)"
+            title={`Save (${modKey}+S)`}
             className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
           >
             <Save size={16} />
@@ -338,7 +339,7 @@ export function WorkspaceShell() {
 
           {/* Open file */}
           <label
-            title="Open file (Ctrl+O)"
+            title={`Open file (${modKey}+O)`}
             className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 cursor-pointer transition-colors"
           >
             <Upload size={16} />

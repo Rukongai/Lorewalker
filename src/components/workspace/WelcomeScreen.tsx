@@ -1,4 +1,5 @@
 import { Upload, GitBranch, Activity, Zap } from 'lucide-react'
+import { modKey } from '@/lib/platform'
 
 interface WelcomeScreenProps {
   onOpenFile: () => void
@@ -51,7 +52,7 @@ export function WelcomeScreen({ onOpenFile }: WelcomeScreenProps) {
 
         {/* Keyboard hint */}
         <p className="text-[10px] text-ctp-overlay0">
-          Ctrl+O to open &nbsp;·&nbsp; Ctrl+S to save &nbsp;·&nbsp; Ctrl+Z to undo
+          {modKey}+O to open &nbsp;·&nbsp; {modKey}+S to save &nbsp;·&nbsp; {modKey}+Z to undo
         </p>
       </div>
     </div>
