@@ -5,7 +5,6 @@ import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { simulate, simulateConversation } from '@/services/simulator-service'
 import type { SimMessage, SimulationContext, SimulationSettings } from '@/types'
 import { MessageInput } from './MessageInput'
-import { SimulatorSettings } from './SimulatorSettings'
 import { ActivationResults } from './ActivationResults'
 
 interface SimulatorPanelProps {
@@ -30,21 +29,17 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
     )
   }
 
-  function handleUpdateSettings(patch: Partial<SimulationSettings>) {
-    realStore?.getState().updateSimulatorSettings(patch)
-  }
-
   function handleRun() {
     if (!realStore) return
     const state = realStore.getState()
     const context: SimulationContext = {
       messages: localMessages,
-      scanDepth: state.simulatorState.settings.defaultScanDepth,
-      tokenBudget: state.simulatorState.settings.defaultTokenBudget,
-      caseSensitive: state.simulatorState.settings.defaultCaseSensitive,
-      matchWholeWords: state.simulatorState.settings.defaultMatchWholeWords,
-      maxRecursionSteps: state.simulatorState.settings.defaultMaxRecursionSteps,
-      includeNames: state.simulatorState.settings.defaultIncludeNames,
+      scanDepth: state.bookMeta.scanDepth,
+      tokenBudget: state.bookMeta.tokenBudget,
+      caseSensitive: state.bookMeta.caseSensitive,
+      matchWholeWords: state.bookMeta.matchWholeWords,
+      maxRecursionSteps: state.bookMeta.maxRecursionSteps,
+      includeNames: state.bookMeta.includeNames,
     }
     state.setSimulatorMessages(localMessages)
     const result = simulate(state.entries, context)
@@ -55,12 +50,15 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
     if (!realStore) return
     const state = realStore.getState()
     if (!state.simulatorState.lastResult) return
-
-    const steps = simulateConversation(
-      state.entries,
-      localMessages,
-      state.simulatorState.settings,
-    )
+    const settings: SimulationSettings = {
+      defaultScanDepth: state.bookMeta.scanDepth,
+      defaultTokenBudget: state.bookMeta.tokenBudget,
+      defaultCaseSensitive: state.bookMeta.caseSensitive,
+      defaultMatchWholeWords: state.bookMeta.matchWholeWords,
+      defaultMaxRecursionSteps: state.bookMeta.maxRecursionSteps,
+      defaultIncludeNames: state.bookMeta.includeNames,
+    }
+    const steps = simulateConversation(state.entries, localMessages, settings)
     for (const step of steps) {
       state.appendConversationStep(step)
     }
@@ -74,7 +72,7 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
     realStore?.getState().selectEntry(entryId)
   }
 
-  const { lastResult, settings, conversationHistory } = simulatorState
+  const { lastResult, conversationHistory } = simulatorState
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
@@ -84,9 +82,6 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
           Engine: SillyTavern
         </span>
       </div>
-
-      {/* Settings accordion */}
-      <SimulatorSettings settings={settings} onChange={handleUpdateSettings} />
 
       {/* Message composer */}
       <div className="flex flex-col gap-2 p-3 overflow-y-auto flex-1 min-h-0">

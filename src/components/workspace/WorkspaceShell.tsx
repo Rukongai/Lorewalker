@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from 'zustand'
-import { Upload, Save, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, ChevronDown, Maximize2 } from 'lucide-react'
+import { Upload, Save, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { RecoveryDialog } from './RecoveryDialog'
 import { WelcomeScreen } from './WelcomeScreen'
@@ -31,7 +31,7 @@ import { SimulatorPanel } from '@/components/simulator/SimulatorPanel'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import type { PersistedDocument } from '@/types'
 
-type RightPanelTab = 'entry' | 'analysis' | 'inspector' | 'simulator'
+type RightPanelTab = 'lorebook' | 'entry' | 'analysis' | 'inspector' | 'simulator'
 
 const DEFAULT_PREFERENCES = { autosaveIntervalMs: 2000, recoveryRetentionDays: 7, simulationDefaults: { defaultScanDepth: 4, defaultTokenBudget: 4096, defaultCaseSensitive: false, defaultMatchWholeWords: false, defaultMaxRecursionSteps: 0, defaultIncludeNames: false } }
 
@@ -48,8 +48,6 @@ export function WorkspaceShell() {
   const [leftCollapsed, setLeftCollapsed] = useState(false)
   const [rightCollapsed, setRightCollapsed] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
-  const [lorebookSettingsOpen, setLorebookSettingsOpen] = useState(false)
-  const [editorOpen, setEditorOpen] = useState(true)
   const [modalEntryId, setModalEntryId] = useState<string | null>(null)
   const [showRecovery, setShowRecovery] = useState(false)
   const [recoveryDocs, setRecoveryDocs] = useState<PersistedDocument[]>([])
@@ -74,7 +72,7 @@ export function WorkspaceShell() {
     rightPanelWidth: rightWidth,
     leftCollapsed,
     rightCollapsed,
-    rightPanelTab: rightPanelTab as 'editor' | 'analysis' | 'simulator' | 'inspector',
+    rightPanelTab: rightPanelTab as 'lorebook' | 'entry' | 'analysis' | 'inspector' | 'simulator',
   }), [leftWidth, rightWidth, leftCollapsed, rightCollapsed, rightPanelTab])
   useWorkspacePersistence(panelLayout)
 
@@ -476,7 +474,7 @@ export function WorkspaceShell() {
               {/* Panel header with tabs */}
               <div className="border-b border-ctp-surface0 shrink-0 flex items-center justify-between px-1">
                 <div className="flex">
-                  {(['entry', 'analysis', 'inspector', 'simulator'] as RightPanelTab[]).map((tab) => (
+                  {(['lorebook', 'entry', 'analysis', 'inspector', 'simulator'] as RightPanelTab[]).map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setRightPanelTab(tab)}
@@ -486,7 +484,11 @@ export function WorkspaceShell() {
                           : 'text-ctp-overlay1 border-transparent hover:text-ctp-subtext1'
                       }`}
                     >
-                      {tab}
+                      {tab === 'lorebook' ? 'Lorebook'
+                        : tab === 'entry' ? 'Entry'
+                        : tab === 'analysis' ? 'Analysis'
+                        : tab === 'inspector' ? 'Inspection'
+                        : 'Simulator'}
                     </button>
                   ))}
                 </div>
@@ -499,75 +501,55 @@ export function WorkspaceShell() {
                 </button>
               </div>
 
-              {/* Tab: Entry */}
-              {rightPanelTab === 'entry' && (
-                <>
-                  {/* Lorebook Settings section — always shown when a book is open */}
-                  {activeTabId && (
-                    <div className="border-b border-ctp-surface0 shrink-0">
-                      <button
-                        onClick={() => setLorebookSettingsOpen(o => !o)}
-                        className="w-full px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1 hover:text-ctp-subtext0 transition-colors"
-                      >
-                        {lorebookSettingsOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                        Lorebook
-                      </button>
-                      {lorebookSettingsOpen && <BookMetaEditor />}
+              {/* Tab: Lorebook */}
+              {rightPanelTab === 'lorebook' && (
+                <div className="flex flex-col flex-1 overflow-y-auto">
+                  {activeTabId ? (
+                    <BookMetaEditor />
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center">
+                      <p className="text-xs text-ctp-overlay1">No file open</p>
                     </div>
                   )}
+                </div>
+              )}
 
-                  {/* Editor section */}
-                  <div className="flex flex-col flex-1 overflow-hidden">
-                    {activeTabId && (
-                      <div className="flex items-center border-b border-ctp-surface0 shrink-0">
-                        <div
-                          onClick={() => setEditorOpen(o => !o)}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setEditorOpen(o => !o) }}
-                          tabIndex={0}
-                          role="button"
-                          aria-expanded={editorOpen}
-                          className={`flex-1 px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-ctp-overlay1 hover:text-ctp-subtext0 transition-colors cursor-default ${selectedEntry ? '' : 'uppercase'}`}
-                        >
-                          {editorOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                          <span className="truncate">{selectedEntry ? (selectedEntry.name || 'Untitled') : 'Entry'}</span>
-                          {selectedEntry && (
-                            <span onClick={(e) => e.stopPropagation()} className="ml-1">
-                              <Toggle
-                                checked={selectedEntry.enabled}
-                                onChange={handleToggleEnabled}
-                                aria-label={selectedEntry.enabled ? 'Disable entry' : 'Enable entry'}
-                              />
-                            </span>
-                          )}
-                        </div>
-                        {selectedEntryId && (
-                          <button
-                            onClick={() => setModalEntryId(selectedEntryId)}
-                            title="Open in full editor"
-                            className="p-1.5 mr-2 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
-                          >
-                            <Maximize2 size={12} />
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    {editorOpen && (
-                      selectedEntryId ? (
-                        <ErrorBoundary label="Editor">
-                          <EntryEditor entryId={selectedEntryId} />
-                        </ErrorBoundary>
-                      ) : activeTabId ? (
-                        <div className="flex-1 flex items-center justify-center">
-                          <p className="text-xs text-ctp-overlay1">Select an entry to edit</p>
-                        </div>
-                      ) : (
-                        <div className="flex-1 flex items-center justify-center">
-                          <p className="text-xs text-ctp-overlay1">No file open</p>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </>
+              {/* Tab: Entry */}
+              {rightPanelTab === 'entry' && (
+                <div className="flex flex-col flex-1 overflow-hidden">
+                  {activeTabId && selectedEntry && (
+                    <div className="flex items-center border-b border-ctp-surface0 shrink-0 px-3 py-1.5 gap-2">
+                      <span className="flex-1 text-xs font-medium text-ctp-subtext0 truncate">
+                        {selectedEntry.name || 'Untitled'}
+                      </span>
+                      <Toggle
+                        checked={selectedEntry.enabled}
+                        onChange={handleToggleEnabled}
+                        aria-label={selectedEntry.enabled ? 'Disable entry' : 'Enable entry'}
+                      />
+                      <button
+                        onClick={() => setModalEntryId(selectedEntryId!)}
+                        title="Open in full editor"
+                        className="p-1 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
+                      >
+                        <Maximize2 size={12} />
+                      </button>
+                    </div>
+                  )}
+                  {selectedEntryId ? (
+                    <ErrorBoundary label="Editor">
+                      <EntryEditor entryId={selectedEntryId} />
+                    </ErrorBoundary>
+                  ) : activeTabId ? (
+                    <div className="flex-1 flex items-center justify-center">
+                      <p className="text-xs text-ctp-overlay1">Select an entry to edit</p>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center">
+                      <p className="text-xs text-ctp-overlay1">No file open</p>
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Tab: Analysis */}

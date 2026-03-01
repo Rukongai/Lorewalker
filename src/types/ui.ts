@@ -42,7 +42,7 @@ export interface PanelLayout {
   rightPanelWidth: number;
   leftCollapsed: boolean;
   rightCollapsed: boolean;
-  rightPanelTab: 'editor' | 'analysis' | 'simulator' | 'inspector';
+  rightPanelTab: 'lorebook' | 'entry' | 'analysis' | 'inspector' | 'simulator';
 }
 
 export type ThemeId =
