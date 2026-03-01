@@ -94,6 +94,129 @@
   --color-ctp-pink:      #f5bde6;
 }
 
+/* Catppuccin Latte overrides (light theme) */
+:root.theme-catppuccin-latte {
+  --edge-active: #1e66f5;    /* Blue */
+  --edge-selected: #7287fd;  /* Lavender */
+  --edge-incoming: #179299;  /* Teal */
+  --edge-blocked: #9ca0b0;   /* Overlay0 */
+  --edge-cycle: #d20f39;     /* Red */
+
+  --node-constant: #8839ef;  /* Mauve */
+  --node-keyword: #1e66f5;   /* Blue */
+  --node-selective: #179299; /* Teal */
+  --node-disabled: #9ca0b0;  /* Overlay0 */
+
+  --color-ctp-base:      #eff1f5;
+  --color-ctp-mantle:    #e6e9ef;
+  --color-ctp-crust:     #dce0e8;
+  --color-ctp-surface0:  #ccd0da;
+  --color-ctp-surface1:  #bcc0cc;
+  --color-ctp-surface2:  #acb0be;
+  --color-ctp-overlay0:  #9ca0b0;
+  --color-ctp-overlay1:  #8c8fa1;
+  --color-ctp-overlay2:  #7c7f93;
+  --color-ctp-subtext0:  #6c6f85;
+  --color-ctp-subtext1:  #5c5f77;
+  --color-ctp-text:      #4c4f69;
+  --color-ctp-lavender:  #7287fd;
+  --color-ctp-blue:      #1e66f5;
+  --color-ctp-teal:      #179299;
+  --color-ctp-green:     #40a02b;
+  --color-ctp-yellow:    #df8e1d;
+  --color-ctp-peach:     #fe640b;
+  --color-ctp-red:       #d20f39;
+  --color-ctp-mauve:     #8839ef;
+  --color-ctp-sky:       #04a5e5;
+  --color-ctp-sapphire:  #209fb5;
+  --color-ctp-flamingo:  #dd7878;
+  --color-ctp-rosewater: #dc8a78;
+  --color-ctp-maroon:    #e64553;
+  --color-ctp-pink:      #ea76cb;
+}
+
+/* Catppuccin Frappé overrides */
+:root.theme-catppuccin-frappe {
+  --edge-active: #8caaee;    /* Blue */
+  --edge-selected: #babbf1;  /* Lavender */
+  --edge-incoming: #81c8be;  /* Teal */
+  --edge-blocked: #737994;   /* Overlay0 */
+  --edge-cycle: #e78284;     /* Red */
+
+  --node-constant: #ca9ee6;  /* Mauve */
+  --node-keyword: #8caaee;   /* Blue */
+  --node-selective: #81c8be; /* Teal */
+  --node-disabled: #737994;  /* Overlay0 */
+
+  --color-ctp-base:      #303446;
+  --color-ctp-mantle:    #292c3c;
+  --color-ctp-crust:     #232634;
+  --color-ctp-surface0:  #414559;
+  --color-ctp-surface1:  #51576d;
+  --color-ctp-surface2:  #626880;
+  --color-ctp-overlay0:  #737994;
+  --color-ctp-overlay1:  #838ba7;
+  --color-ctp-overlay2:  #949cbb;
+  --color-ctp-subtext0:  #a5adce;
+  --color-ctp-subtext1:  #b5bfe2;
+  --color-ctp-text:      #c6d0f5;
+  --color-ctp-lavender:  #babbf1;
+  --color-ctp-blue:      #8caaee;
+  --color-ctp-teal:      #81c8be;
+  --color-ctp-green:     #a6d189;
+  --color-ctp-yellow:    #e5c890;
+  --color-ctp-peach:     #ef9f76;
+  --color-ctp-red:       #e78284;
+  --color-ctp-mauve:     #ca9ee6;
+  --color-ctp-sky:       #99d1db;
+  --color-ctp-sapphire:  #85c1dc;
+  --color-ctp-flamingo:  #eebebe;
+  --color-ctp-rosewater: #f2d5cf;
+  --color-ctp-maroon:    #ea999c;
+  --color-ctp-pink:      #f4b8e4;
+}
+
+/* Catppuccin Mocha overrides */
+:root.theme-catppuccin-mocha {
+  --edge-active: #89b4fa;    /* Blue */
+  --edge-selected: #b4befe;  /* Lavender */
+  --edge-incoming: #94e2d5;  /* Teal */
+  --edge-blocked: #6c7086;   /* Overlay0 */
+  --edge-cycle: #f38ba8;     /* Red */
+
+  --node-constant: #cba6f7;  /* Mauve */
+  --node-keyword: #89b4fa;   /* Blue */
+  --node-selective: #94e2d5; /* Teal */
+  --node-disabled: #6c7086;  /* Overlay0 */
+
+  --color-ctp-base:      #1e1e2e;
+  --color-ctp-mantle:    #181825;
+  --color-ctp-crust:     #11111b;
+  --color-ctp-surface0:  #313244;
+  --color-ctp-surface1:  #45475a;
+  --color-ctp-surface2:  #585b70;
+  --color-ctp-overlay0:  #6c7086;
+  --color-ctp-overlay1:  #7f849c;
+  --color-ctp-overlay2:  #9399b2;
+  --color-ctp-subtext0:  #a6adc8;
+  --color-ctp-subtext1:  #bac2de;
+  --color-ctp-text:      #cdd6f4;
+  --color-ctp-lavender:  #b4befe;
+  --color-ctp-blue:      #89b4fa;
+  --color-ctp-teal:      #94e2d5;
+  --color-ctp-green:     #a6e3a1;
+  --color-ctp-yellow:    #f9e2af;
+  --color-ctp-peach:     #fab387;
+  --color-ctp-red:       #f38ba8;
+  --color-ctp-mauve:     #cba6f7;
+  --color-ctp-sky:       #89dceb;
+  --color-ctp-sapphire:  #74c7ec;
+  --color-ctp-flamingo:  #f2cdcd;
+  --color-ctp-rosewater: #f5e0dc;
+  --color-ctp-maroon:    #eba0ac;
+  --color-ctp-pink:      #f5c2e7;
+}
+
 /* ─── Base styles ─────────────────────────────────────────────────────────── */
 
 body {
@@ -164,3 +287,51 @@ body {
 .theme-catppuccin-macchiato .cm-kw-cycle::after {
   color: #ee99a0;
 }
+
+/* Catppuccin Latte CodeMirror overrides */
+.theme-catppuccin-latte .cm-selectionBackground,
+.theme-catppuccin-latte .cm-focused .cm-selectionBackground {
+  background: rgba(30,102,245,0.15) !important;
+}
+.theme-catppuccin-latte .cm-kw-normal {
+  background: rgba(30,102,245,0.12);
+  border-bottom: 2px solid rgba(114,135,253,0.75);
+}
+.theme-catppuccin-latte .cm-kw-normal::after { color: #7287fd; }
+.theme-catppuccin-latte .cm-kw-cycle {
+  background: rgba(210,15,57,0.10);
+  border-bottom: 2px solid rgba(230,69,83,0.75);
+}
+.theme-catppuccin-latte .cm-kw-cycle::after { color: #e64553; }
+
+/* Catppuccin Frappé CodeMirror overrides */
+.theme-catppuccin-frappe .cm-selectionBackground,
+.theme-catppuccin-frappe .cm-focused .cm-selectionBackground {
+  background: rgba(140,170,238,0.25) !important;
+}
+.theme-catppuccin-frappe .cm-kw-normal {
+  background: rgba(140,170,238,0.18);
+  border-bottom: 2px solid rgba(186,187,241,0.75);
+}
+.theme-catppuccin-frappe .cm-kw-normal::after { color: #babbf1; }
+.theme-catppuccin-frappe .cm-kw-cycle {
+  background: rgba(231,130,132,0.15);
+  border-bottom: 2px solid rgba(234,153,156,0.75);
+}
+.theme-catppuccin-frappe .cm-kw-cycle::after { color: #ea999c; }
+
+/* Catppuccin Mocha CodeMirror overrides */
+.theme-catppuccin-mocha .cm-selectionBackground,
+.theme-catppuccin-mocha .cm-focused .cm-selectionBackground {
+  background: rgba(137,180,250,0.25) !important;
+}
+.theme-catppuccin-mocha .cm-kw-normal {
+  background: rgba(137,180,250,0.18);
+  border-bottom: 2px solid rgba(180,190,254,0.75);
+}
+.theme-catppuccin-mocha .cm-kw-normal::after { color: #b4befe; }
+.theme-catppuccin-mocha .cm-kw-cycle {
+  background: rgba(243,139,168,0.15);
+  border-bottom: 2px solid rgba(235,160,172,0.75);
+}
+.theme-catppuccin-mocha .cm-kw-cycle::after { color: #eba0ac; }

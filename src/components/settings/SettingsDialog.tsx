@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
+import type { ThemeId } from '@/stores/workspace-store'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
 import { LorebookSettingsPanel } from './LorebookSettingsPanel'
@@ -33,10 +34,13 @@ function GeneralSettingsPanel() {
         <select
           className={inputClass}
           value={theme}
-          onChange={(e) => setTheme(e.target.value as 'dark' | 'catppuccin-macchiato')}
+          onChange={(e) => setTheme(e.target.value as ThemeId)}
         >
           <option value="dark">Default Dark</option>
+          <option value="catppuccin-latte">Catppuccin Latte</option>
+          <option value="catppuccin-frappe">Catppuccin Frappé</option>
           <option value="catppuccin-macchiato">Catppuccin Macchiato</option>
+          <option value="catppuccin-mocha">Catppuccin Mocha</option>
         </select>
       </div>
       <div className="flex items-center justify-between">

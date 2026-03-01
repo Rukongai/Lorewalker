@@ -44,10 +44,12 @@ const DEFAULT_LOREBOOK_DEFAULTS: LorebookDefaults = {
   insertionStrategy: 'evenly',
 }
 
+export type ThemeId = 'dark' | 'catppuccin-macchiato' | 'catppuccin-latte' | 'catppuccin-frappe' | 'catppuccin-mocha'
+
 interface WorkspaceState {
   tabs: TabMeta[]
   activeTabId: string | null
-  theme: 'dark' | 'catppuccin-macchiato'
+  theme: ThemeId
   graphSettings: GraphLayoutSettings
   checkRecursionLoops: boolean
   graphDisplayDefaults: GraphDisplayDefaults
@@ -60,7 +62,7 @@ interface WorkspaceState {
   closeTab(tabId: string): void
   switchTab(tabId: string): void
   markDirty(tabId: string, isDirty: boolean): void
-  setTheme(theme: 'dark' | 'catppuccin-macchiato'): void
+  setTheme(theme: ThemeId): void
   setGraphSettings(settings: GraphLayoutSettings): void
   setCheckRecursionLoops(value: boolean): void
   setGraphDisplayDefaults(settings: GraphDisplayDefaults): void
