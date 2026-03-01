@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { temporal } from 'zundo'
 import { generateId } from '@/lib/uuid'
-import type { WorkingEntry, BookMeta, SimulatorState, SimulationSettings } from '@/types'
+import type { WorkingEntry, BookMeta, SimulatorState, SimulationSettings, Finding, HealthScore } from '@/types'
 
 // --- Selection state ---
 
@@ -36,6 +36,10 @@ export interface DocumentState {
   entries: WorkingEntry[]
   graphPositions: Map<string, { x: number; y: number }>
   bookMeta: BookMeta
+
+  // Derived state (not in undo history)
+  findings: Finding[]
+  healthScore: HealthScore
 
   // UI state (excluded from undo)
   selection: SelectionState
@@ -135,6 +139,20 @@ export function createDocumentStore(init: DocumentStoreInit) {
         entries: init.entries,
         graphPositions: init.graphPositions ?? new Map(),
         bookMeta: init.bookMeta,
+
+        findings: [],
+        healthScore: {
+          overall: 100,
+          categories: {
+            structure: { score: 100, errorCount: 0, warningCount: 0, suggestionCount: 0 },
+            config: { score: 100, errorCount: 0, warningCount: 0, suggestionCount: 0 },
+            keywords: { score: 100, errorCount: 0, warningCount: 0, suggestionCount: 0 },
+            content: { score: 100, errorCount: 0, warningCount: 0, suggestionCount: 0 },
+            recursion: { score: 100, errorCount: 0, warningCount: 0, suggestionCount: 0 },
+            budget: { score: 100, errorCount: 0, warningCount: 0, suggestionCount: 0 },
+          },
+          summary: 'No file open',
+        },
 
         selection: { selectedEntryId: null, multiSelect: [] },
         simulatorState: init.simulatorState ?? DEFAULT_SIMULATOR_STATE,

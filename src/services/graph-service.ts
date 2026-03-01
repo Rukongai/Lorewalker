@@ -219,6 +219,39 @@ export function incrementalUpdate(
   return { edges, reverseEdges, edgeMeta }
 }
 
+export function findIslands(entries: WorkingEntry[], graph: RecursionGraph): string[] {
+  return entries
+    .filter((e) => !e.constant)
+    .filter((e) => (graph.edges.get(e.id)?.size ?? 0) === 0 && (graph.reverseEdges.get(e.id)?.size ?? 0) === 0)
+    .map((e) => e.id)
+}
+
+export function computeChainDepths(graph: RecursionGraph, entries: WorkingEntry[]): Map<string, number> {
+  const depths = new Map<string, number>()
+
+  function dfs(id: string, stack: Set<string>): number {
+    if (stack.has(id)) return 0 // cycle — stop
+    if (depths.has(id)) return depths.get(id)!
+    stack.add(id)
+    const children = graph.edges.get(id) ?? new Set()
+    let max = 0
+    for (const child of children) {
+      max = Math.max(max, 1 + dfs(child, stack))
+    }
+    stack.delete(id)
+    depths.set(id, max)
+    return max
+  }
+
+  for (const entry of entries) {
+    if (!depths.has(entry.id)) {
+      dfs(entry.id, new Set())
+    }
+  }
+
+  return depths
+}
+
 const NODE_WIDTH = 180
 const NODE_HEIGHT = 60
 

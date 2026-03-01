@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import type { RecursionGraph, WorkingEntry, KeywordMatchOptions } from '@/types'
+import type { RecursionGraph, WorkingEntry, KeywordMatchOptions, Finding, HealthScore } from '@/types'
 import { buildGraph, incrementalUpdate, computeLayout } from '@/services/graph-service'
+import { runDeterministic, computeHealthScore } from '@/services/analysis/analysis-service'
+import { defaultRubric } from '@/services/analysis/default-rubric'
 import { createDocumentStore, type DocumentStore } from '@/stores/document-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
 export interface DerivedState {
   graph: RecursionGraph
+  findings: Finding[]
+  healthScore: HealthScore
 }
 
 function emptyGraph(): RecursionGraph {
@@ -14,6 +18,21 @@ function emptyGraph(): RecursionGraph {
     edges: new Map(),
     reverseEdges: new Map(),
     edgeMeta: new Map(),
+  }
+}
+
+function emptyHealthScore(): HealthScore {
+  return {
+    overall: 100,
+    categories: {
+      structure: { score: 100, errorCount: 0, warningCount: 0, suggestionCount: 0 },
+      config: { score: 100, errorCount: 0, warningCount: 0, suggestionCount: 0 },
+      keywords: { score: 100, errorCount: 0, warningCount: 0, suggestionCount: 0 },
+      content: { score: 100, errorCount: 0, warningCount: 0, suggestionCount: 0 },
+      recursion: { score: 100, errorCount: 0, warningCount: 0, suggestionCount: 0 },
+      budget: { score: 100, errorCount: 0, warningCount: 0, suggestionCount: 0 },
+    },
+    summary: 'No file open',
   }
 }
 
@@ -35,6 +54,8 @@ export const EMPTY_STORE: DocumentStore = createDocumentStore({
 
 export function useDerivedState(tabId: string | null): DerivedState {
   const [graph, setGraph] = useState<RecursionGraph>(emptyGraph)
+  const [findings, setFindings] = useState<Finding[]>([])
+  const [healthScore, setHealthScore] = useState<HealthScore>(emptyHealthScore)
   const prevEntriesRef = useRef<WorkingEntry[]>([])
   const prevBookMatchOptionsRef = useRef<KeywordMatchOptions>({ caseSensitive: false, matchWholeWords: false })
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -75,6 +96,22 @@ export function useDerivedState(tabId: string | null): DerivedState {
     [realStore, graphSettings],
   )
 
+  const runAnalysis = useCallback(
+    async (currentEntries: WorkingEntry[], newGraph: RecursionGraph) => {
+      const newFindings = await runDeterministic(
+        { entries: currentEntries, graph: newGraph },
+        defaultRubric,
+      )
+      const newHealthScore = computeHealthScore(newFindings, defaultRubric)
+      if (realStore) {
+        realStore.setState((s) => ({ ...s, findings: newFindings, healthScore: newHealthScore }))
+      }
+      setFindings(newFindings)
+      setHealthScore(newHealthScore)
+    },
+    [realStore],
+  )
+
   const recompute = useCallback(
     (currentEntries: WorkingEntry[], prevEntries: WorkingEntry[], opts: KeywordMatchOptions, prevOpts: KeywordMatchOptions) => {
       const hasStructuralChange =
@@ -89,6 +126,7 @@ export function useDerivedState(tabId: string | null): DerivedState {
         const newGraph = buildGraph(currentEntries, opts)
         setGraph(newGraph)
         persistMissingPositions(currentEntries, newGraph)
+        void runAnalysis(currentEntries, newGraph)
         return
       }
 
@@ -113,19 +151,26 @@ export function useDerivedState(tabId: string | null): DerivedState {
       if (!multipleChanged && changedEntry && changeType) {
         const type = changeType
         const entry = changedEntry
-        setGraph((prev) => incrementalUpdate(prev, entry, currentEntries, opts, type))
+        setGraph((prev) => {
+          const newGraph = incrementalUpdate(prev, entry, currentEntries, opts, type)
+          void runAnalysis(currentEntries, newGraph)
+          return newGraph
+        })
       } else {
         const newGraph = buildGraph(currentEntries, opts)
         setGraph(newGraph)
         persistMissingPositions(currentEntries, newGraph)
+        void runAnalysis(currentEntries, newGraph)
       }
     },
-    [persistMissingPositions],
+    [persistMissingPositions, runAnalysis],
   )
 
   useEffect(() => {
     if (!tabId) {
       setGraph(emptyGraph())
+      setFindings([])
+      setHealthScore(emptyHealthScore())
       prevEntriesRef.current = []
       return
     }
@@ -145,5 +190,5 @@ export function useDerivedState(tabId: string | null): DerivedState {
     }
   }, [entries, bookMatchOptions, tabId, recompute])
 
-  return { graph }
+  return { graph, findings, healthScore }
 }
