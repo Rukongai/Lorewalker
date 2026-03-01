@@ -184,7 +184,7 @@ export function inflate(book: CCv3CharacterBook): InflateResult {
       secondaryKeys: raw.secondary_keys ?? [],
 
       constant: raw.constant ?? false,
-      selective: raw.selective ?? false,
+      selective: (raw.selective ?? false) && (raw.secondary_keys?.length ?? 0) > 0,
       selectiveLogic: normalizeSelectiveLogic(raw.selective_logic),
       enabled: raw.enabled,
 
@@ -288,7 +288,7 @@ export function inflateFromRawST(raw: RawSTBook): InflateResult {
       secondaryKeys: e.keysecondary ?? [],
 
       constant: e.constant ?? false,
-      selective: e.selective ?? false,
+      selective: (e.selective ?? false) && (e.keysecondary?.length ?? 0) > 0,
       selectiveLogic: normalizeSelectiveLogic(e.selectiveLogic ?? 0),
       enabled: !(e.disable ?? false),
 
