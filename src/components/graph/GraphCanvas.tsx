@@ -39,6 +39,9 @@ interface GraphCanvasInnerProps {
 function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasInnerProps) {
   const graphSettings = useWorkspaceStore((s) => s.graphSettings)
   const checkRecursionLoops = useWorkspaceStore((s) => s.checkRecursionLoops)
+  const theme = useWorkspaceStore((s) => s.theme)
+  const isLightTheme = theme === 'catppuccin-latte'
+  const reactFlowColorMode = isLightTheme ? 'light' : 'dark'
   const realStore = documentStoreRegistry.get(tabId)
   const store = realStore ?? EMPTY_STORE
   const entries = store((s) => s.entries)
@@ -247,10 +250,10 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
         onNodeDoubleClick={handleNodeDoubleClick}
         onPaneClick={handlePaneClick}
         fitView={false}
-        colorMode="dark"
+        colorMode={reactFlowColorMode}
         proOptions={{ hideAttribution: true }}
       >
-        <Background color="#374151" gap={20} size={1} />
+        <Background color="var(--color-ctp-surface1)" gap={20} size={1} />
         <MiniMap
           nodeColor={(node) => {
             const d = node.data as EntryNodeData
@@ -260,7 +263,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
             if (d.entry.selective) return 'var(--node-selective)'
             return 'var(--node-keyword)'
           }}
-          maskColor="rgba(0,0,0,0.6)"
+          maskColor={isLightTheme ? 'rgba(239,241,245,0.7)' : 'rgba(0,0,0,0.6)'}
           className="!bg-ctp-mantle !border-ctp-surface1"
           pannable
           zoomable
