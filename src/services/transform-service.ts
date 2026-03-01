@@ -56,22 +56,32 @@ export interface InflateResult {
 }
 
 /**
- * Converts a CCv3 position value to the EntryPosition (0-4) used internally.
+ * Converts a CCv3 position value to the EntryPosition (0–7) used internally.
  * CCv3 uses strings ('before_char', 'after_char', 'in_chat') or numeric values.
- * SillyTavern format passes through numeric values directly.
+ * SillyTavern format passes through numeric values (0–7) directly.
+ *
+ * Position semantics:
+ *   0 — Before Char Defs
+ *   1 — After Char Defs (default)
+ *   2 — Before Example Messages
+ *   3 — After Example Messages
+ *   4 — @ Depth (uses depth + role fields)
+ *   5 — Top of Author's Note
+ *   6 — Bottom of Author's Note
+ *   7 — Outlet (manual placement via {{outlet::Name}} macro)
  */
 function normalizePosition(
   pos: 'before_char' | 'after_char' | 'in_chat' | number | '' | null | undefined
 ): EntryPosition {
-  if (pos === 'before_char') return 4      // Highest priority, before char
-  if (pos === 'after_char') return 0       // After char (default)
-  if (pos === 'in_chat') return 3          // At scene depth
-  if (typeof pos === 'number' && pos >= 0 && pos <= 4) return pos as EntryPosition
-  return 0
+  if (pos === 'before_char') return 0      // Before Char Defs
+  if (pos === 'after_char') return 1       // After Char Defs (default)
+  if (pos === 'in_chat') return 4          // @ Depth
+  if (typeof pos === 'number' && pos >= 0 && pos <= 7) return pos as EntryPosition
+  return 1
 }
 
 /**
- * Converts internal EntryPosition (0-4) back to CCv3 numeric position.
+ * Converts internal EntryPosition (0–7) back to CCv3 numeric position.
  * We store as numeric since that's what SillyTavern reads back.
  */
 function denormalizePosition(pos: EntryPosition): number {

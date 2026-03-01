@@ -176,32 +176,61 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
 
       {/* Priority */}
       <FieldGroup label="Insertion">
-        <Field label="Insertion Position" help="Where the entry's content appears in the final prompt (before/after character info, at conversation depth, etc.). Entries placed closer to the end of the prompt generally have stronger influence on the AI.">
+        <Field label="Insertion Position" help="Where the entry's content is injected in the final prompt. 'Before/After Char Defs' frames the character card; '@ Depth' places content at a specific chat position; 'Author's Note' inserts into the AN block; 'Outlet' skips auto-injection and lets you place content manually via template macro.">
           <select
             value={entry.position}
             onChange={(e) => handleChange('position', Number(e.target.value) as EntryPosition)}
             className={inputClass}
           >
-            <option value={0}>0 — After char (top)</option>
-            <option value={1}>1 — After char</option>
-            <option value={2}>2 — In-chat</option>
-            <option value={3}>3 — Before char</option>
-            <option value={4}>4 — Highest priority</option>
+            <option value={0}>0 — Before Char Defs</option>
+            <option value={1}>1 — After Char Defs (default)</option>
+            <option value={2}>2 — Before Example Messages</option>
+            <option value={3}>3 — After Example Messages</option>
+            <option value={4}>4 — @ Depth</option>
+            <option value={5}>5 — Top of Author's Note</option>
+            <option value={6}>6 — Bottom of Author's Note</option>
+            <option value={7}>7 — Outlet</option>
           </select>
         </Field>
+        {entry.position === 4 && (
+          <>
+            <Field label="Context Depth" help="Chat depth at which this entry is injected. Depth 0 = bottom of the prompt (most recent); higher values insert further up in the conversation history.">
+              <input
+                type="number"
+                value={entry.depth}
+                onChange={(e) => handleChange('depth', Number(e.target.value))}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Role" help="Whether this entry is injected as a system, user, or assistant message.">
+              <select
+                value={entry.role}
+                onChange={(e) => handleChange('role', Number(e.target.value))}
+                className={inputClass}
+              >
+                <option value={0}>System</option>
+                <option value={1}>User</option>
+                <option value={2}>Assistant</option>
+              </select>
+            </Field>
+          </>
+        )}
+        {entry.position === 7 && (
+          <Field label="Outlet Name" help="The named outlet this entry's content is stored under. Reference it in your prompt template with {{outlet::Name}}.">
+            <input
+              type="text"
+              value={entry.outletName}
+              onChange={(e) => handleChange('outletName', e.target.value)}
+              className={inputClass}
+              placeholder="Outlet name"
+            />
+          </Field>
+        )}
         <Field label="Insertion Order" help="Priority when multiple entries activate simultaneously. Higher values place entries closer to the end of the prompt, giving them more influence.">
           <input
             type="number"
             value={entry.order}
             onChange={(e) => handleChange('order', Number(e.target.value))}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Context Depth" help="How many recent chat messages to scan for trigger keywords. 0 scans only recursed content; higher values scan further back in history.">
-          <input
-            type="number"
-            value={entry.depth}
-            onChange={(e) => handleChange('depth', Number(e.target.value))}
             className={inputClass}
           />
         </Field>
@@ -505,17 +534,6 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
 
       {/* Advanced */}
       <FieldGroup label="Advanced" stOnly defaultCollapsed>
-        <Field label="Role" help="Inserts the entry as a system, user, or assistant message in role-aware injection formats.">
-          <select
-            value={entry.role}
-            onChange={(e) => handleChange('role', Number(e.target.value))}
-            className={inputClass}
-          >
-            <option value={0}>System</option>
-            <option value={1}>User</option>
-            <option value={2}>Assistant</option>
-          </select>
-        </Field>
         <Field label="Automation ID" help="Connects this entry to an STscript in Quick Replies. When the entry activates, the matching script runs automatically.">
           <input
             type="text"
@@ -523,15 +541,6 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
             onChange={(e) => handleChange('automationId', e.target.value)}
             className={inputClass}
             placeholder="Automation ID"
-          />
-        </Field>
-        <Field label="Outlet Name" help="Places this entry's content at a named outlet in your prompt template instead of a standard injection position.">
-          <input
-            type="text"
-            value={entry.outletName}
-            onChange={(e) => handleChange('outletName', e.target.value)}
-            className={inputClass}
-            placeholder="Outlet name"
           />
         </Field>
         <div className="grid grid-cols-2 gap-2">

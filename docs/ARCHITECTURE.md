@@ -449,12 +449,12 @@ User clicks "Deep Analysis"
 **Structure category:**
 - `structure/valid-json`: Verify entries have all required fields with correct types
 - `structure/uid-consistency`: Check that UIDs are sequential and non-duplicate
-- `structure/field-types`: Validate field value ranges (position 0-4, probability 1-100, etc.)
+- `structure/field-types`: Validate field value ranges (position 0–7, probability 1-100, etc.)
 
 **Configuration category:**
 - `config/selective-logic`: Flag selective:true with empty keysecondary (error)
 - `config/unused-secondary`: Flag non-empty keysecondary with selective:false (suggestion)
-- `config/position-alignment`: Constant entries should have position 4; sticky entries should have position 3 (warning)
+- `config/position-alignment`: Constant entries should use positions 0–3 (character/lore blocks); sticky entries are expected at position 4 (@ Depth). Mismatches flagged as warning.
 - `config/rule-content-mismatch`: Content starts with RULE: but constant is false (warning)
 - `config/fixed-value-deviations`: Check vectorized, useProbability, excludeRecursion, addMemo against expected defaults (warning)
 - `config/disabled-entries`: Flag disable:true entries (suggestion — might be intentional)

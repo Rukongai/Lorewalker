@@ -29,7 +29,7 @@ interface WorkingEntry {
   enabled: boolean;               // Master toggle (ST "disable" inverted)
 
   // === Priority ===
-  position: EntryPosition;        // Where in context the entry is injected (0-4)
+  position: EntryPosition;        // Where in context the entry is injected (0–7)
   order: number;                  // Priority within position (higher = inserted first)
   depth: number;                  // Context depth for injection
 
@@ -64,11 +64,14 @@ type SelectiveLogic =
   | 3;  // NOT ALL: primary, but not all secondary
 
 type EntryPosition =
-  | 0   // After character card (locations, general lore, items, flavor)
-  | 1   // After character card, higher priority (character backgrounds, relationships)
-  | 2   // After character card (speech patterns, dialogue quirks)
-  | 3   // At scene depth (combat events, weather, injuries, temporary conditions)
-  | 4;  // Highest priority (fundamental world rules, physics, absolute laws)
+  | 0   // Before Char Defs — inserted before character description and scenario
+  | 1   // After Char Defs — inserted after character description and scenario (default)
+  | 2   // Before Example Messages — injected as authored dialogue before examples
+  | 3   // After Example Messages — injected as authored dialogue after examples
+  | 4   // @ Depth — inserted at a specific chat depth (uses depth + role fields)
+  | 5   // Top of Author's Note — inserted at top of AN content
+  | 6   // Bottom of Author's Note — inserted at bottom of AN content
+  | 7;  // Outlet — not injected automatically; placed via {{outlet::Name}} macro
 
 type LorebookFormat =
   | 'ccv3'
