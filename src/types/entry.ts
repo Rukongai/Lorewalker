@@ -106,6 +106,7 @@ export interface BookMeta {
   description: string;
   scanDepth: number;
   tokenBudget: number;
+  contextSize: number;   // Lorewalker-only display field (not exported). Default 200000.
   recursiveScan: boolean;
   caseSensitive: boolean;
   matchWholeWords: boolean;

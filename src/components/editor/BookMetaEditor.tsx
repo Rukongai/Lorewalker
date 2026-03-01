@@ -118,14 +118,27 @@ export function BookMetaEditor() {
 
       {/* Budget */}
       <FieldGroup label="Budget" defaultCollapsed>
-        <Field label="Context %" help="Percentage of the total context window reserved for World Info entries. Controls how much lore can be injected before the budget is exhausted.">
+        <Field label="Context Size" help="Total context window size in tokens. Used to compute the Context % budget. Not exported to the lorebook file.">
           <input
             type="number"
-            min={0}
-            value={bookMeta.tokenBudget}
-            onChange={(e) => handleChange('tokenBudget', Number(e.target.value))}
+            min={1000}
+            value={bookMeta.contextSize}
+            onChange={(e) => handleChange('contextSize', Number(e.target.value))}
             className={inputClass}
           />
+        </Field>
+        <Field label="Context %" help="Percentage of the total context window reserved for World Info entries. Controls how much lore can be injected before the budget is exhausted.">
+          <div className="flex items-center gap-1">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={Math.min(100, Math.round((bookMeta.tokenBudget / bookMeta.contextSize) * 100))}
+              onChange={(e) => handleChange('tokenBudget', Math.round((Number(e.target.value) / 100) * bookMeta.contextSize))}
+              className={inputClass}
+            />
+            <span className="text-xs text-ctp-subtext1 shrink-0">%</span>
+          </div>
         </Field>
         <Field label="Budget Cap" help="Hard maximum token count for all lorebook content combined, regardless of the percentage setting. Set to 0 for no hard cap.">
           <input

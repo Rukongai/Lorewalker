@@ -45,6 +45,7 @@ export const EMPTY_STORE: DocumentStore = createDocumentStore({
     description: '',
     scanDepth: 4,
     tokenBudget: 4096,
+    contextSize: 200000,
     recursiveScan: false,
     caseSensitive: false,
     matchWholeWords: false,

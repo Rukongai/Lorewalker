@@ -62,6 +62,7 @@ function makeBookMeta(overrides: Partial<BookMeta> = {}): BookMeta {
     description: '',
     scanDepth: 4,
     tokenBudget: 2048,
+    contextSize: 200000,
     recursiveScan: false,
     caseSensitive: false,
     matchWholeWords: false,
