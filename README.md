@@ -1,73 +1,77 @@
-# React + TypeScript + Vite
+> [!WARNING]
+> **This is early alpha software — here be dragons.**
+> There is **no persistence yet**. If you refresh the page, **your work is gone**. This is the most important thing to know before you use it.
+>
+> That said — if the idea appeals to you, please try it! Open issues when you find bugs. Real-world use cases help more than anything.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+---
 
-Currently, two official plugins are available:
+# Lorewalker
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Lorewalker is a local-first lorebook editor, visualizer, and analysis tool for AI roleplay platforms like SillyTavern. It transforms flat JSON lorebook files into an interactive graph-based editing experience — letting you see how your entries connect, catch structural problems, and simulate activation, all without any backend or account.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## What's Working Now (Phases 0–2)
 
-## Expanding the ESLint configuration
+- **Import / Export** — drag-and-drop or file picker; full SillyTavern lorebook JSON round-trip
+- **Entry editor** — all CCv3 lorebook entry fields with live token counting
+- **Multi-tab workspace** — open multiple lorebooks at once, each with independent undo/redo
+- **Recursion graph** — interactive node graph visualizing keyword-triggered entry chains
+  - Solid edges = active links; dashed = blocked (`preventRecursion` / `excludeRecursion`); red = cycle
+  - Auto-layout (dagre), minimap, zoom, fit-to-view
+  - Bidirectional selection: click a node to highlight the entry in the list, and vice versa
+  - Double-click a node to jump straight to editing that entry
+- **Theme system** — 14+ themes including Catppuccin variants, Nord, One Dark, Dracula, Rosé Pine, Tokyo Night, and light variants
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## What's Coming (Phases 3–8)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+| Phase | Feature |
+|-------|---------|
+| 3 | **Deterministic health analysis** — 28 built-in rules across structure, configuration, keywords, recursion, and budget categories; real-time health scoring |
+| 4 | **Activation simulator** — simulate SillyTavern's entry activation logic against mock messages, with step-by-step recursion trace |
+| 5 | **Autosave & crash recovery** — IndexedDB-backed autosave; restore your session after a browser crash *(this is when the "refresh = data loss" problem goes away)* |
+| 6 | **LLM-powered deep analysis** — BYOK qualitative review via any OpenAI-compatible endpoint or Anthropic; content quality, keyword suggestions, splitting recommendations |
+| 7 | **Graph editing** — create and delete recursion links by dragging edges directly on the graph canvas |
+| 8 | **Desktop app** — Tauri-based native wrapper with native file dialogs and system keychain for API keys |
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+---
+
+## Running Locally
+
+```bash
+git clone https://github.com/Rukongai/Lorewalker
+cd Lorewalker
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Then open `http://localhost:5173` in your browser.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+> No account, no backend, no network requests. Everything runs in your browser.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+---
+
+## Tech Stack
+
+- [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) + [Vite](https://vitejs.dev/)
+- [@xyflow/react](https://reactflow.dev/) — graph canvas
+- [Zustand](https://zustand-demo.pmnd.rs/) + [immer](https://immerjs.github.io/immer/) + [zundo](https://github.com/charkour/zundo) — state and undo/redo
+- [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
+- [@character-foundry/character-foundry](https://github.com/character-foundry/character-foundry) — lorebook format parsing
+
+---
+
+## Contributing / Issues
+
+Found a bug? Have a use case that doesn't work? [Open an issue](https://github.com/Rukongai/Lorewalker/issues). Real-world use cases are genuinely the most helpful thing at this stage — they shape which features get prioritized.
+
+---
+
+## Support
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/rukongai)
+
+If Lorewalker saves you time or sanity, consider buying me a coffee. It's entirely optional but very appreciated.
