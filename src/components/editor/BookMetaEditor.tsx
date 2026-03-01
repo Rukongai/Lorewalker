@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
+import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import type { BookMeta } from '@/types'
 
 function FieldGroup({ label, defaultCollapsed = false, children }: {
@@ -25,12 +26,12 @@ function FieldGroup({ label, defaultCollapsed = false, children }: {
   )
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({ label, help, children }: { label: string; help?: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[10px] text-gray-500">
+      <span className="text-[10px] text-gray-500 flex items-center">
         {label}
-        {hint && <span className="ml-1 text-gray-600 normal-case">— {hint}</span>}
+        {help && <HelpTooltip text={help} />}
       </span>
       {children}
     </label>
@@ -69,7 +70,7 @@ export function BookMetaEditor() {
     <div className="flex-1 overflow-y-auto text-sm">
       {/* Book Info */}
       <FieldGroup label="Book Info">
-        <Field label="Name">
+        <Field label="Name" help="The display name of this lorebook. Used as a label in the editor only — not injected into the AI's context.">
           <input
             type="text"
             value={bookMeta.name}
@@ -78,7 +79,7 @@ export function BookMetaEditor() {
             placeholder="Lorebook name"
           />
         </Field>
-        <Field label="Description">
+        <Field label="Description" help="A brief summary of this lorebook's purpose or content. Shown in the editor only.">
           <textarea
             value={bookMeta.description}
             onChange={(e) => handleChange('description', e.target.value)}
@@ -90,7 +91,7 @@ export function BookMetaEditor() {
 
       {/* Scanning */}
       <FieldGroup label="Scanning">
-        <Field label="Scan Depth" hint="How many messages back to scan for keywords">
+        <Field label="Scan Depth" help="How many messages back in chat history to scan for keyword triggers. Higher values catch older context but cost more processing time.">
           <input
             type="number"
             min={0}
@@ -106,7 +107,8 @@ export function BookMetaEditor() {
             onChange={(e) => handleChange('includeNames', e.target.checked)}
             className={checkboxClass}
           />
-          Include Names — Include message author names in keyword scan
+          Include Names
+          <HelpTooltip text="Also scans message author names (user/character) for trigger keywords." />
         </label>
         <label className="flex items-center gap-2 text-xs text-gray-400">
           <input
@@ -116,6 +118,7 @@ export function BookMetaEditor() {
             className={checkboxClass}
           />
           Case-sensitive Keys
+          <HelpTooltip text="When on, keywords must match exact letter casing ('Dragon' won't match 'dragon'). Off by default." />
         </label>
         <label className="flex items-center gap-2 text-xs text-gray-400">
           <input
@@ -125,12 +128,13 @@ export function BookMetaEditor() {
             className={checkboxClass}
           />
           Match Whole Words
+          <HelpTooltip text="When on, keywords only match complete words ('ring' won't match 'spring'). Off by default." />
         </label>
       </FieldGroup>
 
       {/* Budget */}
       <FieldGroup label="Budget" defaultCollapsed>
-        <Field label="Context %" hint="Token budget for World Info entries">
+        <Field label="Context %" help="Percentage of the total context window reserved for World Info entries. Controls how much lore can be injected before the budget is exhausted.">
           <input
             type="number"
             min={0}
@@ -139,7 +143,7 @@ export function BookMetaEditor() {
             className={inputClass}
           />
         </Field>
-        <Field label="Budget Cap" hint="Hard token cap; 0 = no cap">
+        <Field label="Budget Cap" help="Hard maximum token count for all lorebook content combined, regardless of the percentage setting. Set to 0 for no hard cap.">
           <input
             type="number"
             min={0}
@@ -156,8 +160,9 @@ export function BookMetaEditor() {
             className={checkboxClass}
           />
           Alert on Overflow
+          <HelpTooltip text="Triggers a warning when lorebook content exceeds the configured token budget." />
         </label>
-        <Field label="Insertion Strategy">
+        <Field label="Insertion Strategy" help="Determines which lorebook entries get priority when competing for limited context space. 'Sorted Evenly' interleaves character and global lore; the others front-load one type.">
           <select
             value={bookMeta.insertionStrategy}
             onChange={(e) => handleChange('insertionStrategy', e.target.value as 'evenly' | 'character_lore_first' | 'global_lore_first')}
@@ -180,8 +185,9 @@ export function BookMetaEditor() {
             className={checkboxClass}
           />
           Recursive Scan
+          <HelpTooltip text="When on, newly activated entries are also scanned for keywords, allowing chains of entries to activate each other." />
         </label>
-        <Field label="Max Recursion Steps" hint="0 = unlimited">
+        <Field label="Max Recursion Steps" help="Caps how many recursive scan passes occur per generation. Set to 0 for unlimited recursion (not recommended).">
           <input
             type="number"
             min={0}
@@ -190,7 +196,7 @@ export function BookMetaEditor() {
             className={inputClass}
           />
         </Field>
-        <Field label="Min Activations" hint="Minimum entries to activate; 0 = disabled">
+        <Field label="Min Activations" help="Forces at least this many entries to activate even with no keyword matches, scanning progressively older messages as needed. Set to 0 to disable.">
           <input
             type="number"
             min={0}
@@ -199,7 +205,7 @@ export function BookMetaEditor() {
             className={inputClass}
           />
         </Field>
-        <Field label="Max Depth" hint="Max message depth for Min Activations; 0 = unlimited">
+        <Field label="Max Depth" help="How far back in chat history Min Activations is allowed to scan. Set to 0 for unlimited depth.">
           <input
             type="number"
             min={0}
@@ -219,7 +225,8 @@ export function BookMetaEditor() {
             onChange={(e) => handleChange('useGroupScoring', e.target.checked)}
             className={checkboxClass}
           />
-          Use Group Scoring — Global default; entries can override
+          Use Group Scoring
+          <HelpTooltip text="Global default for how entries compete within inclusion groups. When on, the entry with the most keyword matches wins; when off, entries are chosen by random weight rolling. Individual entries can override this setting." />
         </label>
       </FieldGroup>
     </div>
