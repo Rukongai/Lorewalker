@@ -107,11 +107,9 @@ export function EntryList() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <span className="text-xs text-gray-400">Pin Constants</span>
-                <HelpCircle
-                  size={11}
-                  className="text-gray-600 cursor-help"
-                  title="Always show constant entries at the top of the list, regardless of sort order"
-                />
+                <span title="Float constant (always-active) entries to the top, ignoring sort order.">
+                  <HelpCircle size={11} className="text-gray-600 cursor-help" />
+                </span>
               </div>
               <button
                 role="switch"
@@ -127,11 +125,9 @@ export function EntryList() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <span className="text-xs text-gray-400">Display</span>
-                <HelpCircle
-                  size={11}
-                  className="text-gray-600 cursor-help"
-                  title="Choose what metric to show on each entry row: token count or insertion order"
-                />
+                <span title="The number shown on each row — token count or insertion order.">
+                  <HelpCircle size={11} className="text-gray-600 cursor-help" />
+                </span>
               </div>
               <div className="flex items-center rounded overflow-hidden border border-gray-700 text-xs">
                 <button
@@ -154,11 +150,9 @@ export function EntryList() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <span className="text-xs text-gray-400">Sort</span>
-                <HelpCircle
-                  size={11}
-                  className="text-gray-600 cursor-help"
-                  title="Primary sort field for the entry list"
-                />
+                <span title="Primary field to sort entries by.">
+                  <HelpCircle size={11} className="text-gray-600 cursor-help" />
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <select
@@ -186,11 +180,9 @@ export function EntryList() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <span className="text-xs text-gray-400">Then</span>
-                <HelpCircle
-                  size={11}
-                  className="text-gray-600 cursor-help"
-                  title="Secondary sort field, applied when the primary sort produces a tie"
-                />
+                <span title="Tiebreaker field used when two entries share the same primary sort value.">
+                  <HelpCircle size={11} className="text-gray-600 cursor-help" />
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 <select
