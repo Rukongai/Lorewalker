@@ -3,7 +3,7 @@ import { X } from 'lucide-react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { useDerivedState } from '@/hooks/useDerivedState'
 import { EntryEditor } from './EntryEditor'
-import { InspectorPanel } from '@/components/analysis/InspectorPanel'
+import { ActivationLinks } from './ActivationLinks'
 import { ModalFindingsPane } from '@/components/analysis/ModalFindingsPane'
 
 interface EntryEditorModalProps {
@@ -54,13 +54,11 @@ export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
             entryId={currentEntryId}
             layout="quadrant"
             onNavigate={setCurrentEntryId}
-            renderTopRight={() => (
-              <InspectorPanel
-                tabId={activeTabId}
+            renderBottomLeft={() => (
+              <ActivationLinks
+                entryId={currentEntryId}
                 graph={graph}
-                showFindings={false}
                 onNavigate={setCurrentEntryId}
-                selectedEntryIdOverride={currentEntryId}
               />
             )}
             renderBottomRight={() => (

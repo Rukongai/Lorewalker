@@ -62,7 +62,7 @@ interface EntryEditorProps {
   entryId: string
   layout?: 'single' | 'wide' | 'quadrant'
   onNavigate?: (entryId: string) => void
-  renderTopRight?: () => React.ReactNode
+  renderBottomLeft?: () => React.ReactNode
   renderBottomRight?: () => React.ReactNode
 }
 
@@ -131,32 +131,32 @@ function QuadrantLayout({
   nameField,
   contentField,
   fieldGroups,
-  renderTopRight,
+  renderBottomLeft,
   renderBottomRight,
 }: {
   nameField: React.ReactNode
   contentField: React.ReactNode
   fieldGroups: React.ReactNode
-  renderTopRight?: () => React.ReactNode
+  renderBottomLeft?: () => React.ReactNode
   renderBottomRight?: () => React.ReactNode
 }) {
   return (
     <div className="grid h-full" style={{
       gridTemplateColumns: '60fr 40fr',
-      gridTemplateRows: '55fr 45fr',
+      gridTemplateRows: '40fr 60fr',
     }}>
       {/* Top-left: name + content */}
       <div className="overflow-y-auto p-3 space-y-3 border-r border-b border-ctp-surface1">
         {nameField}
         {contentField}
       </div>
-      {/* Top-right: connections pane (injected by modal) */}
-      <div className="overflow-hidden border-b border-ctp-surface1">
-        {renderTopRight?.()}
-      </div>
-      {/* Bottom-left: all field groups */}
-      <div className="overflow-y-auto border-r border-ctp-surface1">
+      {/* Top-right: all field groups */}
+      <div className="overflow-y-auto border-b border-ctp-surface1">
         {fieldGroups}
+      </div>
+      {/* Bottom-left: connections pane (injected by modal) */}
+      <div className="overflow-hidden border-r border-ctp-surface1">
+        {renderBottomLeft?.()}
       </div>
       {/* Bottom-right: findings pane (injected by modal) */}
       <div className="overflow-hidden">
@@ -166,7 +166,7 @@ function QuadrantLayout({
   )
 }
 
-export function EntryEditor({ entryId, layout = 'single', onNavigate, renderTopRight, renderBottomRight }: EntryEditorProps) {
+export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBottomLeft, renderBottomRight }: EntryEditorProps) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
@@ -670,7 +670,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderTopR
         nameField={nameField}
         contentField={contentField}
         fieldGroups={fieldGroups}
-        renderTopRight={renderTopRight}
+        renderBottomLeft={renderBottomLeft}
         renderBottomRight={renderBottomRight}
       />
     )
