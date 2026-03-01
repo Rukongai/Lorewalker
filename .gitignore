@@ -26,3 +26,4 @@ dist-ssr
 references/
 .playwright-mcp/
 .claude/agent-memory/
+./docs/plans/
