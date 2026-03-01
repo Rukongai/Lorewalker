@@ -24,6 +24,7 @@ import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import type { EntryNodeData } from './EntryNode'
 import type { RecursionEdgeData } from './RecursionEdge'
+import type { FindingSeverity } from '@/types'
 
 const nodeTypes = { entryNode: EntryNode }
 const edgeTypes = { recursionEdge: RecursionEdge }
@@ -51,7 +52,24 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
   const entries = store((s) => s.entries)
   const graphPositions = store((s) => s.graphPositions)
   const selectedEntryId = store((s) => s.selection.selectedEntryId)
+  const findings = store((s) => s.findings)
   const { graph } = useDerivedState(tabId)
+
+  // Compute worst severity per entry for health dots
+  const SEVERITY_RANK: Record<FindingSeverity, number> = { error: 2, warning: 1, suggestion: 0 }
+  const entryWorstSeverity = useMemo(() => {
+    const map = new Map<string, FindingSeverity>()
+    for (const finding of findings) {
+      for (const id of finding.entryIds) {
+        const current = map.get(id)
+        if (!current || SEVERITY_RANK[finding.severity] > SEVERITY_RANK[current]) {
+          map.set(id, finding.severity)
+        }
+      }
+    }
+    return map
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [findings])
   const { fitView, getNode, setCenter } = useReactFlow()
 
   const graphDisplayDefaults = useWorkspaceStore((s) => s.graphDisplayDefaults)
@@ -88,10 +106,10 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
       type: 'entryNode',
       position: graphPositions.get(entry.id) ?? { x: 0, y: 0 },
       selected: entry.id === selectedEntryId,
-      data: { entry, isCyclic: cycleInfo.cycleNodeIds.has(entry.id), edgeDirection: graphSettings.edgeDirection },
+      data: { entry, isCyclic: cycleInfo.cycleNodeIds.has(entry.id), edgeDirection: graphSettings.edgeDirection, severity: entryWorstSeverity.get(entry.id) ?? null },
     }))
     setNodes(newNodes)
-  }, [entries, graphPositions, selectedEntryId, cycleInfo, graphSettings, setNodes])
+  }, [entries, graphPositions, selectedEntryId, cycleInfo, graphSettings, entryWorstSeverity, setNodes])
 
   // Sync graph → React Flow edges
   useEffect(() => {

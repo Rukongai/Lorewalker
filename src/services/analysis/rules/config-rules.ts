@@ -63,7 +63,7 @@ const positionAlignmentRule: Rule = {
   async evaluate(context: AnalysisContext): Promise<Finding[]> {
     const findings: Finding[] = []
     for (const entry of context.entries) {
-      if ((entry.constant === true && entry.position > 3) || (entry.sticky > 0 && entry.position !== 4)) {
+      if ((entry.constant === true && entry.position > 3) || ((entry.sticky ?? 0) > 0 && entry.position !== 4)) {
         const reason =
           entry.constant === true && entry.position > 3
             ? `constant entry is at position ${entry.position} (expected 0–3)`
@@ -181,7 +181,7 @@ const stickyOnNonEventsRule: Rule = {
   async evaluate(context: AnalysisContext): Promise<Finding[]> {
     const findings: Finding[] = []
     for (const entry of context.entries) {
-      if (entry.sticky > 0 && !entry.selective && entry.position < 4) {
+      if ((entry.sticky ?? 0) > 0 && !entry.selective && entry.position < 4) {
         findings.push({
           id: generateId(),
           ruleId: 'config/sticky-on-non-events',

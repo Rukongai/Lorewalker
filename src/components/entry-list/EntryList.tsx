@@ -6,7 +6,7 @@ import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { EntryListItem } from './EntryListItem'
 import { Toggle } from '@/components/shared/Toggle'
-import type { WorkingEntry, SortKey } from '@/types'
+import type { WorkingEntry, SortKey, FindingSeverity } from '@/types'
 
 export function EntryList() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
@@ -24,6 +24,19 @@ export function EntryList() {
   const activeStore = realStore ?? EMPTY_STORE
   const entries: WorkingEntry[] = activeStore((s) => s.entries)
   const selectedId = activeStore((s) => s.selection.selectedEntryId)
+  const findings = activeStore((s) => s.findings)
+
+  // Compute worst severity per entry
+  const SEVERITY_RANK: Record<FindingSeverity, number> = { error: 2, warning: 1, suggestion: 0 }
+  const entryWorstSeverity = new Map<string, FindingSeverity>()
+  for (const finding of findings) {
+    for (const id of finding.entryIds) {
+      const current = entryWorstSeverity.get(id)
+      if (!current || SEVERITY_RANK[finding.severity] > SEVERITY_RANK[current]) {
+        entryWorstSeverity.set(id, finding.severity)
+      }
+    }
+  }
 
   function handleSelect(id: string) {
     realStore?.getState().selectEntry(id)
@@ -214,6 +227,7 @@ export function EntryList() {
               onSelect={handleSelect}
               onToggleEnabled={handleToggleEnabled}
               displayMetric={displayMetric}
+              severity={entryWorstSeverity.get(entry.id) ?? null}
             />
           ))
         )}

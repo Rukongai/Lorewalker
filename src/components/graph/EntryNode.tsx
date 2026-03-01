@@ -1,11 +1,13 @@
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
-import type { WorkingEntry } from '@/types'
+import type { WorkingEntry, FindingSeverity } from '@/types'
+import { severityColor } from '@/lib/severity-color'
 
 export interface EntryNodeData {
   entry: WorkingEntry
   isCyclic: boolean
   edgeDirection: 'LR' | 'TB'
+  severity: FindingSeverity | null
   [key: string]: unknown
 }
 
@@ -33,7 +35,7 @@ const ACTIVATION_BADGE: Record<ActivationType, string> = {
 }
 
 export function EntryNode({ data, selected }: NodeProps<EntryNodeData>) {
-  const { entry, isCyclic, edgeDirection } = data
+  const { entry, isCyclic, edgeDirection, severity } = data
   const activationType = getActivationType(entry)
   const accentColor = ACTIVATION_COLORS[activationType]
   const isLR = edgeDirection !== 'TB'
@@ -69,8 +71,11 @@ export function EntryNode({ data, selected }: NodeProps<EntryNodeData>) {
 
       <div className="flex items-center justify-between">
         <span className="text-[10px] text-ctp-overlay1">{entry.tokenCount}t</span>
-        {/* Health dot placeholder — Phase 3 fills this with real severity */}
-        <span className="w-2 h-2 rounded-full bg-ctp-overlay0" title="Health (Phase 3)" />
+        <span
+          className="w-2 h-2 rounded-full shrink-0"
+          style={{ background: severityColor(severity) }}
+          title={severity ?? 'No issues'}
+        />
       </div>
 
       <Handle type="source" position={isLR ? Position.Right : Position.Bottom} className="!bg-ctp-overlay0 !border-ctp-overlay0" />

@@ -1,6 +1,7 @@
 import { cn } from '@/lib/cn'
-import type { WorkingEntry } from '@/types'
+import type { WorkingEntry, FindingSeverity } from '@/types'
 import { Toggle } from '@/components/shared/Toggle'
+import { severityColor } from '@/lib/severity-color'
 
 interface EntryListItemProps {
   entry: WorkingEntry
@@ -8,6 +9,7 @@ interface EntryListItemProps {
   onSelect: (id: string) => void
   onToggleEnabled: (id: string) => void
   displayMetric: 'tokens' | 'order'
+  severity: FindingSeverity | null
 }
 
 function getTypeBadge(entry: WorkingEntry): { label: string; color: string } {
@@ -18,7 +20,7 @@ function getTypeBadge(entry: WorkingEntry): { label: string; color: string } {
   return { label: 'KW', color: 'bg-ctp-blue/50 text-ctp-blue ring-1 ring-ctp-blue/40' }
 }
 
-export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, displayMetric }: EntryListItemProps) {
+export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, displayMetric, severity }: EntryListItemProps) {
   const badge = getTypeBadge(entry)
 
   return (
@@ -44,6 +46,13 @@ export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, di
           aria-label={entry.enabled ? 'Disable entry' : 'Enable entry'}
         />
       </span>
+
+      {/* Health dot */}
+      <span
+        className="w-2 h-2 rounded-full shrink-0"
+        style={{ background: severityColor(severity) }}
+        title={severity ?? 'No issues'}
+      />
 
       {/* Name */}
       <span className="flex-1 truncate text-xs">{entry.name || <em className="text-ctp-overlay0">Untitled</em>}</span>
