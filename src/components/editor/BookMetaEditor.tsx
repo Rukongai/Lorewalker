@@ -17,7 +17,7 @@ function FieldGroup({ label, defaultCollapsed = false, children }: {
     <div className="mb-4">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full text-left text-[10px] font-semibold tracking-wider text-ctp-overlay0 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-ctp-overlay1 transition-colors"
+        className="w-full text-left text-[10px] font-semibold tracking-wider text-ctp-overlay1 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-ctp-subtext0 transition-colors"
       >
         {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
         {label}
@@ -30,7 +30,7 @@ function FieldGroup({ label, defaultCollapsed = false, children }: {
 function Field({ label, help, children }: { label: string; help?: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-[10px] text-ctp-overlay0 flex items-center">
+      <span className="text-[10px] text-ctp-overlay1 flex items-center">
         {label}
         {help && <HelpTooltip text={help} />}
       </span>
@@ -60,7 +60,7 @@ export function BookMetaEditor() {
   if (!activeTabId) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-xs text-ctp-overlay0">No book open</p>
+        <p className="text-xs text-ctp-overlay1">No book open</p>
       </div>
     )
   }

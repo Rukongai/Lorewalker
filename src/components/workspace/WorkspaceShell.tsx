@@ -145,7 +145,7 @@ export function WorkspaceShell() {
         <div className="flex items-center gap-3">
           <span className="text-lg font-semibold text-ctp-lavender">Lorewalker</span>
           {activeTab && (
-            <span className="text-xs text-ctp-overlay0">{activeTab.fileMeta.fileName}</span>
+            <span className="text-xs text-ctp-overlay1">{activeTab.fileMeta.fileName}</span>
           )}
         </div>
 
@@ -155,7 +155,7 @@ export function WorkspaceShell() {
             onClick={handleUndo}
             disabled={!canUndo}
             title="Undo (Ctrl+Z)"
-            className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 disabled:opacity-50 transition-colors"
+            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
           >
             <Undo2 size={16} />
           </button>
@@ -165,7 +165,7 @@ export function WorkspaceShell() {
             onClick={handleRedo}
             disabled={!canRedo}
             title="Redo"
-            className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 disabled:opacity-50 transition-colors"
+            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
           >
             <Redo2 size={16} />
           </button>
@@ -175,7 +175,7 @@ export function WorkspaceShell() {
             onClick={handleSave}
             disabled={!activeTabId}
             title="Save (Ctrl+S)"
-            className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 disabled:opacity-50 transition-colors"
+            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
           >
             <Save size={16} />
           </button>
@@ -183,7 +183,7 @@ export function WorkspaceShell() {
           {/* Open file */}
           <label
             title="Open file"
-            className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 cursor-pointer transition-colors"
+            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 cursor-pointer transition-colors"
           >
             <Upload size={16} />
             <input
@@ -198,7 +198,7 @@ export function WorkspaceShell() {
           <button
             onClick={() => setSettingsOpen(true)}
             title="Settings"
-            className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
+            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
           >
             <Settings size={16} />
           </button>
@@ -227,7 +227,7 @@ export function WorkspaceShell() {
 
         {/* Left panel: entry list */}
         <aside
-          className="shrink-0 border-r border-ctp-surface0 bg-ctp-base flex flex-col overflow-hidden"
+          className="shrink-0 border-r border-ctp-surface1 bg-ctp-mantle flex flex-col overflow-hidden"
           style={{
             width: leftCollapsed ? COLLAPSED_WIDTH : leftWidth,
             transition: isResizing ? 'none' : 'width 200ms ease-in-out',
@@ -235,7 +235,7 @@ export function WorkspaceShell() {
         >
           {leftCollapsed ? (
             <button
-              className="flex-1 flex items-center justify-center text-ctp-overlay0 hover:text-ctp-subtext0 hover:bg-ctp-surface0 transition-colors"
+              className="flex-1 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
               onClick={() => setLeftCollapsed(false)}
               title="Expand entries panel"
             >
@@ -244,12 +244,12 @@ export function WorkspaceShell() {
           ) : (
             <>
               <div className="p-3 border-b border-ctp-surface0 shrink-0 flex items-center justify-between">
-                <span className="text-xs font-medium text-ctp-overlay1 uppercase tracking-wider">Entries</span>
+                <span className="text-xs font-medium text-ctp-subtext0 uppercase tracking-wider">Entries</span>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => setLeftCollapsed(true)}
                     title="Collapse panel"
-                    className="p-1 rounded text-ctp-overlay0 hover:text-ctp-subtext0 hover:bg-ctp-surface0 transition-colors"
+                    className="p-1 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
                   >
                     <ChevronLeft size={14} />
                   </button>
@@ -274,8 +274,8 @@ export function WorkspaceShell() {
             <div className="flex-1 flex items-center justify-center pointer-events-none">
               <div className="text-center space-y-3">
                 <div className="text-5xl text-ctp-surface1">&#x2B21;</div>
-                <p className="text-sm text-ctp-overlay0">Drag a SillyTavern JSON file here</p>
-                <p className="text-xs text-ctp-overlay0">or click the upload icon above</p>
+                <p className="text-sm text-ctp-overlay1">Drag a SillyTavern JSON file here</p>
+                <p className="text-xs text-ctp-overlay1">or click the upload icon above</p>
               </div>
             </div>
           ) : (
@@ -297,7 +297,7 @@ export function WorkspaceShell() {
 
         {/* Right panel: entry editor */}
         <aside
-          className="shrink-0 border-l border-ctp-surface0 bg-ctp-base flex flex-col overflow-hidden"
+          className="shrink-0 border-l border-ctp-surface1 bg-ctp-mantle flex flex-col overflow-hidden"
           style={{
             width: rightCollapsed ? COLLAPSED_WIDTH : rightWidth,
             transition: isResizing ? 'none' : 'width 200ms ease-in-out',
@@ -305,7 +305,7 @@ export function WorkspaceShell() {
         >
           {rightCollapsed ? (
             <button
-              className="flex-1 flex items-center justify-center text-ctp-overlay0 hover:text-ctp-subtext0 hover:bg-ctp-surface0 transition-colors"
+              className="flex-1 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
               onClick={() => setRightCollapsed(false)}
               title="Expand editor panel"
             >
@@ -314,13 +314,13 @@ export function WorkspaceShell() {
           ) : (
             <>
               <div className="p-3 border-b border-ctp-surface0 shrink-0 flex items-center justify-between">
-                <span className="text-xs font-medium text-ctp-overlay1 uppercase tracking-wider">
+                <span className="text-xs font-medium text-ctp-subtext0 uppercase tracking-wider">
                   Entry
                 </span>
                 <button
                   onClick={() => setRightCollapsed(true)}
                   title="Collapse panel"
-                  className="p-1 rounded text-ctp-overlay0 hover:text-ctp-subtext0 hover:bg-ctp-surface0 transition-colors"
+                  className="p-1 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
                 >
                   <ChevronRight size={14} />
                 </button>
@@ -331,7 +331,7 @@ export function WorkspaceShell() {
                 <div className="border-b border-ctp-surface0 shrink-0">
                   <button
                     onClick={() => setLorebookSettingsOpen(o => !o)}
-                    className="w-full px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay0 hover:text-ctp-overlay1 transition-colors"
+                    className="w-full px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1 hover:text-ctp-subtext0 transition-colors"
                   >
                     {lorebookSettingsOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
                     Lorebook
@@ -350,7 +350,7 @@ export function WorkspaceShell() {
                       tabIndex={0}
                       role="button"
                       aria-expanded={editorOpen}
-                      className={`flex-1 px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-ctp-overlay0 hover:text-ctp-overlay1 transition-colors cursor-default ${selectedEntry ? '' : 'uppercase'}`}
+                      className={`flex-1 px-3 py-2 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-ctp-overlay1 hover:text-ctp-subtext0 transition-colors cursor-default ${selectedEntry ? '' : 'uppercase'}`}
                     >
                       {editorOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
                       <span className="truncate">{selectedEntry ? (selectedEntry.name || 'Untitled') : 'Entry'}</span>
@@ -368,7 +368,7 @@ export function WorkspaceShell() {
                       <button
                         onClick={() => setEditorModalOpen(true)}
                         title="Open in full editor"
-                        className="p-1.5 mr-2 rounded text-ctp-overlay0 hover:text-ctp-subtext0 hover:bg-ctp-surface0 transition-colors"
+                        className="p-1.5 mr-2 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
                       >
                         <Maximize2 size={12} />
                       </button>
@@ -380,11 +380,11 @@ export function WorkspaceShell() {
                     <EntryEditor entryId={selectedEntryId} />
                   ) : activeTabId ? (
                     <div className="flex-1 flex items-center justify-center">
-                      <p className="text-xs text-ctp-overlay0">Select an entry to edit</p>
+                      <p className="text-xs text-ctp-overlay1">Select an entry to edit</p>
                     </div>
                   ) : (
                     <div className="flex-1 flex items-center justify-center">
-                      <p className="text-xs text-ctp-overlay0">No file open</p>
+                      <p className="text-xs text-ctp-overlay1">No file open</p>
                     </div>
                   )
                 )}

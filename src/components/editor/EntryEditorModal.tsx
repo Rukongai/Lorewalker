@@ -29,13 +29,13 @@ export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-ctp-surface0 shrink-0">
-          <span className="text-xs font-medium text-ctp-overlay1 uppercase tracking-wider">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-ctp-surface1 shrink-0">
+          <span className="text-xs font-medium text-ctp-subtext0 uppercase tracking-wider">
             Entry
           </span>
           <button
             onClick={onClose}
-            className="p-1 rounded text-ctp-overlay0 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
+            className="p-1 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
             title="Close (Esc)"
           >
             <X size={14} />

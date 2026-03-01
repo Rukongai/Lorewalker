@@ -67,7 +67,7 @@ export function EntryList() {
   if (!activeTabId) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-xs text-ctp-overlay0">Open a lorebook to get started</p>
+        <p className="text-xs text-ctp-overlay1">Open a lorebook to get started</p>
       </div>
     )
   }
@@ -77,7 +77,7 @@ export function EntryList() {
       {/* Search bar */}
       <div className="p-2 border-b border-ctp-surface0">
         <div className="flex items-center gap-2 px-2 py-1 bg-ctp-surface0 rounded text-xs">
-          <Search size={12} className="text-ctp-overlay1 shrink-0" />
+          <Search size={12} className="text-ctp-subtext0 shrink-0" />
           <input
             type="text"
             value={search}
@@ -91,12 +91,12 @@ export function EntryList() {
       {/* Entry count + collapsible sort controls */}
       <div className="px-3 py-1 border-b border-ctp-surface0 flex flex-col gap-0.5">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-ctp-overlay0">
+          <span className="text-xs text-ctp-overlay1">
             {sorted.length} {sorted.length === 1 ? 'entry' : 'entries'}
           </span>
           <button
             onClick={() => setSortExpanded((v) => !v)}
-            className="flex items-center gap-1 text-xs text-ctp-overlay0 hover:text-ctp-subtext0 transition-colors"
+            className="flex items-center gap-1 text-xs text-ctp-overlay1 hover:text-ctp-subtext1 transition-colors"
           >
             {sortExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
             <span>Sort Options</span>
@@ -108,7 +108,7 @@ export function EntryList() {
             {/* Pin Constants */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <span className="text-xs text-ctp-overlay1">Pin Constants</span>
+                <span className="text-xs text-ctp-subtext0">Pin Constants</span>
                 <HelpTooltip text="Float constant (always-active) entries to the top, ignoring sort order." />
               </div>
               <Toggle checked={pinConstantsToTop} onChange={setPinConstantsToTop} />
@@ -117,7 +117,7 @@ export function EntryList() {
             {/* Display metric */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <span className="text-xs text-ctp-overlay1">Display</span>
+                <span className="text-xs text-ctp-subtext0">Display</span>
                 <HelpTooltip text="The number shown on each row — token count or insertion order." />
               </div>
               <div className="flex items-center rounded overflow-hidden border border-ctp-surface1 text-xs">
@@ -140,14 +140,14 @@ export function EntryList() {
             {/* Primary sort */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <span className="text-xs text-ctp-overlay1">Sort</span>
+                <span className="text-xs text-ctp-subtext0">Sort</span>
                 <HelpTooltip text="Primary field to sort entries by." />
               </div>
               <div className="flex items-center gap-1">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortKey)}
-                  className="bg-transparent text-xs text-ctp-overlay1 outline-none cursor-pointer hover:text-ctp-subtext1 transition-colors"
+                  className="bg-transparent text-xs text-ctp-subtext0 outline-none cursor-pointer hover:text-ctp-text transition-colors"
                 >
                   <option value="uid">UID</option>
                   <option value="name">Name</option>
@@ -157,7 +157,7 @@ export function EntryList() {
                 </select>
                 <button
                   onClick={() => setSortDir((d) => d === 'asc' ? 'desc' : 'asc')}
-                  className="text-ctp-overlay0 hover:text-ctp-subtext0 transition-colors leading-none w-4 text-center"
+                  className="text-ctp-overlay1 hover:text-ctp-subtext1 transition-colors leading-none w-4 text-center"
                   title={sortDir === 'asc' ? 'Ascending — click to reverse' : 'Descending — click to reverse'}
                 >
                   {sortDir === 'asc' ? '↑' : '↓'}
@@ -168,14 +168,14 @@ export function EntryList() {
             {/* Secondary sort */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <span className="text-xs text-ctp-overlay1">Then</span>
+                <span className="text-xs text-ctp-subtext0">Then</span>
                 <HelpTooltip text="Tiebreaker field used when two entries share the same primary sort value." />
               </div>
               <div className="flex items-center gap-1">
                 <select
                   value={sortBy2 ?? ''}
                   onChange={(e) => setSortBy2(e.target.value === '' ? null : e.target.value as SortKey)}
-                  className="bg-transparent text-xs text-ctp-overlay1 outline-none cursor-pointer hover:text-ctp-subtext1 transition-colors"
+                  className="bg-transparent text-xs text-ctp-subtext0 outline-none cursor-pointer hover:text-ctp-text transition-colors"
                 >
                   <option value="">— none —</option>
                   <option value="uid">UID</option>
@@ -186,7 +186,7 @@ export function EntryList() {
                 </select>
                 <button
                   onClick={() => setSortDir2((d) => d === 'asc' ? 'desc' : 'asc')}
-                  className={`leading-none transition-colors w-4 text-center ${sortBy2 === null ? 'text-ctp-surface1 cursor-default' : 'text-ctp-overlay0 hover:text-ctp-subtext0 cursor-pointer'}`}
+                  className={`leading-none transition-colors w-4 text-center ${sortBy2 === null ? 'text-ctp-surface1 cursor-default' : 'text-ctp-overlay1 hover:text-ctp-subtext1 cursor-pointer'}`}
                   title={sortDir2 === 'asc' ? 'Ascending — click to reverse' : 'Descending — click to reverse'}
                   disabled={sortBy2 === null}
                 >
@@ -203,7 +203,7 @@ export function EntryList() {
       <div className="flex-1 overflow-y-auto">
         {sorted.length === 0 ? (
           <div className="flex items-center justify-center h-16">
-            <p className="text-xs text-ctp-overlay0">No entries found</p>
+            <p className="text-xs text-ctp-overlay1">No entries found</p>
           </div>
         ) : (
           sorted.map((entry) => (

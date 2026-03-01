@@ -11,11 +11,11 @@ interface EntryListItemProps {
 }
 
 function getTypeBadge(entry: WorkingEntry): { label: string; color: string } {
-  if (!entry.enabled) return { label: 'OFF', color: 'bg-ctp-surface1 text-ctp-overlay1' }
-  if (entry.constant) return { label: 'CONST', color: 'bg-ctp-mauve/20 text-ctp-mauve' }
-  if (entry.selective) return { label: 'SEL', color: 'bg-ctp-teal/20 text-ctp-teal' }
-  if (entry.sticky > 0) return { label: 'STICKY', color: 'bg-ctp-blue/20 text-ctp-blue' }
-  return { label: 'KW', color: 'bg-ctp-lavender/20 text-ctp-lavender' }
+  if (!entry.enabled) return { label: 'OFF', color: 'bg-ctp-surface1 text-ctp-subtext0' }
+  if (entry.constant) return { label: 'CONST', color: 'bg-ctp-mauve/30 text-ctp-mauve' }
+  if (entry.selective) return { label: 'SEL', color: 'bg-ctp-teal/30 text-ctp-teal' }
+  if (entry.sticky > 0) return { label: 'STICKY', color: 'bg-ctp-blue/30 text-ctp-blue' }
+  return { label: 'KW', color: 'bg-ctp-lavender/30 text-ctp-lavender' }
 }
 
 export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, displayMetric }: EntryListItemProps) {
@@ -29,10 +29,10 @@ export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, di
       role="option"
       aria-selected={isSelected}
       className={cn(
-        'w-full flex items-center gap-2 px-3 py-2 text-left border-b border-ctp-surface0/50 transition-colors text-sm cursor-default',
+        'w-full flex items-center gap-2 px-3 py-2 text-left border-b border-ctp-surface0 transition-colors text-sm cursor-default',
         isSelected
-          ? 'bg-ctp-lavender/15 text-ctp-text'
-          : 'text-ctp-subtext0 hover:bg-ctp-surface0/50',
+          ? 'bg-ctp-lavender/20 text-ctp-text border-l-2 border-l-ctp-lavender'
+          : 'text-ctp-subtext1 hover:bg-ctp-surface0',
         !entry.enabled && 'opacity-50'
       )}
     >
@@ -54,7 +54,7 @@ export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, di
       </span>
 
       {/* Metric */}
-      <span className="text-[10px] text-ctp-overlay0 shrink-0">
+      <span className="text-[10px] text-ctp-overlay1 shrink-0">
         {displayMetric === 'tokens' ? `${entry.tokenCount}t` : `${entry.order}`}
       </span>
     </div>
