@@ -54,6 +54,7 @@ interface WorkspaceState {
   editorDefaults: EditorDefaults
   entriesListDefaults: EntriesListDefaults
   lorebookDefaults: LorebookDefaults
+  activeLlmProviderId: string | null
 
   // Actions
   openTab(tabId: string, name: string, fileMeta: FileMeta): void
@@ -67,6 +68,7 @@ interface WorkspaceState {
   setEditorDefaults(settings: EditorDefaults): void
   setEntriesListDefaults(settings: EntriesListDefaults): void
   setLorebookDefaults(patch: Partial<LorebookDefaults>): void
+  setActiveLlmProviderId(id: string | null): void
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -80,6 +82,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     editorDefaults: DEFAULT_EDITOR_DEFAULTS,
     entriesListDefaults: DEFAULT_ENTRIES_LIST_DEFAULTS,
     lorebookDefaults: DEFAULT_LOREBOOK_DEFAULTS,
+    activeLlmProviderId: null,
 
     openTab(tabId, name, fileMeta) {
       set((state) => {
@@ -152,6 +155,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
     setLorebookDefaults(patch) {
       set((state) => { state.lorebookDefaults = { ...state.lorebookDefaults, ...patch } })
+    },
+
+    setActiveLlmProviderId(id) {
+      set((state) => { state.activeLlmProviderId = id })
     },
   }))
 )

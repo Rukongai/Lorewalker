@@ -11,7 +11,10 @@ import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
 import { useAutosave } from '@/hooks/useAutosave'
 import { useWorkspacePersistence } from '@/hooks/useWorkspacePersistence'
-import { loadWorkspace, loadPreferences, listDocuments, cleanupStaleDocuments } from '@/services/persistence-service'
+import { loadWorkspace, loadPreferences, listDocuments, cleanupStaleDocuments, loadProviders } from '@/services/persistence-service'
+import { llmService } from '@/services/llm/llm-service'
+import { OpenAICompatibleProvider } from '@/services/llm/providers/openai-compatible'
+import { AnthropicProvider } from '@/services/llm/providers/anthropic'
 import { GraphCanvas } from '@/components/graph/GraphCanvas'
 import { BookMetaEditor } from '@/components/editor/BookMetaEditor'
 import { SettingsDialog } from '@/components/settings/SettingsDialog'
@@ -64,6 +67,26 @@ export function WorkspaceShell() {
   // On mount: restore persisted state and check for recovery docs
   useEffect(() => {
     async function init() {
+      // Bootstrap LLMService from IndexedDB
+      try {
+        const persistedProviders = await loadProviders()
+        for (const p of persistedProviders) {
+          const config = { ...p.config, apiKey: p.apiKey }
+          const provider = p.type === 'anthropic'
+            ? new AnthropicProvider(p.id, p.name, config)
+            : new OpenAICompatibleProvider(p.id, p.name, config)
+          llmService.registerProvider(provider)
+        }
+        if (persistedProviders.length > 0) {
+          const firstId = persistedProviders[0].id
+          if (!useWorkspaceStore.getState().activeLlmProviderId) {
+            useWorkspaceStore.getState().setActiveLlmProviderId(firstId)
+          }
+        }
+      } catch {
+        // Non-fatal — app works without LLM
+      }
+
       const prefs = await loadPreferences() ?? DEFAULT_PREFERENCES
       const workspace = await loadWorkspace()
       if (workspace) {
@@ -499,7 +522,7 @@ export function WorkspaceShell() {
 
               {/* Tab: Analysis */}
               {rightPanelTab === 'analysis' && (
-                <AnalysisPanel tabId={activeTabId} />
+                <AnalysisPanel tabId={activeTabId} graph={graph} />
               )}
 
               {/* Tab: Inspector */}

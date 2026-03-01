@@ -4,12 +4,13 @@ import { configRules } from './rules/config-rules'
 import { keywordRules } from './rules/keyword-rules'
 import { recursionRules } from './rules/recursion-rules'
 import { budgetRules } from './rules/budget-rules'
+import { llmRules } from './rules/llm-rules'
 
 export const defaultRubric: Rubric = {
   id: 'default',
   name: 'Default Rubric',
   description: 'Comprehensive health check for SillyTavern lorebooks.',
-  rules: [...structureRules, ...configRules, ...keywordRules, ...recursionRules, ...budgetRules],
+  rules: [...structureRules, ...configRules, ...keywordRules, ...recursionRules, ...budgetRules, ...llmRules],
   scoringWeights: {
     structure: 0.25,
     config: 0.20,

@@ -41,9 +41,14 @@ export interface DocumentState {
   findings: Finding[]
   healthScore: HealthScore
 
+  // LLM findings (user-triggered, not cleared on entry edits)
+  llmFindings: Finding[]
+
   // UI state (excluded from undo)
   selection: SelectionState
   simulatorState: SimulatorState
+
+  setLlmFindings(findings: Finding[]): void
 
   // Undo / redo (provided by zundo)
   undo(): void
@@ -148,6 +153,7 @@ export function createDocumentStore(init: DocumentStoreInit) {
         bookMeta: init.bookMeta,
 
         findings: [],
+        llmFindings: [],
         healthScore: {
           overall: 100,
           categories: {
@@ -308,6 +314,12 @@ export function createDocumentStore(init: DocumentStoreInit) {
             ...state,
             simulatorState: { ...state.simulatorState, conversationHistory: [] },
           }))
+        },
+
+        // --- LLM findings (excluded from undo) ---
+
+        setLlmFindings(findings) {
+          store.setState((state) => ({ ...state, llmFindings: findings }))
         },
       })),
       {

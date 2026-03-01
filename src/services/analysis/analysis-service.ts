@@ -7,6 +7,16 @@ export async function runDeterministic(context: AnalysisContext, rubric: Rubric)
   return results.flat().map((f) => ({ ...f, id: f.id || generateId() }))
 }
 
+export async function runLLMRules(context: AnalysisContext, rubric: Rubric): Promise<Finding[]> {
+  const llmRules = rubric.rules.filter((r) => r.requiresLLM)
+  const findings: Finding[] = []
+  for (const rule of llmRules) {
+    const results = await rule.evaluate(context)
+    findings.push(...results.map((f) => ({ ...f, id: f.id || generateId() })))
+  }
+  return findings
+}
+
 export function computeHealthScore(findings: Finding[], rubric: Rubric): HealthScore {
   const categories: RuleCategory[] = ['structure', 'config', 'keywords', 'content', 'recursion', 'budget']
 

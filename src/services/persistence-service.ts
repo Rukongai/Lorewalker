@@ -1,5 +1,5 @@
 import { createStore, get, set, del, keys } from 'idb-keyval'
-import type { PersistedWorkspace, PersistedDocument, PersistedPreferences } from '@/types'
+import type { PersistedWorkspace, PersistedDocument, PersistedPreferences, PersistedProvider } from '@/types'
 
 // Named IndexedDB store so we don't pollute the default keyval store
 const store = createStore('lorewalker-db', 'keyval')
@@ -89,6 +89,24 @@ export async function loadPreferences(): Promise<PersistedPreferences | undefine
     return await get<PersistedPreferences>('preferences', store)
   } catch (err) {
     throw new PersistenceError('Failed to load preferences', err)
+  }
+}
+
+// --- Providers ---
+
+export async function saveProviders(providers: PersistedProvider[]): Promise<void> {
+  try {
+    await set('providers', providers, store)
+  } catch (err) {
+    throw new PersistenceError('Failed to save providers', err)
+  }
+}
+
+export async function loadProviders(): Promise<PersistedProvider[]> {
+  try {
+    return (await get<PersistedProvider[]>('providers', store)) ?? []
+  } catch (err) {
+    throw new PersistenceError('Failed to load providers', err)
   }
 }
 

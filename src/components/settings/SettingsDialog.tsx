@@ -4,6 +4,7 @@ import type { ThemeId } from '@/types'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
 import { LorebookSettingsPanel } from './LorebookSettingsPanel'
+import { ProviderSettingsPanel } from './ProviderSettingsPanel'
 import type { GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults } from '@/types'
 
 const inputClass =
@@ -362,7 +363,7 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
-  const [activeCategory, setActiveCategory] = useState<'general' | 'graph' | 'editor' | 'entries' | 'lorebook'>('general')
+  const [activeCategory, setActiveCategory] = useState<'general' | 'graph' | 'editor' | 'entries' | 'lorebook' | 'providers'>('general')
   const [leftWidth, setLeftWidth] = useState(140)
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null)
 
@@ -410,7 +411,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         <div className="flex flex-1 overflow-hidden">
           {/* Left: category list */}
           <div className="shrink-0 border-r border-ctp-surface0 p-2 overflow-y-auto" style={{ width: leftWidth }}>
-            {(['general', 'graph', 'editor', 'entries', 'lorebook'] as const).map((cat) => (
+            {(['general', 'graph', 'editor', 'entries', 'lorebook', 'providers'] as const).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
@@ -420,7 +421,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                     : 'text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0/50'
                 } transition-colors`}
               >
-                {cat === 'general' ? 'General' : cat === 'graph' ? 'Workspace Settings' : cat === 'editor' ? 'Editor' : cat === 'entries' ? 'Entries' : 'Lorebook'}
+                {cat === 'general' ? 'General' : cat === 'graph' ? 'Workspace Settings' : cat === 'editor' ? 'Editor' : cat === 'entries' ? 'Entries' : cat === 'lorebook' ? 'Lorebook' : 'Providers'}
               </button>
             ))}
           </div>
@@ -438,6 +439,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
             {activeCategory === 'editor' && <EditorSettingsPanel />}
             {activeCategory === 'entries' && <EntriesSettingsPanel />}
             {activeCategory === 'lorebook' && <LorebookSettingsPanel />}
+            {activeCategory === 'providers' && <ProviderSettingsPanel />}
           </div>
         </div>
       </div>

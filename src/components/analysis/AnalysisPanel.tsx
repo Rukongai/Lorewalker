@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
+import { useWorkspaceStore } from '@/stores/workspace-store'
 import { FindingItem } from './FindingItem'
-import type { FindingSeverity } from '@/types'
+import { DeepAnalysisDialog } from './DeepAnalysisDialog'
+import type { Finding, FindingSeverity, RecursionGraph } from '@/types'
 
 interface AnalysisPanelProps {
   tabId: string | null
+  graph: RecursionGraph
 }
 
 type Filter = FindingSeverity | 'all'
@@ -24,22 +27,52 @@ function scoreBarColor(score: number): string {
 
 const CATEGORIES = ['structure', 'config', 'keywords', 'recursion', 'budget'] as const
 
-export function AnalysisPanel({ tabId }: AnalysisPanelProps) {
+const SEVERITY_ORDER: Record<FindingSeverity, number> = { error: 0, warning: 1, suggestion: 2 }
+
+function AiBadge() {
+  return (
+    <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-semibold bg-ctp-accent/20 text-ctp-accent leading-none">
+      AI
+    </span>
+  )
+}
+
+const LLM_RULE_IDS = new Set([
+  'content/quality-assessment',
+  'content/structure-check',
+  'content/scope-check',
+  'keywords/missing-variations',
+])
+
+export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
   const [filter, setFilter] = useState<Filter>('all')
+  const [deepAnalysisOpen, setDeepAnalysisOpen] = useState(false)
+
+  const activeLlmProviderId = useWorkspaceStore((s) => s.activeLlmProviderId)
 
   const realStore = tabId ? documentStoreRegistry.get(tabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
   const findings = activeStore((s) => s.findings)
+  const llmFindings = activeStore((s) => s.llmFindings)
   const healthScore = activeStore((s) => s.healthScore)
+  const entries = activeStore((s) => s.entries)
 
-  const errorCount = findings.filter((f) => f.severity === 'error').length
-  const warningCount = findings.filter((f) => f.severity === 'warning').length
-  const suggestionCount = findings.filter((f) => f.severity === 'suggestion').length
+  const allFindings: Finding[] = [...findings, ...llmFindings].sort(
+    (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
+  )
 
-  const filtered = filter === 'all' ? findings : findings.filter((f) => f.severity === filter)
+  const errorCount = allFindings.filter((f) => f.severity === 'error').length
+  const warningCount = allFindings.filter((f) => f.severity === 'warning').length
+  const suggestionCount = allFindings.filter((f) => f.severity === 'suggestion').length
+
+  const filtered = filter === 'all' ? allFindings : allFindings.filter((f) => f.severity === filter)
 
   function handleSelectEntry(entryId: string) {
     realStore?.getState().selectEntry(entryId)
+  }
+
+  function handleDeepAnalysisComplete(newLlmFindings: Finding[]) {
+    realStore?.getState().setLlmFindings(newLlmFindings)
   }
 
   if (!tabId) {
@@ -79,12 +112,29 @@ export function AnalysisPanel({ tabId }: AnalysisPanelProps) {
             )
           })}
         </div>
+
+        {/* Deep Analysis button */}
+        <div className="pt-1 flex items-center justify-between">
+          <button
+            onClick={() => setDeepAnalysisOpen(true)}
+            disabled={!activeLlmProviderId}
+            title={activeLlmProviderId ? 'Run AI-powered analysis' : 'Add a provider in Settings → Providers to enable'}
+            className="px-2 py-1 rounded text-[10px] bg-ctp-accent text-ctp-base font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
+          >
+            Deep Analysis
+          </button>
+          {llmFindings.length > 0 && (
+            <span className="text-[10px] text-ctp-overlay1 flex items-center gap-1">
+              <AiBadge /> {llmFindings.length} AI finding{llmFindings.length !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Filter bar */}
       <div className="flex items-center gap-1 px-2 py-1.5 border-b border-ctp-surface0 shrink-0">
         {(['all', 'error', 'warning', 'suggestion'] as Filter[]).map((f) => {
-          const count = f === 'all' ? findings.length : f === 'error' ? errorCount : f === 'warning' ? warningCount : suggestionCount
+          const count = f === 'all' ? allFindings.length : f === 'error' ? errorCount : f === 'warning' ? warningCount : suggestionCount
           const active = filter === f
           return (
             <button
@@ -105,19 +155,34 @@ export function AnalysisPanel({ tabId }: AnalysisPanelProps) {
         {filtered.length === 0 ? (
           <div className="flex items-center justify-center h-16">
             <p className="text-xs text-ctp-overlay1">
-              {findings.length === 0 ? 'No issues detected' : 'No findings match filter'}
+              {allFindings.length === 0 ? 'No issues detected' : 'No findings match filter'}
             </p>
           </div>
         ) : (
           filtered.map((finding) => (
-            <FindingItem
-              key={finding.id}
-              finding={finding}
-              onSelectEntry={handleSelectEntry}
-            />
+            <div key={finding.id} className="relative">
+              {LLM_RULE_IDS.has(finding.ruleId) && (
+                <span className="absolute top-2 right-2 z-10">
+                  <AiBadge />
+                </span>
+              )}
+              <FindingItem
+                finding={finding}
+                onSelectEntry={handleSelectEntry}
+              />
+            </div>
           ))
         )}
       </div>
+
+      {deepAnalysisOpen && activeLlmProviderId && (
+        <DeepAnalysisDialog
+          providerId={activeLlmProviderId}
+          context={{ entries, graph }}
+          onComplete={handleDeepAnalysisComplete}
+          onClose={() => setDeepAnalysisOpen(false)}
+        />
+      )}
     </div>
   )
 }
