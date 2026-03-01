@@ -1,13 +1,17 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from 'zustand'
 import { Upload, Save, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, ChevronDown, Maximize2 } from 'lucide-react'
 import { TabBar } from './TabBar'
+import { RecoveryDialog } from './RecoveryDialog'
 import { EntryList } from '@/components/entry-list/EntryList'
 import { EntryEditor } from '@/components/editor/EntryEditor'
 import { importFile, exportFile } from '@/services/file-service'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
+import { useAutosave } from '@/hooks/useAutosave'
+import { useWorkspacePersistence } from '@/hooks/useWorkspacePersistence'
+import { loadWorkspace, loadPreferences, listDocuments, cleanupStaleDocuments } from '@/services/persistence-service'
 import { GraphCanvas } from '@/components/graph/GraphCanvas'
 import { BookMetaEditor } from '@/components/editor/BookMetaEditor'
 import { SettingsDialog } from '@/components/settings/SettingsDialog'
@@ -16,12 +20,16 @@ import { Toggle } from '@/components/shared/Toggle'
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel'
 import { InspectorPanel } from '@/components/analysis/InspectorPanel'
 import { SimulatorPanel } from '@/components/simulator/SimulatorPanel'
+import type { PersistedDocument } from '@/types'
 
 type RightPanelTab = 'entry' | 'analysis' | 'inspector' | 'simulator'
+
+const DEFAULT_PREFERENCES = { autosaveIntervalMs: 2000, recoveryRetentionDays: 7, simulationDefaults: { defaultScanDepth: 4, defaultTokenBudget: 4096, defaultCaseSensitive: false, defaultMatchWholeWords: false, defaultMaxRecursionSteps: 0, defaultIncludeNames: false } }
 
 export function WorkspaceShell() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const activeTab = useWorkspaceStore((s) => s.tabs.find((t) => t.id === s.activeTabId))
+  const tabs = useWorkspaceStore((s) => s.tabs)
   const [isDragOver, setIsDragOver] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
   const [leftWidth, setLeftWidth] = useState(256)
@@ -34,9 +42,82 @@ export function WorkspaceShell() {
   const [lorebookSettingsOpen, setLorebookSettingsOpen] = useState(false)
   const [editorOpen, setEditorOpen] = useState(true)
   const [editorModalOpen, setEditorModalOpen] = useState(false)
+  const [showRecovery, setShowRecovery] = useState(false)
+  const [recoveryDocs, setRecoveryDocs] = useState<PersistedDocument[]>([])
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('entry')
+
+  // Autosave the active document to IndexedDB
+  useAutosave(activeTabId)
+
+  // Persist workspace settings (tabs, theme, panel layout) to IndexedDB
+  const panelLayout = useMemo(() => ({
+    leftPanelWidth: leftWidth,
+    rightPanelWidth: rightWidth,
+    leftCollapsed,
+    rightCollapsed,
+    rightPanelTab: rightPanelTab as 'editor' | 'analysis' | 'simulator' | 'inspector',
+  }), [leftWidth, rightWidth, leftCollapsed, rightCollapsed, rightPanelTab])
+  useWorkspacePersistence(panelLayout)
+
+  // On mount: restore persisted state and check for recovery docs
+  useEffect(() => {
+    async function init() {
+      const prefs = await loadPreferences() ?? DEFAULT_PREFERENCES
+      const workspace = await loadWorkspace()
+      if (workspace) {
+        useWorkspaceStore.getState().setTheme(workspace.theme)
+        setLeftWidth(workspace.panelLayout.leftPanelWidth)
+        setRightWidth(workspace.panelLayout.rightPanelWidth)
+        setLeftCollapsed(workspace.panelLayout.leftCollapsed)
+        setRightCollapsed(workspace.panelLayout.rightCollapsed)
+        setRightPanelTab(workspace.panelLayout.rightPanelTab as RightPanelTab)
+      }
+      await cleanupStaleDocuments(prefs.recoveryRetentionDays)
+      const docs = await listDocuments()
+      if (docs.length > 0 && useWorkspaceStore.getState().tabs.length === 0) {
+        setRecoveryDocs(docs)
+        setShowRecovery(true)
+      }
+    }
+    init()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Warn before unload if any tabs have unsaved changes
+  useEffect(() => {
+    const hasDirtyTabs = tabs.some((t) => t.dirty)
+    if (!hasDirtyTabs) return
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault() }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [tabs])
+
+  async function handleRestore(docs: PersistedDocument[]) {
+    for (const doc of docs) {
+      const positions = new Map(Object.entries(doc.graphPositions))
+      documentStoreRegistry.create(doc.tabId, {
+        entries: doc.entries,
+        bookMeta: doc.bookMeta,
+        graphPositions: positions,
+        simulatorState: doc.simulatorState,
+      })
+      useWorkspaceStore.getState().openTab(doc.tabId, doc.fileMeta.fileName, doc.fileMeta)
+    }
+    setShowRecovery(false)
+  }
+
+  async function handleDismissRecovery() {
+    setShowRecovery(false)
+    for (const doc of recoveryDocs) {
+      try {
+        const { deleteDocument } = await import('@/services/persistence-service')
+        await deleteDocument(doc.tabId)
+      } catch {
+        // Non-fatal
+      }
+    }
+  }
 
   const { graph } = useDerivedState(activeTabId)
 
@@ -442,6 +523,13 @@ export function WorkspaceShell() {
         />
       )}
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      {showRecovery && (
+        <RecoveryDialog
+          documents={recoveryDocs}
+          onRestore={handleRestore}
+          onDismiss={handleDismissRecovery}
+        />
+      )}
     </div>
   )
 }

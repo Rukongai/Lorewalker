@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
+import { deleteDocument } from '@/services/persistence-service'
 
 export function TabBar() {
   const tabs = useWorkspaceStore((s) => s.tabs)
@@ -9,10 +10,18 @@ export function TabBar() {
   const switchTab = useWorkspaceStore((s) => s.switchTab)
   const closeTab = useWorkspaceStore((s) => s.closeTab)
 
-  function handleClose(e: React.MouseEvent, tabId: string) {
+  async function handleClose(e: React.MouseEvent, tabId: string) {
     e.stopPropagation()
+    const tab = tabs.find((t) => t.id === tabId)
+    if (tab?.dirty) {
+      const confirmed = window.confirm(
+        `"${tab.name}" has unsaved changes. Close anyway?`
+      )
+      if (!confirmed) return
+    }
     documentStoreRegistry.delete(tabId)
     closeTab(tabId)
+    await deleteDocument(tabId)
   }
 
   if (tabs.length === 0) {
