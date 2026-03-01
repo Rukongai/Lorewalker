@@ -15,6 +15,7 @@ export function EntryList() {
   const [sortBy2, setSortBy2] = useState<SortKey | null>(entriesListDefaults.sortBy2)
   const [sortDir2, setSortDir2] = useState<'asc' | 'desc'>(entriesListDefaults.sortDir2)
   const [pinConstantsToTop, setPinConstantsToTop] = useState(entriesListDefaults.pinConstantsToTop)
+  const [displayMetric, setDisplayMetric] = useState<'tokens' | 'order'>('tokens')
 
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
@@ -23,6 +24,11 @@ export function EntryList() {
 
   function handleSelect(id: string) {
     realStore?.getState().selectEntry(id)
+  }
+
+  function handleToggleEnabled(id: string) {
+    const entry = entries.find((e) => e.id === id)
+    if (entry) realStore?.getState().updateEntry(id, { enabled: !entry.enabled })
   }
 
   const filtered = search.trim()
@@ -92,6 +98,13 @@ export function EntryList() {
             >
               C↑
             </button>
+            <button
+              onClick={() => setDisplayMetric((m) => m === 'tokens' ? 'order' : 'tokens')}
+              title={displayMetric === 'tokens' ? 'Showing tokens — click for order' : 'Showing order — click for tokens'}
+              className={`text-xs font-medium leading-none px-1 py-0.5 rounded transition-colors ${displayMetric === 'order' ? 'text-indigo-400 bg-indigo-950' : 'text-gray-700 hover:text-gray-500'}`}
+            >
+              {displayMetric === 'tokens' ? 'Tok' : 'Ord'}
+            </button>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortKey)}
@@ -148,6 +161,8 @@ export function EntryList() {
               entry={entry}
               isSelected={selectedId === entry.id}
               onSelect={handleSelect}
+              onToggleEnabled={handleToggleEnabled}
+              displayMetric={displayMetric}
             />
           ))
         )}

@@ -5,6 +5,8 @@ interface EntryListItemProps {
   entry: WorkingEntry
   isSelected: boolean
   onSelect: (id: string) => void
+  onToggleEnabled: (id: string) => void
+  displayMetric: 'tokens' | 'order'
 }
 
 function getTypeBadge(entry: WorkingEntry): { label: string; color: string } {
@@ -15,7 +17,7 @@ function getTypeBadge(entry: WorkingEntry): { label: string; color: string } {
   return { label: 'KW', color: 'bg-indigo-900/60 text-indigo-300' }
 }
 
-export function EntryListItem({ entry, isSelected, onSelect }: EntryListItemProps) {
+export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, displayMetric }: EntryListItemProps) {
   const badge = getTypeBadge(entry)
 
   return (
@@ -29,16 +31,33 @@ export function EntryListItem({ entry, isSelected, onSelect }: EntryListItemProp
         !entry.enabled && 'opacity-50'
       )}
     >
+      {/* Enable toggle */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onToggleEnabled(entry.id) }}
+        title={entry.enabled ? 'Disable entry' : 'Enable entry'}
+        className={cn(
+          'relative inline-flex h-4 w-7 items-center rounded-full shrink-0 transition-colors',
+          entry.enabled ? 'bg-indigo-600' : 'bg-gray-700'
+        )}
+      >
+        <span className={cn(
+          'inline-block h-3 w-3 rounded-full bg-white transition-transform',
+          entry.enabled ? 'translate-x-3.5' : 'translate-x-0.5'
+        )} />
+      </button>
+
+      {/* Name */}
+      <span className="flex-1 truncate text-xs">{entry.name || <em className="text-gray-500">Untitled</em>}</span>
+
       {/* Type badge */}
       <span className={cn('text-[10px] font-mono px-1 py-0.5 rounded shrink-0', badge.color)}>
         {badge.label}
       </span>
 
-      {/* Name */}
-      <span className="flex-1 truncate text-xs">{entry.name || <em className="text-gray-500">Untitled</em>}</span>
-
-      {/* Token count */}
-      <span className="text-[10px] text-gray-600 shrink-0">{entry.tokenCount}t</span>
+      {/* Metric */}
+      <span className="text-[10px] text-gray-600 shrink-0">
+        {displayMetric === 'tokens' ? `${entry.tokenCount}t` : `${entry.order}`}
+      </span>
     </button>
   )
 }
