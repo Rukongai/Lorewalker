@@ -74,4 +74,5 @@ export type {
   EntriesListDefaults,
   SortKey,
   LorebookDefaults,
+  ThemeId,
 } from './ui'

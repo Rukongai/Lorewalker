@@ -1,12 +1,12 @@
 import type { WorkingEntry, BookMeta } from './entry'
-import type { FileMeta, TabMeta, PanelLayout } from './ui'
+import type { FileMeta, TabMeta, PanelLayout, ThemeId } from './ui'
 import type { SimulationSettings, SimulatorState } from './ui'
 import type { LLMProviderType, ProviderConfig } from './llm'
 
 export interface PersistedWorkspace {
   tabs: TabMeta[];
   activeTabId: string | null;
-  theme: 'dark' | 'light';
+  theme: ThemeId;
   panelLayout: PanelLayout;
 }
 

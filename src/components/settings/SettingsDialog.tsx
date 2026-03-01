@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import type { ThemeId } from '@/stores/workspace-store'
+import type { ThemeId } from '@/types'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
 import { LorebookSettingsPanel } from './LorebookSettingsPanel'
