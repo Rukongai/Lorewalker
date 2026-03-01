@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { temporal } from 'zundo'
 import { generateId } from '@/lib/uuid'
-import type { WorkingEntry, BookMeta, SimulatorState, SimulationSettings, Finding, HealthScore } from '@/types'
+import type { WorkingEntry, BookMeta, SimulatorState, SimulationSettings, Finding, HealthScore, SimMessage, ActivationResult, ConversationStep } from '@/types'
 
 // --- Selection state ---
 
@@ -68,6 +68,13 @@ export interface DocumentState {
   selectEntry(id: string | null): void
   toggleMultiSelect(id: string): void
   clearSelection(): void
+
+  // Simulator actions (excluded from undo)
+  setSimulatorMessages(messages: SimMessage[]): void
+  updateSimulatorSettings(patch: Partial<SimulationSettings>): void
+  setSimulatorResult(result: ActivationResult | null): void
+  appendConversationStep(step: ConversationStep): void
+  clearConversationHistory(): void
 }
 
 function makeDefaultEntry(partial: Partial<WorkingEntry> = {}): WorkingEntry {
@@ -257,6 +264,49 @@ export function createDocumentStore(init: DocumentStoreInit) {
           store.setState((state) => ({
             ...state,
             selection: { selectedEntryId: null, multiSelect: [] },
+          }))
+        },
+
+        // --- Simulator actions (excluded from undo) ---
+
+        setSimulatorMessages(messages) {
+          store.setState((state) => ({
+            ...state,
+            simulatorState: { ...state.simulatorState, messages },
+          }))
+        },
+
+        updateSimulatorSettings(patch) {
+          store.setState((state) => ({
+            ...state,
+            simulatorState: {
+              ...state.simulatorState,
+              settings: { ...state.simulatorState.settings, ...patch },
+            },
+          }))
+        },
+
+        setSimulatorResult(result) {
+          store.setState((state) => ({
+            ...state,
+            simulatorState: { ...state.simulatorState, lastResult: result },
+          }))
+        },
+
+        appendConversationStep(step) {
+          store.setState((state) => ({
+            ...state,
+            simulatorState: {
+              ...state.simulatorState,
+              conversationHistory: [...state.simulatorState.conversationHistory, step],
+            },
+          }))
+        },
+
+        clearConversationHistory() {
+          store.setState((state) => ({
+            ...state,
+            simulatorState: { ...state.simulatorState, conversationHistory: [] },
           }))
         },
       })),
