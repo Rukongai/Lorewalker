@@ -12,6 +12,7 @@ import { GraphCanvas } from '@/components/graph/GraphCanvas'
 import { BookMetaEditor } from '@/components/editor/BookMetaEditor'
 import { SettingsDialog } from '@/components/settings/SettingsDialog'
 import { EntryEditorModal } from '@/components/editor/EntryEditorModal'
+import { Toggle } from '@/components/shared/Toggle'
 
 export function WorkspaceShell() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
@@ -354,16 +355,13 @@ export function WorkspaceShell() {
                       {editorOpen ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
                       <span className="truncate">{selectedEntry ? (selectedEntry.name || 'Untitled') : 'Entry'}</span>
                       {selectedEntry && (
-                        <button
-                          role="switch"
-                          aria-checked={selectedEntry.enabled}
-                          onClick={(e) => { e.stopPropagation(); handleToggleEnabled() }}
-                          className={`relative inline-flex h-4 w-7 shrink-0 rounded-full border border-gray-600 transition-colors ml-1
-                            ${selectedEntry.enabled ? 'bg-indigo-600' : 'bg-gray-700'}`}
-                        >
-                          <span className={`inline-block h-3 w-3 mt-[1px] rounded-full bg-white shadow transition-transform
-                            ${selectedEntry.enabled ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
-                        </button>
+                        <span onClick={(e) => e.stopPropagation()} className="ml-1">
+                          <Toggle
+                            checked={selectedEntry.enabled}
+                            onChange={handleToggleEnabled}
+                            aria-label={selectedEntry.enabled ? 'Disable entry' : 'Enable entry'}
+                          />
+                        </span>
                       )}
                     </div>
                     {selectedEntryId && (

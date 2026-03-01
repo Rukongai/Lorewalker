@@ -4,6 +4,7 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
+import { Toggle } from '@/components/shared/Toggle'
 import type { BookMeta } from '@/types'
 
 function FieldGroup({ label, defaultCollapsed = false, children }: {
@@ -40,8 +41,6 @@ function Field({ label, help, children }: { label: string; help?: string; childr
 
 const inputClass =
   'w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors'
-
-const checkboxClass = 'w-3.5 h-3.5 accent-indigo-500'
 
 export function BookMetaEditor() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
@@ -101,32 +100,17 @@ export function BookMetaEditor() {
           />
         </Field>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={bookMeta.includeNames}
-            onChange={(e) => handleChange('includeNames', e.target.checked)}
-            className={checkboxClass}
-          />
+          <Toggle checked={bookMeta.includeNames} onChange={(val) => handleChange('includeNames', val)} />
           Include Names
           <HelpTooltip text="Also scans message author names (user/character) for trigger keywords." />
         </label>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={bookMeta.caseSensitive}
-            onChange={(e) => handleChange('caseSensitive', e.target.checked)}
-            className={checkboxClass}
-          />
+          <Toggle checked={bookMeta.caseSensitive} onChange={(val) => handleChange('caseSensitive', val)} />
           Case-sensitive Keys
           <HelpTooltip text="When on, keywords must match exact letter casing ('Dragon' won't match 'dragon'). Off by default." />
         </label>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={bookMeta.matchWholeWords}
-            onChange={(e) => handleChange('matchWholeWords', e.target.checked)}
-            className={checkboxClass}
-          />
+          <Toggle checked={bookMeta.matchWholeWords} onChange={(val) => handleChange('matchWholeWords', val)} />
           Match Whole Words
           <HelpTooltip text="When on, keywords only match complete words ('ring' won't match 'spring'). Off by default." />
         </label>
@@ -153,12 +137,7 @@ export function BookMetaEditor() {
           />
         </Field>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={bookMeta.alertOnOverflow}
-            onChange={(e) => handleChange('alertOnOverflow', e.target.checked)}
-            className={checkboxClass}
-          />
+          <Toggle checked={bookMeta.alertOnOverflow} onChange={(val) => handleChange('alertOnOverflow', val)} />
           Alert on Overflow
           <HelpTooltip text="Triggers a warning when lorebook content exceeds the configured token budget." />
         </label>
@@ -178,12 +157,7 @@ export function BookMetaEditor() {
       {/* Activation */}
       <FieldGroup label="Activation" defaultCollapsed>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={bookMeta.recursiveScan}
-            onChange={(e) => handleChange('recursiveScan', e.target.checked)}
-            className={checkboxClass}
-          />
+          <Toggle checked={bookMeta.recursiveScan} onChange={(val) => handleChange('recursiveScan', val)} />
           Recursive Scan
           <HelpTooltip text="When on, newly activated entries are also scanned for keywords, allowing chains of entries to activate each other." />
         </label>
@@ -219,12 +193,7 @@ export function BookMetaEditor() {
       {/* Groups */}
       <FieldGroup label="Groups" defaultCollapsed>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={bookMeta.useGroupScoring}
-            onChange={(e) => handleChange('useGroupScoring', e.target.checked)}
-            className={checkboxClass}
-          />
+          <Toggle checked={bookMeta.useGroupScoring} onChange={(val) => handleChange('useGroupScoring', val)} />
           Use Group Scoring
           <HelpTooltip text="Global default for how entries compete within inclusion groups. When on, the entry with the most keyword matches wins; when off, entries are chosen by random weight rolling. Individual entries can override this setting." />
         </label>

@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn'
 import type { WorkingEntry } from '@/types'
+import { Toggle } from '@/components/shared/Toggle'
 
 interface EntryListItemProps {
   entry: WorkingEntry
@@ -36,19 +37,13 @@ export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, di
       )}
     >
       {/* Enable toggle */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onToggleEnabled(entry.id) }}
-        title={entry.enabled ? 'Disable entry' : 'Enable entry'}
-        className={cn(
-          'relative inline-flex h-4 w-7 items-center rounded-full shrink-0 transition-colors',
-          entry.enabled ? 'bg-indigo-600' : 'bg-gray-700'
-        )}
-      >
-        <span className={cn(
-          'inline-block h-3 w-3 rounded-full bg-white transition-transform',
-          entry.enabled ? 'translate-x-3.5' : 'translate-x-0.5'
-        )} />
-      </button>
+      <span onClick={(e) => e.stopPropagation()}>
+        <Toggle
+          checked={entry.enabled}
+          onChange={() => onToggleEnabled(entry.id)}
+          aria-label={entry.enabled ? 'Disable entry' : 'Enable entry'}
+        />
+      </span>
 
       {/* Name */}
       <span className="flex-1 truncate text-xs">{entry.name || <em className="text-gray-500">Untitled</em>}</span>

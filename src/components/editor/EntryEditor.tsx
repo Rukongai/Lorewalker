@@ -8,6 +8,7 @@ import { estimateTokenCount } from '@/lib/token-estimate'
 import { ContentEditor } from './ContentEditor'
 import { KeywordInput } from './KeywordInput'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
+import { Toggle } from '@/components/shared/Toggle'
 
 function FieldGroup({ label, stOnly, defaultCollapsed = false, labelSuffix, headerRight, children }: {
   label: string
@@ -51,8 +52,6 @@ function Field({ label, help, children }: { label: string; help?: string; childr
 
 const inputClass =
   'w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors'
-
-const checkboxClass = 'w-3.5 h-3.5 accent-indigo-500'
 
 type InsertionStrategy = 'constant' | 'normal' | 'vectorized'
 
@@ -162,12 +161,7 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
           </div>
         </Field>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={entry.selective}
-            onChange={(e) => handleChange('selective', e.target.checked)}
-            className={checkboxClass}
-          />
+          <Toggle checked={entry.selective} onChange={(val) => handleChange('selective', val)} />
           Selective (requires secondary key match)
           <HelpTooltip text="When checked, the entry only activates if secondary keys also match according to the Selective Logic rule." />
         </label>
@@ -314,22 +308,12 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
       {/* Recursion */}
       <FieldGroup label="Recursion" stOnly defaultCollapsed>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={entry.preventRecursion}
-            onChange={(e) => handleChange('preventRecursion', e.target.checked)}
-            className={checkboxClass}
-          />
+          <Toggle checked={entry.preventRecursion} onChange={(val) => handleChange('preventRecursion', val)} />
           Prevent Further Recursion
           <HelpTooltip text="When active, this entry won't trigger other entries through recursion. Stops unintended cascading activation chains." />
         </label>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={entry.excludeRecursion}
-            onChange={(e) => handleChange('excludeRecursion', e.target.checked)}
-            className={checkboxClass}
-          />
+          <Toggle checked={entry.excludeRecursion} onChange={(val) => handleChange('excludeRecursion', val)} />
           Non-recursable
           <HelpTooltip text="This entry can only be activated by direct keyword matches in chat. Other entries cannot recursively trigger it." />
         </label>
@@ -338,12 +322,7 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
       {/* Budget */}
       <FieldGroup label="Budget" stOnly defaultCollapsed>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={entry.ignoreBudget}
-            onChange={(e) => handleChange('ignoreBudget', e.target.checked)}
-            className={checkboxClass}
-          />
+          <Toggle checked={entry.ignoreBudget} onChange={(val) => handleChange('ignoreBudget', val)} />
           Ignore Budget
           <HelpTooltip text="Entry bypasses the token budget limit, ensuring it's always inserted regardless of how much context is used. Use sparingly for critical lore." />
         </label>
@@ -381,12 +360,7 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
           </select>
         </Field>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={entry.groupOverride}
-            onChange={(e) => handleChange('groupOverride', e.target.checked)}
-            className={checkboxClass}
-          />
+          <Toggle checked={entry.groupOverride} onChange={(val) => handleChange('groupOverride', val)} />
           Prioritize Inclusion
           <HelpTooltip text="Forces deterministic selection — picks the entry with the highest Insertion Order instead of random weight rolling." />
         </label>
@@ -431,62 +405,32 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
       <FieldGroup label="Match Sources" stOnly defaultCollapsed>
         <div className="grid grid-cols-2 gap-2">
           <label className="flex items-center gap-2 text-xs text-gray-400">
-            <input
-              type="checkbox"
-              checked={entry.matchPersonaDescription}
-              onChange={(e) => handleChange('matchPersonaDescription', e.target.checked)}
-              className={checkboxClass}
-            />
+            <Toggle checked={entry.matchPersonaDescription} onChange={(val) => handleChange('matchPersonaDescription', val)} />
             Persona Description
             <HelpTooltip text="Scan the user's persona description for trigger keywords." />
           </label>
           <label className="flex items-center gap-2 text-xs text-gray-400">
-            <input
-              type="checkbox"
-              checked={entry.matchCharacterDescription}
-              onChange={(e) => handleChange('matchCharacterDescription', e.target.checked)}
-              className={checkboxClass}
-            />
+            <Toggle checked={entry.matchCharacterDescription} onChange={(val) => handleChange('matchCharacterDescription', val)} />
             Char Description
             <HelpTooltip text="Scan the character's description field for trigger keywords." />
           </label>
           <label className="flex items-center gap-2 text-xs text-gray-400">
-            <input
-              type="checkbox"
-              checked={entry.matchCharacterPersonality}
-              onChange={(e) => handleChange('matchCharacterPersonality', e.target.checked)}
-              className={checkboxClass}
-            />
+            <Toggle checked={entry.matchCharacterPersonality} onChange={(val) => handleChange('matchCharacterPersonality', val)} />
             Char Personality
             <HelpTooltip text="Scan the character's personality field for trigger keywords." />
           </label>
           <label className="flex items-center gap-2 text-xs text-gray-400">
-            <input
-              type="checkbox"
-              checked={entry.matchCharacterDepthPrompt}
-              onChange={(e) => handleChange('matchCharacterDepthPrompt', e.target.checked)}
-              className={checkboxClass}
-            />
+            <Toggle checked={entry.matchCharacterDepthPrompt} onChange={(val) => handleChange('matchCharacterDepthPrompt', val)} />
             Depth Prompt
             <HelpTooltip text="Scan the character's depth prompt / author's note field for trigger keywords." />
           </label>
           <label className="flex items-center gap-2 text-xs text-gray-400">
-            <input
-              type="checkbox"
-              checked={entry.matchScenario}
-              onChange={(e) => handleChange('matchScenario', e.target.checked)}
-              className={checkboxClass}
-            />
+            <Toggle checked={entry.matchScenario} onChange={(val) => handleChange('matchScenario', val)} />
             Scenario
             <HelpTooltip text="Scan the scenario field for trigger keywords." />
           </label>
           <label className="flex items-center gap-2 text-xs text-gray-400">
-            <input
-              type="checkbox"
-              checked={entry.matchCreatorNotes}
-              onChange={(e) => handleChange('matchCreatorNotes', e.target.checked)}
-              className={checkboxClass}
-            />
+            <Toggle checked={entry.matchCreatorNotes} onChange={(val) => handleChange('matchCreatorNotes', val)} />
             Creator Notes
             <HelpTooltip text="Scan the creator notes field for trigger keywords." />
           </label>
@@ -517,13 +461,9 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
       {/* Character Filter */}
       <FieldGroup label="Character Filter" stOnly defaultCollapsed>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
+          <Toggle
             checked={entry.characterFilter.isExclude}
-            onChange={(e) =>
-              handleChange('characterFilter', { ...entry.characterFilter, isExclude: e.target.checked })
-            }
-            className={checkboxClass}
+            onChange={(val) => handleChange('characterFilter', { ...entry.characterFilter, isExclude: val })}
           />
           Exclude (block listed characters instead of allow)
           <HelpTooltip text="When checked, the character list becomes a blocklist — the entry activates for all characters except those named." />
@@ -595,22 +535,12 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
           </Field>
         </div>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={entry.useProbability}
-            onChange={(e) => handleChange('useProbability', e.target.checked)}
-            className={checkboxClass}
-          />
+          <Toggle checked={entry.useProbability} onChange={(val) => handleChange('useProbability', val)} />
           Use Probability
           <HelpTooltip text="When enabled, the Trigger % value applies; when disabled, the entry always inserts if its keys match." />
         </label>
         <label className="flex items-center gap-2 text-xs text-gray-400">
-          <input
-            type="checkbox"
-            checked={entry.addMemo}
-            onChange={(e) => handleChange('addMemo', e.target.checked)}
-            className={checkboxClass}
-          />
+          <Toggle checked={entry.addMemo} onChange={(val) => handleChange('addMemo', val)} />
           Add Memo
           <HelpTooltip text="Attaches a reference note to this entry visible in SillyTavern's editor. Not injected into context." />
         </label>

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
+import { Toggle } from '@/components/shared/Toggle'
 import type { GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults } from '@/types'
 
 const inputClass =
@@ -26,12 +27,7 @@ function GeneralSettingsPanel() {
           Check for recursion loops
           <HelpTooltip text="Highlights circular references in the graph. SillyTavern breaks loops automatically, so this is off by default." />
         </div>
-        <input
-          type="checkbox"
-          checked={checkRecursionLoops}
-          onChange={(e) => setCheckRecursionLoops(e.target.checked)}
-          className="accent-indigo-500 w-4 h-4 cursor-pointer"
-        />
+        <Toggle checked={checkRecursionLoops} onChange={setCheckRecursionLoops} />
       </div>
     </div>
   )

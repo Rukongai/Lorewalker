@@ -5,6 +5,7 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { EntryListItem } from './EntryListItem'
+import { Toggle } from '@/components/shared/Toggle'
 import type { WorkingEntry, SortKey } from '@/types'
 
 export function EntryList() {
@@ -110,14 +111,7 @@ export function EntryList() {
                 <span className="text-xs text-gray-400">Pin Constants</span>
                 <HelpTooltip text="Float constant (always-active) entries to the top, ignoring sort order." />
               </div>
-              <button
-                role="switch"
-                aria-checked={pinConstantsToTop}
-                onClick={() => setPinConstantsToTop((v) => !v)}
-                className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${pinConstantsToTop ? 'bg-indigo-500' : 'bg-gray-700'}`}
-              >
-                <span className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform duration-200 ${pinConstantsToTop ? 'translate-x-3' : 'translate-x-0'}`} />
-              </button>
+              <Toggle checked={pinConstantsToTop} onChange={setPinConstantsToTop} />
             </div>
 
             {/* Display metric */}
