@@ -48,6 +48,7 @@
   --color-ctp-subtext0:  #d1d5db;
   --color-ctp-subtext1:  #e5e7eb;
   --color-ctp-text:      #f3f4f6;
+  --color-ctp-accent:    #818cf8;
   --color-ctp-lavender:  #818cf8;
   --color-ctp-blue:      #6366f1;
   --color-ctp-teal:      #2dd4bf;
@@ -66,6 +67,7 @@
 
 /* Catppuccin Macchiato overrides */
 :root.theme-catppuccin-macchiato {
+  --color-ctp-accent:    #8aadf4;
   --color-ctp-base:      #24273a;
   --color-ctp-mantle:    #1e2030;
   --color-ctp-crust:     #181926;
@@ -96,6 +98,7 @@
 
 /* Catppuccin Latte overrides (light theme) */
 :root.theme-catppuccin-latte {
+  --color-ctp-accent:    #1e66f5;
   --edge-active: #1e66f5;    /* Blue */
   --edge-selected: #7287fd;  /* Lavender */
   --edge-incoming: #179299;  /* Teal */
@@ -137,6 +140,7 @@
 
 /* Catppuccin Frappé overrides */
 :root.theme-catppuccin-frappe {
+  --color-ctp-accent:    #8caaee;
   --edge-active: #8caaee;    /* Blue */
   --edge-selected: #babbf1;  /* Lavender */
   --edge-incoming: #81c8be;  /* Teal */
@@ -178,6 +182,7 @@
 
 /* Catppuccin Mocha overrides */
 :root.theme-catppuccin-mocha {
+  --color-ctp-accent:    #89b4fa;
   --edge-active: #89b4fa;    /* Blue */
   --edge-selected: #b4befe;  /* Lavender */
   --edge-incoming: #94e2d5;  /* Teal */
@@ -339,6 +344,7 @@ body {
 /* ─── Nord ───────────────────────────────────────────────────────────────── */
 
 :root.theme-nord {
+  --color-ctp-accent:    #88c0d0;
   --edge-active: #81a1c1;
   --edge-selected: #88c0d0;
   --edge-incoming: #8fbcbb;
@@ -380,7 +386,7 @@ body {
 
 .theme-nord .cm-selectionBackground,
 .theme-nord .cm-focused .cm-selectionBackground {
-  background: rgba(129,161,193,0.25) \!important;
+  background: rgba(129,161,193,0.25) !important;
 }
 .theme-nord .cm-kw-normal {
   background: rgba(129,161,193,0.18);
@@ -396,6 +402,7 @@ body {
 /* ─── Nord Aurora (light) ────────────────────────────────────────────────── */
 
 :root.theme-nord-aurora {
+  --color-ctp-accent:    #81a1c1;
   --edge-active: #5e81ac;
   --edge-selected: #81a1c1;
   --edge-incoming: #5a9c99;
@@ -437,7 +444,7 @@ body {
 
 .theme-nord-aurora .cm-selectionBackground,
 .theme-nord-aurora .cm-focused .cm-selectionBackground {
-  background: rgba(94,129,172,0.15) \!important;
+  background: rgba(94,129,172,0.15) !important;
 }
 .theme-nord-aurora .cm-kw-normal {
   background: rgba(94,129,172,0.12);
@@ -453,6 +460,7 @@ body {
 /* ─── One Dark ───────────────────────────────────────────────────────────── */
 
 :root.theme-one-dark {
+  --color-ctp-accent:    #61afef;
   --edge-active: #61afef;
   --edge-selected: #c678dd;
   --edge-incoming: #56b6c2;
@@ -494,7 +502,7 @@ body {
 
 .theme-one-dark .cm-selectionBackground,
 .theme-one-dark .cm-focused .cm-selectionBackground {
-  background: rgba(97,175,239,0.22) \!important;
+  background: rgba(97,175,239,0.22) !important;
 }
 .theme-one-dark .cm-kw-normal {
   background: rgba(97,175,239,0.18);
@@ -510,6 +518,7 @@ body {
 /* ─── Dracula ────────────────────────────────────────────────────────────── */
 
 :root.theme-dracula {
+  --color-ctp-accent:    #ff79c6;
   --edge-active:    #bd93f9;
   --edge-selected:  #ff79c6;
   --edge-incoming:  #8be9fd;
@@ -551,7 +560,7 @@ body {
 
 .theme-dracula .cm-selectionBackground,
 .theme-dracula .cm-focused .cm-selectionBackground {
-  background: rgba(189,147,249,0.20) \!important;
+  background: rgba(189,147,249,0.20) !important;
 }
 .theme-dracula .cm-kw-normal {
   background: rgba(189,147,249,0.18);
@@ -567,6 +576,7 @@ body {
 /* ─── Dracula Soft ───────────────────────────────────────────────────────── */
 
 :root.theme-dracula-soft {
+  --color-ctp-accent:    #ff92df;
   --edge-active:    #9580ff;
   --edge-selected:  #ff92df;
   --edge-incoming:  #80ffea;
@@ -608,7 +618,7 @@ body {
 
 .theme-dracula-soft .cm-selectionBackground,
 .theme-dracula-soft .cm-focused .cm-selectionBackground {
-  background: rgba(149,128,255,0.20) \!important;
+  background: rgba(149,128,255,0.20) !important;
 }
 .theme-dracula-soft .cm-kw-normal {
   background: rgba(149,128,255,0.18);
@@ -624,6 +634,7 @@ body {
 /* ─── Rosé Pine ──────────────────────────────────────────────────────────── */
 
 :root.theme-rose-pine {
+  --color-ctp-accent:    #9ccfd8;
   --edge-active:    #9ccfd8;
   --edge-selected:  #ebbcba;
   --edge-incoming:  #31748f;
@@ -665,7 +676,7 @@ body {
 
 .theme-rose-pine .cm-selectionBackground,
 .theme-rose-pine .cm-focused .cm-selectionBackground {
-  background: rgba(156,207,216,0.20) \!important;
+  background: rgba(156,207,216,0.20) !important;
 }
 .theme-rose-pine .cm-kw-normal {
   background: rgba(156,207,216,0.18);
@@ -681,6 +692,7 @@ body {
 /* ─── Rosé Pine Dawn ─────────────────────────────────────────────────────── */
 
 :root.theme-rose-pine-dawn {
+  --color-ctp-accent:    #56949f;
   --edge-active:    #56949f;
   --edge-selected:  #907aa9;
   --edge-incoming:  #286983;
@@ -722,7 +734,7 @@ body {
 
 .theme-rose-pine-dawn .cm-selectionBackground,
 .theme-rose-pine-dawn .cm-focused .cm-selectionBackground {
-  background: rgba(86,148,159,0.15) \!important;
+  background: rgba(86,148,159,0.15) !important;
 }
 .theme-rose-pine-dawn .cm-kw-normal {
   background: rgba(86,148,159,0.12);
@@ -738,6 +750,7 @@ body {
 /* ─── Tokyo Night ────────────────────────────────────────────────────────── */
 
 :root.theme-tokyo-night {
+  --color-ctp-accent:    #7aa2f7;
   --edge-active:    #7aa2f7;
   --edge-selected:  #b4befe;
   --edge-incoming:  #73daca;
@@ -779,7 +792,7 @@ body {
 
 .theme-tokyo-night .cm-selectionBackground,
 .theme-tokyo-night .cm-focused .cm-selectionBackground {
-  background: rgba(122,162,247,0.20) \!important;
+  background: rgba(122,162,247,0.20) !important;
 }
 .theme-tokyo-night .cm-kw-normal {
   background: rgba(122,162,247,0.18);
@@ -795,6 +808,7 @@ body {
 /* ─── Tokyo Night Day ────────────────────────────────────────────────────── */
 
 :root.theme-tokyo-night-day {
+  --color-ctp-accent:    #2e7de9;
   --edge-active:    #2e7de9;
   --edge-selected:  #7847bd;
   --edge-incoming:  #118c74;
@@ -836,7 +850,7 @@ body {
 
 .theme-tokyo-night-day .cm-selectionBackground,
 .theme-tokyo-night-day .cm-focused .cm-selectionBackground {
-  background: rgba(46,125,233,0.15) \!important;
+  background: rgba(46,125,233,0.15) !important;
 }
 .theme-tokyo-night-day .cm-kw-normal {
   background: rgba(46,125,233,0.12);

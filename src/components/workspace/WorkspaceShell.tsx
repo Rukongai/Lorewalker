@@ -143,7 +143,7 @@ export function WorkspaceShell() {
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-2 bg-ctp-mantle border-b border-ctp-surface0 shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-lg font-semibold text-ctp-lavender">Lorewalker</span>
+          <span className="text-lg font-semibold text-ctp-accent">Lorewalker</span>
           {activeTab && (
             <span className="text-xs text-ctp-overlay1">{activeTab.fileMeta.fileName}</span>
           )}
@@ -263,7 +263,7 @@ export function WorkspaceShell() {
         {/* Drag divider: left ↔ center */}
         {!leftCollapsed && (
           <div
-            className="w-1 shrink-0 cursor-col-resize bg-ctp-surface0 hover:bg-ctp-lavender transition-colors"
+            className="w-1 shrink-0 cursor-col-resize bg-ctp-surface1 hover:bg-ctp-accent transition-colors"
             onMouseDown={(e) => startDrag(e, 'left')}
           />
         )}
@@ -290,7 +290,7 @@ export function WorkspaceShell() {
         {/* Drag divider: center ↔ right */}
         {!rightCollapsed && (
           <div
-            className="w-1 shrink-0 cursor-col-resize bg-ctp-surface0 hover:bg-ctp-lavender transition-colors"
+            className="w-1 shrink-0 cursor-col-resize bg-ctp-surface1 hover:bg-ctp-accent transition-colors"
             onMouseDown={(e) => startDrag(e, 'right')}
           />
         )}

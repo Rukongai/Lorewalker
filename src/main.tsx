@@ -46,6 +46,8 @@ function applyTheme(theme: ThemeId) {
   }
 }
 
+// Apply persisted theme on load (subscription only fires on changes)
+applyTheme(useWorkspaceStore.getState().theme)
 useWorkspaceStore.subscribe((state, prev) => {
   if (state.theme !== prev.theme) applyTheme(state.theme)
 })

@@ -84,12 +84,12 @@ const cmTheme = EditorView.theme({
   '.cm-content': {
     fontFamily: 'ui-monospace, monospace',
     fontSize: '12px',
-    color: '#e5e7eb',
+    color: 'var(--color-ctp-text)',
     padding: '4px 8px',
-    caretColor: '#e5e7eb',
+    caretColor: 'var(--color-ctp-text)',
     minHeight: '9rem',
   },
-  '.cm-cursor': { borderLeftColor: '#e5e7eb' },
+  '.cm-cursor': { borderLeftColor: 'var(--color-ctp-text)' },
   '&.cm-focused': { outline: 'none' },
   '.cm-scroller': { outline: 'none' },
 })
@@ -236,10 +236,10 @@ export function ContentEditor({ value, entryId, graph, onChange, preventRecursio
               className={
                 m.isCycle
                   ? 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-ctp-red/15 border border-ctp-red/50 text-ctp-maroon'
-                  : 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-ctp-lavender/15 border border-ctp-lavender/50 text-ctp-lavender'
+                  : 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-ctp-accent/15 border border-ctp-accent/50 text-ctp-accent'
               }
             >
-              <span className={m.isCycle ? 'text-ctp-red font-bold' : 'text-ctp-lavender font-bold'}>
+              <span className={m.isCycle ? 'text-ctp-red font-bold' : 'text-ctp-accent font-bold'}>
                 ×{m.count}
               </span>
               {kw}
