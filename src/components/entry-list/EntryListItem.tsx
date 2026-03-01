@@ -12,10 +12,10 @@ interface EntryListItemProps {
 
 function getTypeBadge(entry: WorkingEntry): { label: string; color: string } {
   if (!entry.enabled) return { label: 'OFF', color: 'bg-gray-700 text-gray-400' }
-  if (entry.constant) return { label: 'CONST', color: 'bg-purple-900/60 text-purple-300' }
-  if (entry.selective) return { label: 'SEL', color: 'bg-teal-900/60 text-teal-300' }
-  if (entry.sticky > 0) return { label: 'STICKY', color: 'bg-blue-900/60 text-blue-300' }
-  return { label: 'KW', color: 'bg-indigo-900/60 text-indigo-300' }
+  if (entry.constant) return { label: 'CONST', color: 'bg-purple-900/80 text-purple-300' }
+  if (entry.selective) return { label: 'SEL', color: 'bg-teal-900/80 text-teal-300' }
+  if (entry.sticky > 0) return { label: 'STICKY', color: 'bg-blue-900/80 text-blue-300' }
+  return { label: 'KW', color: 'bg-indigo-900/80 text-indigo-300' }
 }
 
 export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, displayMetric }: EntryListItemProps) {
@@ -54,7 +54,7 @@ export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, di
       </span>
 
       {/* Metric */}
-      <span className="text-[10px] text-gray-600 shrink-0">
+      <span className="text-[10px] text-gray-500 shrink-0">
         {displayMetric === 'tokens' ? `${entry.tokenCount}t` : `${entry.order}`}
       </span>
     </div>

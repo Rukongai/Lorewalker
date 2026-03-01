@@ -155,7 +155,7 @@ export function WorkspaceShell() {
             onClick={handleUndo}
             disabled={!canUndo}
             title="Undo (Ctrl+Z)"
-            className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 disabled:opacity-30 transition-colors"
+            className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 disabled:opacity-50 transition-colors"
           >
             <Undo2 size={16} />
           </button>
@@ -165,7 +165,7 @@ export function WorkspaceShell() {
             onClick={handleRedo}
             disabled={!canRedo}
             title="Redo"
-            className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 disabled:opacity-30 transition-colors"
+            className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 disabled:opacity-50 transition-colors"
           >
             <Redo2 size={16} />
           </button>
@@ -175,7 +175,7 @@ export function WorkspaceShell() {
             onClick={handleSave}
             disabled={!activeTabId}
             title="Save (Ctrl+S)"
-            className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 disabled:opacity-30 transition-colors"
+            className="p-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 disabled:opacity-50 transition-colors"
           >
             <Save size={16} />
           </button>
@@ -275,7 +275,7 @@ export function WorkspaceShell() {
               <div className="text-center space-y-3">
                 <div className="text-5xl text-gray-700">&#x2B21;</div>
                 <p className="text-sm text-gray-500">Drag a SillyTavern JSON file here</p>
-                <p className="text-xs text-gray-600">or click the upload icon above</p>
+                <p className="text-xs text-gray-500">or click the upload icon above</p>
               </div>
             </div>
           ) : (
@@ -380,11 +380,11 @@ export function WorkspaceShell() {
                     <EntryEditor entryId={selectedEntryId} />
                   ) : activeTabId ? (
                     <div className="flex-1 flex items-center justify-center">
-                      <p className="text-xs text-gray-600">Select an entry to edit</p>
+                      <p className="text-xs text-gray-500">Select an entry to edit</p>
                     </div>
                   ) : (
                     <div className="flex-1 flex items-center justify-center">
-                      <p className="text-xs text-gray-600">No file open</p>
+                      <p className="text-xs text-gray-500">No file open</p>
                     </div>
                   )
                 )}

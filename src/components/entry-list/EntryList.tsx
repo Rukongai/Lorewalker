@@ -67,7 +67,7 @@ export function EntryList() {
   if (!activeTabId) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-xs text-gray-600">Open a lorebook to get started</p>
+        <p className="text-xs text-gray-500">Open a lorebook to get started</p>
       </div>
     )
   }
@@ -77,13 +77,13 @@ export function EntryList() {
       {/* Search bar */}
       <div className="p-2 border-b border-gray-800">
         <div className="flex items-center gap-2 px-2 py-1 bg-gray-800 rounded text-xs">
-          <Search size={12} className="text-gray-500 shrink-0" />
+          <Search size={12} className="text-gray-400 shrink-0" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search entries…"
-            className="flex-1 bg-transparent text-gray-200 placeholder-gray-600 outline-none"
+            className="flex-1 bg-transparent text-gray-200 placeholder-gray-500 outline-none"
           />
         </div>
       </div>
@@ -123,14 +123,14 @@ export function EntryList() {
               <div className="flex items-center rounded overflow-hidden border border-gray-700 text-xs">
                 <button
                   onClick={() => setDisplayMetric('tokens')}
-                  className={`px-1.5 py-0.5 leading-none transition-colors ${displayMetric === 'tokens' ? 'text-indigo-400 bg-indigo-950' : 'text-gray-600 hover:text-gray-400'}`}
+                  className={`px-1.5 py-0.5 leading-none transition-colors ${displayMetric === 'tokens' ? 'text-indigo-400 bg-indigo-950' : 'text-gray-400 hover:text-gray-200'}`}
                 >
                   Tokens
                 </button>
                 <span className="text-gray-700 leading-none select-none">|</span>
                 <button
                   onClick={() => setDisplayMetric('order')}
-                  className={`px-1.5 py-0.5 leading-none transition-colors ${displayMetric === 'order' ? 'text-indigo-400 bg-indigo-950' : 'text-gray-600 hover:text-gray-400'}`}
+                  className={`px-1.5 py-0.5 leading-none transition-colors ${displayMetric === 'order' ? 'text-indigo-400 bg-indigo-950' : 'text-gray-400 hover:text-gray-200'}`}
                 >
                   Order
                 </button>
@@ -203,7 +203,7 @@ export function EntryList() {
       <div className="flex-1 overflow-y-auto">
         {sorted.length === 0 ? (
           <div className="flex items-center justify-center h-16">
-            <p className="text-xs text-gray-600">No entries found</p>
+            <p className="text-xs text-gray-500">No entries found</p>
           </div>
         ) : (
           sorted.map((entry) => (

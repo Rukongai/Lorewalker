@@ -29,7 +29,7 @@ export function HelpTooltip({ text }: { text: string }) {
       onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setVisible(false)}
     >
-      <HelpCircle size={12} className="text-gray-600 hover:text-gray-400" />
+      <HelpCircle size={12} className="text-gray-500 hover:text-gray-300" />
       {visible && createPortal(
         <div
           style={{

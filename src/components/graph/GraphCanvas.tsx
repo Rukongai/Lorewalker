@@ -224,7 +224,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
 
   if (entries.length === 0) {
     return (
-      <div className="relative flex-1 flex items-center justify-center text-gray-600 text-sm">
+      <div className="relative flex-1 flex items-center justify-center text-gray-500 text-sm">
         <GraphAddButton onAdd={handleAddEntry} disabled={!realStore} />
         No entries to display
       </div>

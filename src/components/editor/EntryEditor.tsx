@@ -51,7 +51,7 @@ function Field({ label, help, children }: { label: string; help?: string; childr
 }
 
 const inputClass =
-  'w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors placeholder:text-gray-600'
+  'w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors placeholder:text-gray-500'
 
 type InsertionStrategy = 'constant' | 'normal' | 'vectorized'
 
@@ -104,7 +104,7 @@ export function EntryEditor({ entryId, layout = 'single' }: EntryEditorProps) {
   if (!entry) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-xs text-gray-600">Select an entry to edit</p>
+        <p className="text-xs text-gray-500">Select an entry to edit</p>
       </div>
     )
   }

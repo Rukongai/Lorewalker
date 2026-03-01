@@ -60,7 +60,7 @@ export function BookMetaEditor() {
   if (!activeTabId) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-xs text-gray-600">No book open</p>
+        <p className="text-xs text-gray-500">No book open</p>
       </div>
     )
   }
