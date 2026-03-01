@@ -40,7 +40,11 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
   const graphSettings = useWorkspaceStore((s) => s.graphSettings)
   const checkRecursionLoops = useWorkspaceStore((s) => s.checkRecursionLoops)
   const theme = useWorkspaceStore((s) => s.theme)
-  const isLightTheme = theme === 'catppuccin-latte'
+  const isLightTheme =
+    theme === 'catppuccin-latte' ||
+    theme === 'nord-aurora' ||
+    theme === 'rose-pine-dawn' ||
+    theme === 'tokyo-night-day'
   const reactFlowColorMode = isLightTheme ? 'light' : 'dark'
   const realStore = documentStoreRegistry.get(tabId)
   const store = realStore ?? EMPTY_STORE
@@ -264,7 +268,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
             return 'var(--node-keyword)'
           }}
           maskColor={isLightTheme ? 'rgba(239,241,245,0.7)' : 'rgba(0,0,0,0.6)'}
-          className="!bg-ctp-mantle !border-ctp-surface1"
+          className={`!bg-ctp-mantle !border-ctp-surface1${isLightTheme ? ' shadow-md' : ''}`}
           pannable
           zoomable
         />

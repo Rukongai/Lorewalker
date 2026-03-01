@@ -44,7 +44,12 @@ function GeneralSettingsPanel() {
           <option value="nord">Nord</option>
           <option value="nord-aurora">Nord Aurora</option>
           <option value="one-dark">One Dark</option>
+          <option value="rose-pine">Rosé Pine</option>
+          <option value="rose-pine-dawn">Rosé Pine Dawn</option>
+          <option value="tokyo-night">Tokyo Night</option>
+          <option value="tokyo-night-day">Tokyo Night Day</option>
           <option value="dracula">Dracula</option>
+          <option value="dracula-soft">Dracula Soft</option>
         </select>
       </div>
       <div className="flex items-center justify-between">

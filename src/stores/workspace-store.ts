@@ -44,7 +44,13 @@ const DEFAULT_LOREBOOK_DEFAULTS: LorebookDefaults = {
   insertionStrategy: 'evenly',
 }
 
-export type ThemeId = 'dark' | 'catppuccin-macchiato' | 'catppuccin-latte' | 'catppuccin-frappe' | 'catppuccin-mocha' | 'nord' | 'nord-aurora' | 'one-dark' | 'dracula'
+export type ThemeId =
+  | 'dark'
+  | 'catppuccin-macchiato' | 'catppuccin-latte' | 'catppuccin-frappe' | 'catppuccin-mocha'
+  | 'nord' | 'nord-aurora' | 'one-dark'
+  | 'rose-pine' | 'rose-pine-dawn'
+  | 'tokyo-night' | 'tokyo-night-day'
+  | 'dracula' | 'dracula-soft'
 
 interface WorkspaceState {
   tabs: TabMeta[]

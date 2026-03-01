@@ -23,7 +23,12 @@ const themeClasses = [
   'theme-nord',
   'theme-nord-aurora',
   'theme-one-dark',
+  'theme-rose-pine',
+  'theme-rose-pine-dawn',
+  'theme-tokyo-night',
+  'theme-tokyo-night-day',
   'theme-dracula',
+  'theme-dracula-soft',
 ] as const
 
 function applyTheme(theme: ThemeId) {
@@ -31,7 +36,7 @@ function applyTheme(theme: ThemeId) {
   themeClasses.forEach((cls) => html.classList.remove(cls))
 
   // Light themes: remove the 'dark' class
-  if (theme === 'catppuccin-latte' || theme === 'nord-aurora') {
+  if (theme === 'catppuccin-latte' || theme === 'nord-aurora' || theme === 'rose-pine-dawn' || theme === 'tokyo-night-day') {
     html.classList.remove('dark')
     html.classList.add(`theme-${theme}`)
   } else {
