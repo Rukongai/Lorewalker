@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, ChevronDown, ChevronUp } from 'lucide-react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
@@ -16,6 +16,7 @@ export function EntryList() {
   const [sortDir2, setSortDir2] = useState<'asc' | 'desc'>(entriesListDefaults.sortDir2)
   const [pinConstantsToTop, setPinConstantsToTop] = useState(entriesListDefaults.pinConstantsToTop)
   const [displayMetric, setDisplayMetric] = useState<'tokens' | 'order'>('tokens')
+  const [sortExpanded, setSortExpanded] = useState(false)
 
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
@@ -60,6 +61,13 @@ export function EntryList() {
     return sortDir2 === 'asc' ? cmp2 : -cmp2
   })
 
+  const sortKeyLabel: Record<SortKey, string> = { uid: 'UID', name: 'Name', tokenCount: 'Tok', order: 'Ord' }
+  const sortSummary = (() => {
+    const p = `${sortKeyLabel[sortBy]} ${sortDir === 'asc' ? '↑' : '↓'}`
+    if (sortBy2 === null) return p
+    return `${p}, ${sortKeyLabel[sortBy2]} ${sortDir2 === 'asc' ? '↑' : '↓'}`
+  })()
+
   if (!activeTabId) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -84,68 +92,93 @@ export function EntryList() {
         </div>
       </div>
 
-      {/* Entry count + sort controls */}
+      {/* Entry count + collapsible sort controls */}
       <div className="px-3 py-1 border-b border-gray-800 flex flex-col gap-0.5">
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-500">
             {sorted.length} {sorted.length === 1 ? 'entry' : 'entries'}
           </span>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPinConstantsToTop((v) => !v)}
-              title="Pin Constant entries to top"
-              className={`text-xs font-medium leading-none px-1 py-0.5 rounded transition-colors ${pinConstantsToTop ? 'text-indigo-400 bg-indigo-950' : 'text-gray-700 hover:text-gray-500'}`}
-            >
-              C↑
-            </button>
-            <button
-              onClick={() => setDisplayMetric((m) => m === 'tokens' ? 'order' : 'tokens')}
-              title={displayMetric === 'tokens' ? 'Showing tokens — click for order' : 'Showing order — click for tokens'}
-              className={`text-xs font-medium leading-none px-1 py-0.5 rounded transition-colors ${displayMetric === 'order' ? 'text-indigo-400 bg-indigo-950' : 'text-gray-700 hover:text-gray-500'}`}
-            >
-              {displayMetric === 'tokens' ? 'Tok' : 'Ord'}
-            </button>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortKey)}
-              className="bg-transparent text-xs text-gray-500 outline-none cursor-pointer hover:text-gray-300 transition-colors"
-            >
-              <option value="uid">UID</option>
-              <option value="name">Name</option>
-              <option value="tokenCount">Tokens</option>
-              <option value="order">Order</option>
-            </select>
-            <button
-              onClick={() => setSortDir((d) => d === 'asc' ? 'desc' : 'asc')}
-              className="text-gray-500 hover:text-gray-300 transition-colors leading-none"
-              title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
-            >
-              {sortDir === 'asc' ? '↑' : '↓'}
-            </button>
-          </div>
-        </div>
-        <div className="flex items-center justify-end gap-1">
-          <span className="text-xs text-gray-700">then</span>
-          <select
-            value={sortBy2 ?? ''}
-            onChange={(e) => setSortBy2(e.target.value === '' ? null : e.target.value as SortKey)}
-            className="bg-transparent text-xs text-gray-700 outline-none cursor-pointer hover:text-gray-400 transition-colors"
-          >
-            <option value="">— none —</option>
-            <option value="uid">UID</option>
-            <option value="name">Name</option>
-            <option value="tokenCount">Tokens</option>
-            <option value="order">Order</option>
-          </select>
           <button
-            onClick={() => setSortDir2((d) => d === 'asc' ? 'desc' : 'asc')}
-            className={`leading-none transition-colors ${sortBy2 === null ? 'text-gray-700 cursor-default' : 'text-gray-500 hover:text-gray-300 cursor-pointer'}`}
-            title={sortDir2 === 'asc' ? 'Ascending' : 'Descending'}
-            disabled={sortBy2 === null}
+            onClick={() => setSortExpanded((v) => !v)}
+            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
           >
-            {sortDir2 === 'asc' ? '↑' : '↓'}
+            {sortExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+            <span>{sortSummary}</span>
           </button>
         </div>
+        {sortExpanded && (
+          <>
+            {/* Pin constants + display metric */}
+            <div className="flex items-center justify-between mt-0.5">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-gray-600">📌 Pin constants</span>
+                <button
+                  onClick={() => setPinConstantsToTop((v) => !v)}
+                  title="Pin Constant entries to top"
+                  className={`text-xs font-medium leading-none px-1 py-0.5 rounded transition-colors ${pinConstantsToTop ? 'text-indigo-400 bg-indigo-950' : 'text-gray-700 hover:text-gray-500'}`}
+                >
+                  {pinConstantsToTop ? '✓' : '—'}
+                </button>
+              </div>
+              <div className="flex items-center rounded overflow-hidden border border-gray-700 text-xs">
+                <button
+                  onClick={() => setDisplayMetric('tokens')}
+                  className={`px-1.5 py-0.5 leading-none transition-colors ${displayMetric === 'tokens' ? 'text-indigo-400 bg-indigo-950' : 'text-gray-600 hover:text-gray-400'}`}
+                >
+                  Tok
+                </button>
+                <span className="text-gray-700 leading-none">|</span>
+                <button
+                  onClick={() => setDisplayMetric('order')}
+                  className={`px-1.5 py-0.5 leading-none transition-colors ${displayMetric === 'order' ? 'text-indigo-400 bg-indigo-950' : 'text-gray-600 hover:text-gray-400'}`}
+                >
+                  Ord
+                </button>
+              </div>
+            </div>
+            {/* Primary sort */}
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="text-xs text-gray-600">Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortKey)}
+                className="bg-transparent text-xs text-gray-500 outline-none cursor-pointer hover:text-gray-300 transition-colors"
+              >
+                <option value="uid">UID</option>
+                <option value="name">Name</option>
+                <option value="tokenCount">Tokens</option>
+                <option value="order">Order</option>
+              </select>
+              <button
+                onClick={() => setSortDir((d) => d === 'asc' ? 'desc' : 'asc')}
+                className="text-gray-500 hover:text-gray-300 transition-colors leading-none"
+                title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
+              >
+                {sortDir === 'asc' ? '↑' : '↓'}
+              </button>
+              <span className="text-xs text-gray-700 ml-1">then</span>
+              <select
+                value={sortBy2 ?? ''}
+                onChange={(e) => setSortBy2(e.target.value === '' ? null : e.target.value as SortKey)}
+                className="bg-transparent text-xs text-gray-700 outline-none cursor-pointer hover:text-gray-400 transition-colors"
+              >
+                <option value="">— none —</option>
+                <option value="uid">UID</option>
+                <option value="name">Name</option>
+                <option value="tokenCount">Tokens</option>
+                <option value="order">Order</option>
+              </select>
+              <button
+                onClick={() => setSortDir2((d) => d === 'asc' ? 'desc' : 'asc')}
+                className={`leading-none transition-colors ${sortBy2 === null ? 'text-gray-700 cursor-default' : 'text-gray-500 hover:text-gray-300 cursor-pointer'}`}
+                title={sortDir2 === 'asc' ? 'Ascending' : 'Descending'}
+                disabled={sortBy2 === null}
+              >
+                {sortDir2 === 'asc' ? '↑' : '↓'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* List */}
