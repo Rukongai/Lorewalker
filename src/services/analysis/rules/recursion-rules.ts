@@ -1,53 +1,53 @@
 import type { Rule, Finding, AnalysisContext } from '@/types/analysis'
 import { generateId } from '@/lib/uuid'
 import {
-  findCycles,
+  // findCycles,
   findOrphans,
   findDeadLinks,
   findIslands,
   computeChainDepths,
 } from '@/services/graph-service'
 
-const circularReferences: Rule = {
-  id: 'recursion/circular-references',
-  name: 'Circular References',
-  description:
-    'Detects entries that form circular trigger chains. Cycles can cause infinite recursion loops during activation unless all participants have preventRecursion enabled.',
-  category: 'recursion',
-  severity: 'error',
-  requiresLLM: false,
-  async evaluate(context: AnalysisContext): Promise<Finding[]> {
-    const { cycles } = findCycles(context.graph)
-    const findings: Finding[] = []
-    const entryNameMap = new Map(context.entries.map((e) => [e.id, e.name]))
+// const circularReferences: Rule = {
+//   id: 'recursion/circular-references',
+//   name: 'Circular References',
+//   description:
+//     'Detects entries that form circular trigger chains. Cycles can cause infinite recursion loops during activation unless all participants have preventRecursion enabled.',
+//   category: 'recursion',
+//   severity: 'error',
+//   requiresLLM: false,
+//   async evaluate(context: AnalysisContext): Promise<Finding[]> {
+//     const { cycles } = findCycles(context.graph)
+//     const findings: Finding[] = []
+//     const entryNameMap = new Map(context.entries.map((e) => [e.id, e.name]))
 
-    for (const cycle of cycles) {
-      // Deduplicate: the cycle array includes the start node at both ends
-      const participantIds = [...new Set(cycle)]
+//     for (const cycle of cycles) {
+//       // Deduplicate: the cycle array includes the start node at both ends
+//       const participantIds = [...new Set(cycle)]
 
-      // Skip cycles where every participant has preventRecursion === true
-      const allPrevented = participantIds.every((id) => {
-        const entry = context.entries.find((e) => e.id === id)
-        return entry?.preventRecursion === true
-      })
-      if (allPrevented) continue
+//       // Skip cycles where every participant has preventRecursion === true
+//       const allPrevented = participantIds.every((id) => {
+//         const entry = context.entries.find((e) => e.id === id)
+//         return entry?.preventRecursion === true
+//       })
+//       if (allPrevented) continue
 
-      const names = participantIds.map((id) => entryNameMap.get(id) ?? id)
-      const arrowNames = [...names, names[0]]
+//       const names = participantIds.map((id) => entryNameMap.get(id) ?? id)
+//       const arrowNames = [...names, names[0]]
 
-      findings.push({
-        id: generateId(),
-        ruleId: 'recursion/circular-references',
-        severity: 'error',
-        category: 'recursion',
-        message: `Circular reference detected: ${arrowNames.join(' → ')}`,
-        entryIds: participantIds,
-      })
-    }
+//       findings.push({
+//         id: generateId(),
+//         ruleId: 'recursion/circular-references',
+//         severity: 'error',
+//         category: 'recursion',
+//         message: `Circular reference detected: ${arrowNames.join(' → ')}`,
+//         entryIds: participantIds,
+//       })
+//     }
 
-    return findings
-  },
-}
+//     return findings
+//   },
+// }
 
 const longChains: Rule = {
   id: 'recursion/long-chains',
@@ -173,7 +173,7 @@ const islandEntries: Rule = {
 }
 
 export const recursionRules: Rule[] = [
-  circularReferences,
+  // circularReferences,
   longChains,
   orphanedEntries,
   deadLinks,

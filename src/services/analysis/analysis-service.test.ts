@@ -197,29 +197,29 @@ describe('runDeterministic — budget/constant-token-cost', () => {
 
 // ─── runDeterministic — recursion/circular-references ────────────────────────
 
-describe('runDeterministic — recursion/circular-references', () => {
-  it('detects a simple A→B→A cycle as error', async () => {
-    // Entry A mentions "entryb" in content; Entry B has key "entryb"
-    // Entry B mentions "entrya" in content; Entry A has key "entrya"
-    const entryA = makeEntry({ id: 'a', name: 'Entry A', keys: ['entrya'], content: 'see entryb for more' })
-    const entryB = makeEntry({ id: 'b', name: 'Entry B', keys: ['entryb'], content: 'see entrya for more' })
-    const ctx = makeContext([entryA, entryB])
-    const findings = await runDeterministic(ctx, defaultRubric)
-    const match = findings.find((f) => f.ruleId === 'recursion/circular-references')
-    expect(match).toBeDefined()
-    expect(match?.severity).toBe('error')
-    expect(match?.entryIds).toContain('a')
-    expect(match?.entryIds).toContain('b')
-  })
+// describe('runDeterministic — recursion/circular-references', () => {
+//   it('detects a simple A→B→A cycle as error', async () => {
+//     // Entry A mentions "entryb" in content; Entry B has key "entryb"
+//     // Entry B mentions "entrya" in content; Entry A has key "entrya"
+//     const entryA = makeEntry({ id: 'a', name: 'Entry A', keys: ['entrya'], content: 'see entryb for more' })
+//     const entryB = makeEntry({ id: 'b', name: 'Entry B', keys: ['entryb'], content: 'see entrya for more' })
+//     const ctx = makeContext([entryA, entryB])
+//     const findings = await runDeterministic(ctx, defaultRubric)
+//     const match = findings.find((f) => f.ruleId === 'recursion/circular-references')
+//     expect(match).toBeDefined()
+//     expect(match?.severity).toBe('error')
+//     expect(match?.entryIds).toContain('a')
+//     expect(match?.entryIds).toContain('b')
+//   })
 
-  it('does NOT flag cycles where all participants have preventRecursion', async () => {
-    const entryA = makeEntry({ id: 'a', keys: ['entrya'], content: 'see entryb', preventRecursion: true })
-    const entryB = makeEntry({ id: 'b', keys: ['entryb'], content: 'see entrya', preventRecursion: true })
-    const ctx = makeContext([entryA, entryB])
-    const findings = await runDeterministic(ctx, defaultRubric)
-    expect(findings.find((f) => f.ruleId === 'recursion/circular-references')).toBeUndefined()
-  })
-})
+//   it('does NOT flag cycles where all participants have preventRecursion', async () => {
+//     const entryA = makeEntry({ id: 'a', keys: ['entrya'], content: 'see entryb', preventRecursion: true })
+//     const entryB = makeEntry({ id: 'b', keys: ['entryb'], content: 'see entrya', preventRecursion: true })
+//     const ctx = makeContext([entryA, entryB])
+//     const findings = await runDeterministic(ctx, defaultRubric)
+//     expect(findings.find((f) => f.ruleId === 'recursion/circular-references')).toBeUndefined()
+//   })
+// })
 
 // ─── runDeterministic — keywords/empty-keys ──────────────────────────────────
 

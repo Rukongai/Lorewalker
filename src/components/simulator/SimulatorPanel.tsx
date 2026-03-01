@@ -100,7 +100,7 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
 
         {/* Results */}
         {lastResult && (
-          <div className="bg-ctp-surface0 rounded overflow-hidden">
+          <div className="bg-ctp-surface0 rounded">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1 px-3 pt-2 pb-1">Results</p>
             <ActivationResults
               result={lastResult}
