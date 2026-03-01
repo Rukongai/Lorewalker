@@ -32,9 +32,9 @@
 }
 
 /* ─── Catppuccin semantic tokens ─────────────────────────────────────────── */
-/* @theme inline makes these available as Tailwind utilities (bg-ctp-*, text-ctp-*, etc.) */
+/* @theme (no inline) emits CSS vars at :root so runtime theme overrides work */
 
-@theme inline {
+@theme {
   /* Default Dark (maps current grays/indigos to CTP concepts) */
   --color-ctp-base:      #030712;
   --color-ctp-mantle:    #111827;
