@@ -42,13 +42,13 @@ export function KeywordInput({ value, onChange, placeholder }: KeywordInputProps
       {value.map((kw, i) => (
         <span
           key={kw}
-          className="inline-flex items-center gap-0.5 pl-1.5 pr-0.5 py-0.5 rounded text-[10px] bg-indigo-900/50 border border-indigo-700/40 text-indigo-200 select-none"
+          className="inline-flex items-center gap-0.5 pl-1.5 pr-0.5 py-0.5 rounded text-[10px] bg-indigo-500/15 border border-indigo-400/60 text-indigo-200 select-none"
         >
           {kw}
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); removeAt(i) }}
-            className="text-indigo-400 hover:text-indigo-200 hover:bg-indigo-800/50 rounded px-0.5 leading-none"
+            className="text-indigo-400 hover:text-indigo-200 hover:bg-indigo-500/20 rounded px-0.5 leading-none"
           >
             ×
           </button>

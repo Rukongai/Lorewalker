@@ -24,7 +24,7 @@ function FieldGroup({ label, stOnly, defaultCollapsed = false, labelSuffix, head
       <div className="flex items-center">
         <button
           onClick={() => setOpen(o => !o)}
-          className="flex-1 min-w-0 text-left text-[10px] font-semibold tracking-wider text-gray-500 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-gray-400 transition-colors"
+          className="flex-1 min-w-0 text-left text-[11px] font-semibold tracking-wider text-gray-400 px-3 pt-2 pb-1 flex items-center gap-1.5 hover:text-gray-300 transition-colors"
         >
           {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
           <span className="truncate">{label}</span>
@@ -41,7 +41,7 @@ function FieldGroup({ label, stOnly, defaultCollapsed = false, labelSuffix, head
 function Field({ label, help, children }: { label: string; help?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[10px] text-gray-500 flex items-center">
+      <span className="text-[11px] text-gray-400 flex items-center">
         {label}
         {help && <HelpTooltip text={help} />}
       </span>
@@ -51,7 +51,7 @@ function Field({ label, help, children }: { label: string; help?: string; childr
 }
 
 const inputClass =
-  'w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors'
+  'w-full bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-200 outline-none focus:border-indigo-500 transition-colors placeholder:text-gray-600'
 
 type InsertionStrategy = 'constant' | 'normal' | 'vectorized'
 
@@ -65,6 +65,7 @@ export function EntryEditor({ entryId, layout = 'single' }: EntryEditorProps) {
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
   const entry = activeStore((s) => s.entries.find((e) => e.id === entryId))
+  const bookMatchWholeWords = activeStore((s) => s.bookMeta.matchWholeWords)
   const { graph } = useDerivedState(activeTabId ?? '')
 
   const handleChange = useCallback(
@@ -124,7 +125,7 @@ export function EntryEditor({ entryId, layout = 'single' }: EntryEditorProps) {
 
   const contentField = (
     <div className="flex flex-col gap-1">
-      <span className="text-[10px] text-gray-500 flex items-center">
+      <span className="text-[11px] text-gray-400 flex items-center">
         {`Content (${entry.tokenCount} tokens)`}
         <HelpTooltip text="The text injected into the AI's context when this entry activates. Supports Markdown-style formatting depending on your AI platform." />
       </span>
@@ -135,6 +136,7 @@ export function EntryEditor({ entryId, layout = 'single' }: EntryEditorProps) {
         onChange={(v) => handleChange('content', v)}
         inputClass={inputClass}
         preventRecursion={entry.preventRecursion}
+        matchWholeWords={bookMatchWholeWords ?? false}
       />
     </div>
   )

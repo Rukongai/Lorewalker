@@ -5,6 +5,9 @@ const config: Config = {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Outfit', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      },
       colors: {
         // Health severity colors
         'health-error': 'rgb(239 68 68)',       // red-500

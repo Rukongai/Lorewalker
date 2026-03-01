@@ -12,12 +12,13 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 
 type KeywordMeta = Map<string, { count: number; isCycle: boolean }>
 
-function buildDecorations(doc: string, meta: KeywordMeta): DecorationSet {
+function buildDecorations(doc: string, meta: KeywordMeta, matchWholeWords: boolean): DecorationSet {
   const keywords = Array.from(meta.keys()).filter((k) => k.length > 0)
   if (keywords.length === 0) return Decoration.none
 
   const escaped = keywords.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-  const pattern = new RegExp(escaped.join('|'), 'gi')
+  const parts = escaped.map((k) => (matchWholeWords ? `\\b${k}\\b` : k))
+  const pattern = new RegExp(parts.join('|'), 'gi')
 
   // Collect matches in order (regex exec produces them sorted by index)
   const builder = new RangeSetBuilder<Decoration>()
@@ -48,28 +49,29 @@ function buildDecorations(doc: string, meta: KeywordMeta): DecorationSet {
 // StateEffect + StateField
 // ---------------------------------------------------------------------------
 
-const setKeywordEffect = StateEffect.define<KeywordMeta>()
+const setKeywordEffect = StateEffect.define<{ meta: KeywordMeta; matchWholeWords: boolean }>()
 
-const keywordField = StateField.define<{ meta: KeywordMeta; deco: DecorationSet }>({
+const keywordField = StateField.define<{ meta: KeywordMeta; matchWholeWords: boolean; deco: DecorationSet }>({
   create() {
-    return { meta: new Map(), deco: Decoration.none }
+    return { meta: new Map(), matchWholeWords: false, deco: Decoration.none }
   },
   update(value, tr) {
-    let { meta, deco } = value
+    let { meta, matchWholeWords, deco } = value
 
     for (const effect of tr.effects) {
       if (effect.is(setKeywordEffect)) {
-        meta = effect.value
-        deco = buildDecorations(tr.newDoc.toString(), meta)
-        return { meta, deco }
+        meta = effect.value.meta
+        matchWholeWords = effect.value.matchWholeWords
+        deco = buildDecorations(tr.newDoc.toString(), meta, matchWholeWords)
+        return { meta, matchWholeWords, deco }
       }
     }
 
     if (tr.docChanged) {
-      deco = buildDecorations(tr.newDoc.toString(), meta)
+      deco = buildDecorations(tr.newDoc.toString(), meta, matchWholeWords)
     }
 
-    return { meta, deco }
+    return { meta, matchWholeWords, deco }
   },
   provide: (f) => EditorView.decorations.from(f, (s) => s.deco),
 })
@@ -103,9 +105,10 @@ interface ContentEditorProps {
   onChange: (value: string) => void
   inputClass: string
   preventRecursion?: boolean
+  matchWholeWords?: boolean
 }
 
-export function ContentEditor({ value, entryId, graph, onChange, preventRecursion = false }: ContentEditorProps) {
+export function ContentEditor({ value, entryId, graph, onChange, preventRecursion = false, matchWholeWords = false }: ContentEditorProps) {
   const showKeywordHighlightsByDefault = useWorkspaceStore((s) => s.editorDefaults.showKeywordHighlights)
   const [highlight, setHighlight] = useState(showKeywordHighlightsByDefault)
   const effectiveHighlight = highlight && !preventRecursion
@@ -204,9 +207,9 @@ export function ContentEditor({ value, entryId, graph, onChange, preventRecursio
     const view = viewRef.current
     if (!view) return
     view.dispatch({
-      effects: setKeywordEffect.of(effectiveHighlight ? keywordMeta : new Map()),
+      effects: setKeywordEffect.of({ meta: effectiveHighlight ? keywordMeta : new Map(), matchWholeWords }),
     })
-  }, [effectiveHighlight, keywordMeta])
+  }, [effectiveHighlight, keywordMeta, matchWholeWords])
 
   return (
     <div className="relative" onClick={(e) => e.stopPropagation()}>
@@ -232,8 +235,8 @@ export function ContentEditor({ value, entryId, graph, onChange, preventRecursio
               key={kw}
               className={
                 m.isCycle
-                  ? 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-red-900/50 text-red-200'
-                  : 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-indigo-900/50 text-indigo-200'
+                  ? 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-red-500/15 border border-red-400/50 text-red-200'
+                  : 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-indigo-500/15 border border-indigo-400/50 text-indigo-200'
               }
             >
               <span className={m.isCycle ? 'text-red-300 font-bold' : 'text-indigo-300 font-bold'}>

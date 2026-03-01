@@ -17,15 +17,28 @@
   --node-disabled: #6b7280;
 }
 
+body {
+  font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* CodeMirror editor resets */
 .cm-editor { outline: none; }
 .cm-editor.cm-focused { outline: none !important; }
 .cm-selectionBackground,
 .cm-focused .cm-selectionBackground { background: rgba(99,102,241,0.3) !important; }
 
+.cm-editor .cm-content {
+  font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
 /* Keyword highlight decorations */
 .cm-kw-normal {
-  background: rgba(49,46,129,0.6);
+  background: rgba(99,102,241,0.18);
+  border-bottom: 2px solid rgba(129,140,248,0.75);
   border-radius: 2px;
   position: relative;
 }
@@ -38,7 +51,8 @@
   pointer-events: none;
 }
 .cm-kw-cycle {
-  background: rgba(127,29,29,0.6);
+  background: rgba(239,68,68,0.15);
+  border-bottom: 2px solid rgba(252,165,165,0.75);
   border-radius: 2px;
   position: relative;
 }
