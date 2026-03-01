@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Play, PlusCircle, Trash2 } from 'lucide-react'
+import { Play, PlusCircle, Trash2, Network, RotateCcw } from 'lucide-react'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { simulate, simulateConversation } from '@/services/simulator-service'
@@ -68,11 +68,21 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
     realStore?.getState().clearConversationHistory()
   }
 
+  function handleClearSimulation() {
+    realStore?.getState().clearSimulation()
+  }
+
+  function handleToggleConnectionsMode() {
+    if (!realStore) return
+    const state = realStore.getState()
+    state.setConnectionsMode(!state.simulatorState.connectionsMode)
+  }
+
   function handleSelectEntry(entryId: string) {
     realStore?.getState().selectEntry(entryId)
   }
 
-  const { lastResult, conversationHistory } = simulatorState
+  const { lastResult, conversationHistory, connectionsMode } = simulatorState
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
@@ -97,6 +107,32 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
           <Play size={11} />
           Run
         </button>
+
+        {/* Connections + Reset buttons */}
+        {lastResult && (
+          <div className="flex gap-2">
+            <button
+              onClick={handleToggleConnectionsMode}
+              className={`flex flex-1 items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded border transition-colors ${
+                connectionsMode
+                  ? 'bg-ctp-accent text-ctp-base border-ctp-accent'
+                  : 'border-ctp-surface1 text-ctp-subtext0 hover:text-ctp-text hover:border-ctp-surface2'
+              }`}
+              title="Show connections between activated entries"
+            >
+              <Network size={11} />
+              Connections
+            </button>
+            <button
+              onClick={handleClearSimulation}
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-ctp-surface1 text-ctp-subtext0 hover:text-ctp-red hover:border-ctp-red rounded transition-colors"
+              title="Clear simulation results"
+            >
+              <RotateCcw size={11} />
+              Reset
+            </button>
+          </div>
+        )}
 
         {/* Results */}
         {lastResult && (

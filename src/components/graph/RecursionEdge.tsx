@@ -8,6 +8,7 @@ export interface RecursionEdgeData {
   isIncoming?: boolean
   isActivated?: boolean
   edgeStyle?: 'bezier' | 'straight' | 'smoothstep'
+  recursionDepth?: number
   [key: string]: unknown
 }
 
@@ -28,8 +29,16 @@ export function RecursionEdge({
   const isCyclic = data?.isCyclic ?? false
   const isIncoming = data?.isIncoming ?? false
   const isActivated = data?.isActivated ?? false
+  const recursionDepth = data?.recursionDepth
 
-  const color = isActivated
+  const inConnectionsMode = recursionDepth !== undefined
+
+  const color = inConnectionsMode
+    ? (recursionDepth === 0 ? 'var(--color-ctp-green)'
+      : recursionDepth === 1 ? 'var(--color-ctp-yellow)'
+      : recursionDepth === 2 ? 'var(--color-ctp-peach)'
+      : 'var(--color-ctp-red)')
+    : isActivated
     ? 'var(--color-ctp-yellow)'
     : isCyclic
     ? 'var(--edge-cycle)'
@@ -39,7 +48,7 @@ export function RecursionEdge({
     ? 'var(--edge-incoming)'
     : 'var(--edge-active)'
 
-  const strokeWidth = isActivated ? 2.5 : 1.5
+  const strokeWidth = inConnectionsMode ? 3 : isActivated ? 2.5 : 1.5
 
   const [edgePath] =
     data?.edgeStyle === 'straight'

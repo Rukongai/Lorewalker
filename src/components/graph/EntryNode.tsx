@@ -50,8 +50,14 @@ export function EntryNode({ data, selected }: NodeProps<EntryNodeType>) {
   // Determine outline based on activation status or selection/cycle
   let outlineColor = 'transparent'
   let outlineStyle: string | undefined
-  if (activationStatus && activationStatus !== 'skipped') {
+  if (activationStatus === 'activated-constant') {
+    outlineColor = 'var(--node-constant)'
+  } else if (activationStatus === 'activated-keyword' && entry.selective) {
+    outlineColor = 'var(--color-ctp-yellow)'
+  } else if (activationStatus === 'activated-keyword') {
     outlineColor = 'var(--color-ctp-green)'
+  } else if (activationStatus === 'activated-recursion') {
+    outlineColor = 'var(--color-ctp-mauve)'
   } else if (activationStatus === 'skipped') {
     outlineColor = 'var(--color-ctp-peach)'
     outlineStyle = 'dashed'

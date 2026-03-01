@@ -58,6 +58,7 @@ export interface SimulatorState {
   settings: SimulationSettings;
   lastResult: ActivationResult | null;
   conversationHistory: ConversationStep[];
+  connectionsMode: boolean;
 }
 
 // Re-export SimulationSettings for use in persistence types

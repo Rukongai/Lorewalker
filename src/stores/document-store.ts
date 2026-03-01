@@ -27,6 +27,7 @@ const DEFAULT_SIMULATOR_STATE: SimulatorState = {
   settings: DEFAULT_SIMULATION_SETTINGS,
   lastResult: null,
   conversationHistory: [],
+  connectionsMode: false,
 }
 
 // --- DocumentStore type ---
@@ -86,6 +87,8 @@ export interface DocumentState {
   setSimulatorResult(result: ActivationResult | null): void
   appendConversationStep(step: ConversationStep): void
   clearConversationHistory(): void
+  clearSimulation(): void
+  setConnectionsMode(enabled: boolean): void
 }
 
 function makeDefaultEntry(partial: Partial<WorkingEntry> = {}): WorkingEntry {
@@ -358,6 +361,20 @@ export function createDocumentStore(init: DocumentStoreInit) {
           store.setState((state) => ({
             ...state,
             simulatorState: { ...state.simulatorState, conversationHistory: [] },
+          }))
+        },
+
+        clearSimulation() {
+          store.setState((state) => ({
+            ...state,
+            simulatorState: { ...state.simulatorState, lastResult: null, connectionsMode: false },
+          }))
+        },
+
+        setConnectionsMode(enabled) {
+          store.setState((state) => ({
+            ...state,
+            simulatorState: { ...state.simulatorState, connectionsMode: enabled },
           }))
         },
 

@@ -57,6 +57,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
   const selectedEntryId = store((s) => s.selection.selectedEntryId)
   const findings = store((s) => s.findings)
   const lastResult = store((s) => s.simulatorState.lastResult)
+  const connectionsMode = store((s) => s.simulatorState.connectionsMode)
   const { graph } = useDerivedState(tabId)
 
   // Graph search
@@ -128,6 +129,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
   )
   const didInitialFitRef = useRef(false)
   const lastClickRef = useRef<{ id: string; time: number } | null>(null)
+  const savedVisibilityRef = useRef<ConnectionVisibility | null>(null)
 
   useEffect(() => {
     if (!isModalOpen) {
@@ -150,10 +152,38 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
     return { cycleNodeIds, cycleEdgeIds }
   }, [graph, checkRecursionLoops])
 
+  // Save/restore connectionVisibility when connectionsMode toggles
+  useEffect(() => {
+    if (connectionsMode) {
+      savedVisibilityRef.current = connectionVisibility
+    } else {
+      if (savedVisibilityRef.current !== null) {
+        setConnectionVisibility(savedVisibilityRef.current)
+        savedVisibilityRef.current = null
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionsMode])
+
   // Activated entry IDs set for edge highlighting
   const activatedEntryIds = useMemo(() => {
     if (!lastResult) return new Set<string>()
     return new Set(lastResult.activatedEntries.map((ae) => ae.entryId))
+  }, [lastResult])
+
+  // Recursion depth map: entryId → depth (0 = initial, 1+ = recursion pass)
+  const entryDepthMap = useMemo(() => {
+    const map = new Map<string, number>()
+    if (!lastResult) return map
+    for (const ae of lastResult.activatedEntries) {
+      if (ae.activatedBy !== 'recursion') map.set(ae.entryId, 0)
+    }
+    for (const step of lastResult.recursionTrace) {
+      for (const id of step.activatedEntryIds) {
+        map.set(id, step.step + 1)
+      }
+    }
+    return map
   }, [lastResult])
 
   // Sync entries + positions + selection → React Flow nodes
@@ -180,7 +210,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
 
   // Sync graph → React Flow edges
   useEffect(() => {
-    if (connectionVisibility === 'none') {
+    if (!connectionsMode && connectionVisibility === 'none') {
       setEdges([])
       return
     }
@@ -193,6 +223,27 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
         const blocked = (meta?.blockedByPreventRecursion ?? false) || (meta?.blockedByExcludeRecursion ?? false)
         const isCyclic = cycleInfo.cycleEdgeIds.has(edgeKey)
         const isActivated = activatedEntryIds.has(sourceId) && activatedEntryIds.has(targetId)
+
+        if (connectionsMode) {
+          // In connections mode: only show edges where BOTH endpoints are activated
+          if (!isActivated) continue
+          const recursionDepth = entryDepthMap.get(targetId) ?? 0
+          const depthColor =
+            recursionDepth === 0 ? 'var(--color-ctp-green)'
+            : recursionDepth === 1 ? 'var(--color-ctp-yellow)'
+            : recursionDepth === 2 ? 'var(--color-ctp-peach)'
+            : 'var(--color-ctp-red)'
+          newEdges.push({
+            id: edgeKey,
+            source: sourceId,
+            target: targetId,
+            type: 'recursionEdge',
+            markerEnd: { type: MarkerType.ArrowClosed, color: depthColor },
+            data: { blocked, isCyclic, isIncoming: false, isActivated, edgeStyle, recursionDepth },
+          })
+          continue
+        }
+
         if (!showBlockedEdges && blocked) continue
         if (
           connectionVisibility === 'selected' &&
@@ -227,7 +278,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
       }
     }
     setEdges(newEdges)
-  }, [graph, cycleInfo, showBlockedEdges, connectionVisibility, selectedEntryId, edgeStyle, activatedEntryIds, setEdges])
+  }, [graph, cycleInfo, showBlockedEdges, connectionVisibility, selectedEntryId, edgeStyle, activatedEntryIds, connectionsMode, entryDepthMap, setEdges])
 
   // Fit view on first load — wait until positions are computed and at least one node is measured
   useEffect(() => {
