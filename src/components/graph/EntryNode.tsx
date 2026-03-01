@@ -61,7 +61,7 @@ export function EntryNode({ data, selected }: NodeProps<EntryNodeData>) {
         </span>
         <span
           className="text-[10px] font-bold px-1 rounded shrink-0"
-          style={{ color: accentColor, border: `1px solid ${accentColor}` }}
+          style={{ color: accentColor, border: `1px solid ${accentColor}`, background: `color-mix(in srgb, ${accentColor} 20%, transparent)` }}
         >
           {ACTIVATION_BADGE[activationType]}
         </span>

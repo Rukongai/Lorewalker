@@ -42,7 +42,7 @@ export function GraphControls({
       <button
         onClick={onAutoLayout}
         title="Auto Layout"
-        className="flex items-center gap-1.5 px-2 py-1.5 text-xs bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext0 hover:bg-ctp-surface1 hover:text-ctp-text transition-colors"
+        className="flex items-center gap-1.5 px-2 py-1.5 text-xs bg-ctp-surface0 border border-ctp-lavender/50 rounded text-ctp-lavender hover:bg-ctp-lavender/15 hover:border-ctp-lavender transition-colors"
       >
         <LayoutGrid size={13} />
         Layout
@@ -51,7 +51,7 @@ export function GraphControls({
       <button
         onClick={() => fitView({ padding: 0.15, duration: 300 })}
         title="Fit to view"
-        className="p-1.5 bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext0 hover:bg-ctp-surface1 hover:text-ctp-text transition-colors"
+        className="p-1.5 bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext1 hover:bg-ctp-surface1 hover:text-ctp-text transition-colors"
       >
         <Maximize2 size={13} />
       </button>
@@ -59,7 +59,7 @@ export function GraphControls({
       <button
         onClick={onCycleConnectionVisibility}
         title={visibilityTitle[connectionVisibility]}
-        className="p-1.5 bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext0 hover:bg-ctp-surface1 hover:text-ctp-text transition-colors"
+        className="p-1.5 bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext1 hover:bg-ctp-surface1 hover:text-ctp-text transition-colors"
       >
         <VisibilityIcon size={13} />
       </button>
@@ -67,7 +67,7 @@ export function GraphControls({
       <button
         onClick={onToggleBlockedEdges}
         title={showBlockedEdges ? 'Hide blocked edges' : 'Show blocked edges'}
-        className="p-1.5 bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext0 hover:bg-ctp-surface1 hover:text-ctp-text transition-colors"
+        className="p-1.5 bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext1 hover:bg-ctp-surface1 hover:text-ctp-text transition-colors"
       >
         {showBlockedEdges ? <Eye size={13} /> : <EyeOff size={13} />}
       </button>
@@ -75,7 +75,7 @@ export function GraphControls({
       <button
         onClick={onToggleEdgeStyle}
         title={edgeStyle === 'bezier' ? 'Switch to straight edges' : edgeStyle === 'straight' ? 'Switch to smoothed paths' : 'Switch to bezier/noodle edges'}
-        className="p-1.5 bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext0 hover:bg-ctp-surface1 hover:text-ctp-text transition-colors"
+        className="p-1.5 bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext1 hover:bg-ctp-surface1 hover:text-ctp-text transition-colors"
       >
         {edgeStyle === 'bezier' ? <Spline size={13} /> : edgeStyle === 'straight' ? <Minus size={13} /> : <CornerDownRight size={13} />}
       </button>

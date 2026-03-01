@@ -174,6 +174,13 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
 
   const strategy: InsertionStrategy = entry.constant ? 'constant' : entry.vectorized ? 'vectorized' : 'normal'
 
+  const strategyActiveClass: Record<InsertionStrategy, string> = {
+    constant:   'bg-ctp-mauve/40 text-ctp-mauve font-medium',
+    normal:     'bg-ctp-sky/40 text-ctp-sky font-medium',
+    vectorized: 'bg-ctp-sapphire/40 text-ctp-sapphire font-medium',
+  }
+  const strategyInactiveClass = 'bg-ctp-surface0 text-ctp-subtext0 hover:text-ctp-text hover:bg-ctp-surface1'
+
   const nameField = (
     <Field label="Name" help="Display label for this entry in the lorebook editor. Not injected into the AI's context.">
       <input
@@ -217,11 +224,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
               <button
                 key={s}
                 onClick={() => handleStrategyChange(s)}
-                className={`flex-1 px-2 py-1 text-xs capitalize transition-colors
-                  ${strategy === s
-                    ? 'bg-ctp-lavender/25 border-ctp-lavender text-ctp-lavender'
-                    : 'bg-ctp-surface0 text-ctp-subtext0 hover:text-ctp-text hover:bg-ctp-surface1'
-                  }`}
+                className={`flex-1 px-2 py-1 text-xs capitalize transition-colors ${strategy === s ? strategyActiveClass[s] : strategyInactiveClass}`}
               >
                 {s}
               </button>
@@ -256,6 +259,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEdi
             </Field>
             <Field label="Secondary Keys (Optional Filter)" help="Additional keywords evaluated after a primary key match. Activation depends on the Selective Logic setting.">
               <KeywordInput
+                variant="secondary"
                 value={entry.secondaryKeys}
                 onChange={handleSecondaryKeysChange}
                 placeholder="secondary, secondary…"

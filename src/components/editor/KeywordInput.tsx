@@ -4,11 +4,30 @@ interface KeywordInputProps {
   value: string[]
   onChange: (keywords: string[]) => void
   placeholder?: string
+  variant?: 'primary' | 'secondary'
 }
 
-export function KeywordInput({ value, onChange, placeholder }: KeywordInputProps) {
+export function KeywordInput({ value, onChange, placeholder, variant = 'primary' }: KeywordInputProps) {
   const [inputValue, setInputValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  function isRegex(kw: string) { return kw.startsWith('/') && kw.length > 1 }
+
+  function chipClass(kw: string, v: 'primary' | 'secondary'): string {
+    if (v === 'secondary' && isRegex(kw))
+      return 'bg-ctp-sapphire/35 border border-ctp-sapphire/60 text-ctp-sapphire'
+    if (v === 'secondary' || isRegex(kw))
+      return 'bg-ctp-teal/35 border border-ctp-teal/60 text-ctp-teal'
+    return 'bg-ctp-sky/35 border border-ctp-sky/60 text-ctp-sky'
+  }
+
+  function chipBtnClass(kw: string, v: 'primary' | 'secondary'): string {
+    if (v === 'secondary' && isRegex(kw))
+      return 'text-ctp-sapphire hover:bg-ctp-sapphire/20 rounded px-0.5 leading-none'
+    if (v === 'secondary' || isRegex(kw))
+      return 'text-ctp-teal hover:bg-ctp-teal/20 rounded px-0.5 leading-none'
+    return 'text-ctp-sky hover:bg-ctp-sky/20 rounded px-0.5 leading-none'
+  }
 
   function commitInput() {
     const trimmed = inputValue.trim()
@@ -37,18 +56,18 @@ export function KeywordInput({ value, onChange, placeholder }: KeywordInputProps
   return (
     <div
       onClick={() => inputRef.current?.focus()}
-      className="w-full bg-ctp-surface0 border border-ctp-surface1 rounded px-1.5 py-1 flex flex-wrap gap-1 items-center focus-within:border-ctp-lavender transition-colors cursor-text min-h-[30px]"
+      className="w-full bg-ctp-surface0 border border-ctp-surface1 rounded px-1.5 py-1 flex flex-wrap gap-1 items-center focus-within:border-ctp-sky transition-colors cursor-text min-h-[30px]"
     >
       {value.map((kw, i) => (
         <span
           key={kw}
-          className="inline-flex items-center gap-0.5 pl-1.5 pr-0.5 py-0.5 rounded text-[10px] bg-ctp-lavender/15 border border-ctp-lavender/60 text-ctp-lavender select-none"
+          className={`inline-flex items-center gap-0.5 pl-1.5 pr-0.5 py-0.5 rounded text-[10px] select-none ${chipClass(kw, variant)}`}
         >
           {kw}
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); removeAt(i) }}
-            className="text-ctp-lavender hover:text-ctp-lavender hover:bg-ctp-lavender/20 rounded px-0.5 leading-none"
+            className={chipBtnClass(kw, variant)}
           >
             ×
           </button>

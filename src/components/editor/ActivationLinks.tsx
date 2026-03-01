@@ -42,7 +42,7 @@ function LinkRow({ id, keywords, blocked, onNavigate, name }: LinkRowProps) {
         {keywords.map((kw, i) => (
           <span
             key={i}
-            className="text-[10px] bg-ctp-surface0 border border-ctp-surface1 rounded px-1 text-ctp-overlay1"
+            className="text-[10px] bg-ctp-sky/25 border border-ctp-sky/50 rounded px-1 text-ctp-sky"
           >
             {kw}
           </span>
@@ -111,7 +111,7 @@ export function ActivationLinks({ entryId, graph, onNavigate }: ActivationLinksP
                 onClick={() => setHideBlockedLeft((v) => !v)}
                 className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${
                   hideBlockedLeft
-                    ? 'bg-ctp-lavender/15 border-ctp-lavender/20 text-ctp-lavender'
+                    ? 'bg-ctp-lavender/35 border-ctp-lavender/60 text-ctp-lavender font-medium'
                     : 'bg-ctp-surface0 border-ctp-surface1 text-ctp-overlay0 hover:text-ctp-subtext0'
                 }`}
                 title={hideBlockedLeft ? 'Show blocked' : 'Hide blocked'}
@@ -150,7 +150,7 @@ export function ActivationLinks({ entryId, graph, onNavigate }: ActivationLinksP
                 onClick={() => setHideBlockedRight((v) => !v)}
                 className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${
                   hideBlockedRight
-                    ? 'bg-ctp-lavender/15 border-ctp-lavender/20 text-ctp-lavender'
+                    ? 'bg-ctp-lavender/35 border-ctp-lavender/60 text-ctp-lavender font-medium'
                     : 'bg-ctp-surface0 border-ctp-surface1 text-ctp-overlay0 hover:text-ctp-subtext0'
                 }`}
                 title={hideBlockedRight ? 'Show blocked' : 'Hide blocked'}
