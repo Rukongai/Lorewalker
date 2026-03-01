@@ -5,9 +5,11 @@ import type { PersistedWorkspace, PersistedDocument, PersistedPreferences } from
 const store = createStore('lorewalker-db', 'keyval')
 
 export class PersistenceError extends Error {
-  constructor(message: string, public readonly cause?: unknown) {
+  readonly cause?: unknown
+  constructor(message: string, cause?: unknown) {
     super(message)
     this.name = 'PersistenceError'
+    this.cause = cause
   }
 }
 
