@@ -433,6 +433,7 @@ export function WorkspaceShell() {
           ) : (
             <ErrorBoundary label="Graph">
               <GraphCanvas
+                key={activeTabId}
                 tabId={activeTabId}
                 onNodeDoubleClick={() => { if (selectedEntryId) setModalEntryId(selectedEntryId) }}
                 onAddEntry={() => {

@@ -158,11 +158,14 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
 
   // Sync entries + positions + selection → React Flow nodes
   useEffect(() => {
-    const newNodes: Node<EntryNodeData>[] = entries.map((entry) => ({
+    setNodes((prev) => {
+      const prevById = new Map(prev.map((n) => [n.id, n]))
+      return entries.map((entry) => ({
       id: entry.id,
-      type: 'entryNode',
+        type: 'entryNode' as const,
       position: graphPositions.get(entry.id) ?? { x: 0, y: 0 },
       selected: entry.id === selectedEntryId,
+        measured: prevById.get(entry.id)?.measured,
       data: {
         entry,
         isCyclic: cycleInfo.cycleNodeIds.has(entry.id),
@@ -172,7 +175,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
         isDimmed: matchedIds !== null && !matchedIds.has(entry.id),
       },
     }))
-    setNodes(newNodes)
+    })
   }, [entries, graphPositions, selectedEntryId, cycleInfo, graphSettings, entryWorstSeverity, activationStatusMap, matchedIds, setNodes])
 
   // Sync graph → React Flow edges
@@ -226,13 +229,15 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
     setEdges(newEdges)
   }, [graph, cycleInfo, showBlockedEdges, connectionVisibility, selectedEntryId, edgeStyle, activatedEntryIds, setEdges])
 
-  // Fit view on first load — wait until positions are computed for all entries
+  // Fit view on first load — wait until positions are computed and at least one node is measured
   useEffect(() => {
-    if (entries.length > 0 && graphPositions.size >= entries.length && !didInitialFitRef.current) {
+    if (entries.length === 0) return
+    if (graphPositions.size < entries.length) return
+    if (didInitialFitRef.current) return
+    if (!nodes.some((n) => n.measured)) return
       didInitialFitRef.current = true
-      setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 50)
-    }
-  }, [entries.length, graphPositions.size, fitView])
+    fitView({ padding: 0.15, duration: 400 })
+  }, [entries.length, graphPositions.size, nodes, fitView])
 
   // Navigate to selected node when selection changes
   useEffect(() => {
