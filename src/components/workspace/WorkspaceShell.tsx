@@ -3,6 +3,10 @@ import { useStore } from 'zustand'
 import { Upload, Save, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, ChevronDown, Maximize2 } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { RecoveryDialog } from './RecoveryDialog'
+import { WelcomeScreen } from './WelcomeScreen'
+import { StatusBar } from './StatusBar'
+import { LorebookPickerDialog } from './LorebookPickerDialog'
+import type { LorebookMeta } from './LorebookPickerDialog'
 import { EntryList } from '@/components/entry-list/EntryList'
 import { EntryEditor } from '@/components/editor/EntryEditor'
 import { importFile, exportFile } from '@/services/file-service'
@@ -11,6 +15,7 @@ import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
 import { useAutosave } from '@/hooks/useAutosave'
 import { useWorkspacePersistence } from '@/hooks/useWorkspacePersistence'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { loadWorkspace, loadPreferences, listDocuments, cleanupStaleDocuments, loadProviders } from '@/services/persistence-service'
 import { llmService } from '@/services/llm/llm-service'
 import { OpenAICompatibleProvider } from '@/services/llm/providers/openai-compatible'
@@ -23,6 +28,7 @@ import { Toggle } from '@/components/shared/Toggle'
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel'
 import { InspectorPanel } from '@/components/analysis/InspectorPanel'
 import { SimulatorPanel } from '@/components/simulator/SimulatorPanel'
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import type { PersistedDocument } from '@/types'
 
 type RightPanelTab = 'entry' | 'analysis' | 'inspector' | 'simulator'
@@ -47,6 +53,14 @@ export function WorkspaceShell() {
   const [editorModalOpen, setEditorModalOpen] = useState(false)
   const [showRecovery, setShowRecovery] = useState(false)
   const [recoveryDocs, setRecoveryDocs] = useState<PersistedDocument[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Lorebook picker dialog state
+  const [lorebookPickerState, setLorebookPickerState] = useState<{
+    lorebooks: LorebookMeta[]
+    resolve: (indices: number[]) => void
+    reject: () => void
+  } | null>(null)
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('entry')
@@ -159,14 +173,25 @@ export function WorkspaceShell() {
   const canUndo = useStore(temporalStore, s => s.pastStates.length > 0)
   const canRedo = useStore(temporalStore, s => s.futureStates.length > 0)
 
+  // Lorebook picker callback for multi-lorebook card imports
+  const onLorebookPick = useCallback((lorebooks: LorebookMeta[]): Promise<number[]> => {
+    return new Promise((resolve, reject) => {
+      setLorebookPickerState({
+        lorebooks,
+        resolve,
+        reject,
+      })
+    })
+  }, [])
+
   const handleImportFile = useCallback(async (file: File) => {
     setImportError(null)
     try {
-      await importFile(file)
+      await importFile(file, onLorebookPick)
     } catch (err) {
       setImportError(err instanceof Error ? err.message : 'Failed to import file')
     }
-  }, [])
+  }, [onLorebookPick])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -197,10 +222,10 @@ export function WorkspaceShell() {
     [handleImportFile]
   )
 
-  function handleSave() {
+  const handleSave = useCallback(() => {
     if (!activeTabId || !activeTab) return
     exportFile(activeTabId, activeTab.fileMeta.fileName)
-  }
+  }, [activeTabId, activeTab])
 
   function handleToggleEnabled() {
     if (!realStore || !selectedEntry) return
@@ -208,13 +233,34 @@ export function WorkspaceShell() {
     if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
   }
 
-  function handleUndo() {
+  const handleUndo = useCallback(() => {
     realStore?.temporal.getState().undo()
-  }
+  }, [realStore])
 
-  function handleRedo() {
+  const handleRedo = useCallback(() => {
     realStore?.temporal.getState().redo()
-  }
+  }, [realStore])
+
+  const handleNewEntry = useCallback(() => {
+    if (!realStore) return
+    const id = realStore.getState().addEntry()
+    realStore.getState().selectEntry(id)
+    setEditorModalOpen(true)
+  }, [realStore])
+
+  const handleClearSelection = useCallback(() => {
+    realStore?.getState().clearSelection()
+  }, [realStore])
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    activeTabId,
+    onSave: handleSave,
+    onUndo: handleUndo,
+    onRedo: handleRedo,
+    onNewEntry: handleNewEntry,
+    onClearSelection: handleClearSelection,
+  })
 
   const startDrag = useCallback((e: React.MouseEvent, side: 'left' | 'right') => {
     if (side === 'left' && leftCollapsed) return
@@ -276,7 +322,7 @@ export function WorkspaceShell() {
           <button
             onClick={handleRedo}
             disabled={!canRedo}
-            title="Redo"
+            title="Redo (Ctrl+Shift+Z)"
             className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
           >
             <Redo2 size={16} />
@@ -294,15 +340,17 @@ export function WorkspaceShell() {
 
           {/* Open file */}
           <label
-            title="Open file"
+            title="Open file (Ctrl+O)"
             className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 cursor-pointer transition-colors"
           >
             <Upload size={16} />
             <input
+              ref={fileInputRef}
               type="file"
               accept=".json,.png,.charx"
               onChange={handleFilePickerChange}
               className="sr-only"
+              data-1p-ignore
             />
           </label>
 
@@ -383,19 +431,15 @@ export function WorkspaceShell() {
         {/* Center panel: graph canvas */}
         <main className="flex-1 bg-ctp-base flex overflow-hidden">
           {!activeTabId ? (
-            <div className="flex-1 flex items-center justify-center pointer-events-none">
-              <div className="text-center space-y-3">
-                <div className="text-5xl text-ctp-surface1">&#x2B21;</div>
-                <p className="text-sm text-ctp-overlay1">Drag a SillyTavern JSON file here</p>
-                <p className="text-xs text-ctp-overlay1">or click the upload icon above</p>
-              </div>
-            </div>
+            <WelcomeScreen onOpenFile={() => fileInputRef.current?.click()} />
           ) : (
-            <GraphCanvas
-              tabId={activeTabId}
-              onNodeDoubleClick={() => setEditorModalOpen(true)}
-              onAddEntry={() => setEditorModalOpen(true)}
-            />
+            <ErrorBoundary label="Graph">
+              <GraphCanvas
+                tabId={activeTabId}
+                onNodeDoubleClick={() => setEditorModalOpen(true)}
+                onAddEntry={() => setEditorModalOpen(true)}
+              />
+            </ErrorBoundary>
           )}
         </main>
 
@@ -505,7 +549,9 @@ export function WorkspaceShell() {
                     )}
                     {editorOpen && (
                       selectedEntryId ? (
-                        <EntryEditor entryId={selectedEntryId} />
+                        <ErrorBoundary label="Editor">
+                          <EntryEditor entryId={selectedEntryId} />
+                        </ErrorBoundary>
                       ) : activeTabId ? (
                         <div className="flex-1 flex items-center justify-center">
                           <p className="text-xs text-ctp-overlay1">Select an entry to edit</p>
@@ -522,7 +568,9 @@ export function WorkspaceShell() {
 
               {/* Tab: Analysis */}
               {rightPanelTab === 'analysis' && (
-                <AnalysisPanel tabId={activeTabId} graph={graph} />
+                <ErrorBoundary label="Analysis">
+                  <AnalysisPanel tabId={activeTabId} graph={graph} />
+                </ErrorBoundary>
               )}
 
               {/* Tab: Inspector */}
@@ -532,12 +580,17 @@ export function WorkspaceShell() {
 
               {/* Tab: Simulator */}
               {rightPanelTab === 'simulator' && (
-                <SimulatorPanel tabId={activeTabId} />
+                <ErrorBoundary label="Simulator">
+                  <SimulatorPanel tabId={activeTabId} />
+                </ErrorBoundary>
               )}
             </>
           )}
         </aside>
       </div>
+
+      {/* Status bar */}
+      <StatusBar activeTabId={activeTabId} fileName={activeTab?.fileMeta.fileName} />
 
       {editorModalOpen && selectedEntryId && (
         <EntryEditorModal
@@ -551,6 +604,22 @@ export function WorkspaceShell() {
           documents={recoveryDocs}
           onRestore={handleRestore}
           onDismiss={handleDismissRecovery}
+        />
+      )}
+
+      {/* Lorebook picker dialog */}
+      {lorebookPickerState && (
+        <LorebookPickerDialog
+          cardName={activeTab?.fileMeta.fileName ?? 'Character card'}
+          lorebooks={lorebookPickerState.lorebooks}
+          onSelect={(indices) => {
+            lorebookPickerState.resolve(indices)
+            setLorebookPickerState(null)
+          }}
+          onCancel={() => {
+            lorebookPickerState.reject()
+            setLorebookPickerState(null)
+          }}
         />
       )}
     </div>

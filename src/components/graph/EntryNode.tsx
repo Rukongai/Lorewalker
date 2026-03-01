@@ -2,6 +2,7 @@ import { Handle, Position } from '@xyflow/react'
 import type { Node, NodeProps } from '@xyflow/react'
 import type { WorkingEntry, FindingSeverity } from '@/types'
 import { severityColor } from '@/lib/severity-color'
+import { inferEntryCategory, CATEGORY_ICON } from '@/lib/entry-type'
 
 export type EntryNodeType = Node<EntryNodeData>
 
@@ -10,6 +11,8 @@ export interface EntryNodeData {
   isCyclic: boolean
   edgeDirection: 'LR' | 'TB'
   severity: FindingSeverity | null
+  activationStatus?: 'activated-constant' | 'activated-keyword' | 'activated-recursion' | 'skipped' | null
+  isDimmed?: boolean
   [key: string]: unknown
 }
 
@@ -37,25 +40,36 @@ const ACTIVATION_BADGE: Record<ActivationType, string> = {
 }
 
 export function EntryNode({ data, selected }: NodeProps<EntryNodeType>) {
-  const { entry, isCyclic, edgeDirection, severity } = data
+  const { entry, isCyclic, edgeDirection, severity, activationStatus, isDimmed } = data
   const activationType = getActivationType(entry)
   const accentColor = ACTIVATION_COLORS[activationType]
   const isLR = edgeDirection !== 'TB'
+  const category = inferEntryCategory(entry)
+  const categoryIcon = CATEGORY_ICON[category]
 
-  const outlineColor = selected
-    ? accentColor
-    : isCyclic
-    ? 'var(--edge-cycle)'
-    : 'transparent'
+  // Determine outline based on activation status or selection/cycle
+  let outlineColor = 'transparent'
+  let outlineStyle: string | undefined
+  if (activationStatus && activationStatus !== 'skipped') {
+    outlineColor = 'var(--color-ctp-green)'
+  } else if (activationStatus === 'skipped') {
+    outlineColor = 'var(--color-ctp-peach)'
+    outlineStyle = 'dashed'
+  } else if (selected) {
+    outlineColor = accentColor
+  } else if (isCyclic) {
+    outlineColor = 'var(--edge-cycle)'
+  }
 
   return (
     <div
       style={{
         borderLeft: `3px solid ${accentColor}`,
-        outline: `2px solid ${outlineColor}`,
+        outline: `2px ${outlineStyle ?? 'solid'} ${outlineColor}`,
         outlineOffset: '2px',
+        opacity: isDimmed ? 0.3 : 1,
       }}
-      className="bg-ctp-mantle border border-ctp-surface2 rounded px-3 py-2 w-[180px] min-h-[60px] flex flex-col gap-1 cursor-pointer shadow-lg"
+      className="bg-ctp-mantle border border-ctp-surface2 rounded px-3 py-2 w-[180px] min-h-[60px] flex flex-col gap-1 cursor-pointer shadow-lg transition-opacity"
     >
       <Handle type="target" position={isLR ? Position.Left : Position.Top} className="!bg-ctp-overlay0 !border-ctp-overlay0" />
 
@@ -63,12 +77,19 @@ export function EntryNode({ data, selected }: NodeProps<EntryNodeType>) {
         <span className="text-xs font-medium text-ctp-text truncate flex-1" title={entry.name}>
           {entry.name || '(unnamed)'}
         </span>
-        <span
-          className="text-[10px] font-bold px-1 rounded shrink-0"
-          style={{ color: accentColor, border: `1px solid ${accentColor}`, background: `color-mix(in srgb, ${accentColor} 20%, transparent)` }}
-        >
-          {ACTIVATION_BADGE[activationType]}
-        </span>
+        <div className="flex items-center gap-0.5 shrink-0">
+          {categoryIcon && (
+            <span className="text-[10px]" title={category}>
+              {categoryIcon}
+            </span>
+          )}
+          <span
+            className="text-[10px] font-bold px-1 rounded"
+            style={{ color: accentColor, border: `1px solid ${accentColor}`, background: `color-mix(in srgb, ${accentColor} 20%, transparent)` }}
+          >
+            {ACTIVATION_BADGE[activationType]}
+          </span>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">

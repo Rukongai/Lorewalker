@@ -10,7 +10,7 @@ import {
   MarkerType,
   ReactFlowProvider,
 } from '@xyflow/react'
-import type { Node, Edge, NodeChange, EdgeChange } from '@xyflow/react'
+import type { Node, Edge, NodeChange, EdgeChange, Connection } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
 import { EntryNode } from './EntryNode'
@@ -18,10 +18,12 @@ import { RecursionEdge } from './RecursionEdge'
 import { GraphControls } from './GraphControls'
 import type { ConnectionVisibility } from './GraphControls'
 import { GraphAddButton } from './GraphAddButton'
+import { EdgeConnectDialog } from './EdgeConnectDialog'
 import { useDerivedState, EMPTY_STORE } from '@/hooks/useDerivedState'
 import { computeLayout, findCycles } from '@/services/graph-service'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { useWorkspaceStore } from '@/stores/workspace-store'
+import { addKeywordMention, removeKeywordMention } from '@/lib/edge-edit'
 import type { EntryNodeData, EntryNodeType } from './EntryNode'
 import type { RecursionEdgeData, RecursionEdgeType } from './RecursionEdge'
 import type { FindingSeverity } from '@/types'
@@ -53,7 +55,17 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
   const graphPositions = store((s) => s.graphPositions)
   const selectedEntryId = store((s) => s.selection.selectedEntryId)
   const findings = store((s) => s.findings)
+  const lastResult = store((s) => s.simulatorState.lastResult)
   const { graph } = useDerivedState(tabId)
+
+  // Graph search
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Context menu for right-click
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; flowX: number; flowY: number } | null>(null)
+
+  // Edge connect dialog
+  const [pendingConnect, setPendingConnect] = useState<{ sourceId: string; targetId: string } | null>(null)
 
   // Compute worst severity per entry for health dots
   const SEVERITY_RANK: Record<FindingSeverity, number> = { error: 2, warning: 1, suggestion: 0 }
@@ -70,6 +82,37 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
     return map
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [findings])
+
+  // Compute activation status map from lastResult
+  const activationStatusMap = useMemo(() => {
+    const map = new Map<string, 'activated-constant' | 'activated-keyword' | 'activated-recursion' | 'skipped'>()
+    if (!lastResult) return map
+    for (const ae of lastResult.activatedEntries) {
+      map.set(ae.entryId, `activated-${ae.activatedBy}` as 'activated-constant' | 'activated-keyword' | 'activated-recursion')
+    }
+    for (const se of lastResult.skippedEntries) {
+      if (!map.has(se.entryId)) map.set(se.entryId, 'skipped')
+    }
+    return map
+  }, [lastResult])
+
+  // Compute matched IDs for search
+  const matchedIds = useMemo(() => {
+    if (!searchQuery.trim()) return null
+    const q = searchQuery.toLowerCase()
+    const ids = new Set<string>()
+    for (const e of entries) {
+      if (
+        e.name.toLowerCase().includes(q) ||
+        e.content.toLowerCase().includes(q) ||
+        e.keys.some((k) => k.toLowerCase().includes(q))
+      ) {
+        ids.add(e.id)
+      }
+    }
+    return ids
+  }, [entries, searchQuery])
+
   const { fitView, getNode, setCenter } = useReactFlow()
 
   const graphDisplayDefaults = useWorkspaceStore((s) => s.graphDisplayDefaults)
@@ -99,6 +142,12 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
     return { cycleNodeIds, cycleEdgeIds }
   }, [graph, checkRecursionLoops])
 
+  // Activated entry IDs set for edge highlighting
+  const activatedEntryIds = useMemo(() => {
+    if (!lastResult) return new Set<string>()
+    return new Set(lastResult.activatedEntries.map((ae) => ae.entryId))
+  }, [lastResult])
+
   // Sync entries + positions + selection → React Flow nodes
   useEffect(() => {
     const newNodes: Node<EntryNodeData>[] = entries.map((entry) => ({
@@ -106,10 +155,17 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
       type: 'entryNode',
       position: graphPositions.get(entry.id) ?? { x: 0, y: 0 },
       selected: entry.id === selectedEntryId,
-      data: { entry, isCyclic: cycleInfo.cycleNodeIds.has(entry.id), edgeDirection: graphSettings.edgeDirection, severity: entryWorstSeverity.get(entry.id) ?? null },
+      data: {
+        entry,
+        isCyclic: cycleInfo.cycleNodeIds.has(entry.id),
+        edgeDirection: graphSettings.edgeDirection,
+        severity: entryWorstSeverity.get(entry.id) ?? null,
+        activationStatus: activationStatusMap.get(entry.id) ?? null,
+        isDimmed: matchedIds !== null && !matchedIds.has(entry.id),
+      },
     }))
     setNodes(newNodes)
-  }, [entries, graphPositions, selectedEntryId, cycleInfo, graphSettings, entryWorstSeverity, setNodes])
+  }, [entries, graphPositions, selectedEntryId, cycleInfo, graphSettings, entryWorstSeverity, activationStatusMap, matchedIds, setNodes])
 
   // Sync graph → React Flow edges
   useEffect(() => {
@@ -125,6 +181,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
         const meta = graph.edgeMeta.get(edgeKey)
         const blocked = (meta?.blockedByPreventRecursion ?? false) || (meta?.blockedByExcludeRecursion ?? false)
         const isCyclic = cycleInfo.cycleEdgeIds.has(edgeKey)
+        const isActivated = activatedEntryIds.has(sourceId) && activatedEntryIds.has(targetId)
         if (!showBlockedEdges && blocked) continue
         if (
           connectionVisibility === 'selected' &&
@@ -134,6 +191,17 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
           continue
         }
         const isIncoming = selectedEntryId != null && selectedEntryId === targetId
+
+        const markerColor = isActivated
+          ? 'var(--color-ctp-yellow)'
+          : isCyclic
+          ? 'var(--edge-cycle)'
+          : blocked
+          ? 'var(--edge-blocked)'
+          : isIncoming
+          ? 'var(--edge-incoming)'
+          : 'var(--edge-active)'
+
         newEdges.push({
           id: edgeKey,
           source: sourceId,
@@ -141,20 +209,14 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
           type: 'recursionEdge',
           markerEnd: {
             type: MarkerType.ArrowClosed,
-            color: isCyclic
-              ? 'var(--edge-cycle)'
-              : blocked
-              ? 'var(--edge-blocked)'
-              : isIncoming
-              ? 'var(--edge-incoming)'
-              : 'var(--edge-active)',
+            color: markerColor,
           },
-          data: { blocked, isCyclic, isIncoming, edgeStyle },
+          data: { blocked, isCyclic, isIncoming, isActivated, edgeStyle },
         })
       }
     }
     setEdges(newEdges)
-  }, [graph, cycleInfo, showBlockedEdges, connectionVisibility, selectedEntryId, edgeStyle, setEdges])
+  }, [graph, cycleInfo, showBlockedEdges, connectionVisibility, selectedEntryId, edgeStyle, activatedEntryIds, setEdges])
 
   // Fit view on first load — wait until positions are computed for all entries
   useEffect(() => {
@@ -201,6 +263,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
 
   const handlePaneClick = useCallback(() => {
     store.getState().clearSelection()
+    setContextMenu(null)
   }, [store])
 
   const handleAutoLayout = useCallback(() => {
@@ -215,6 +278,54 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
     },
     [store],
   )
+
+  const handleEdgesDelete = useCallback(
+    (deletedEdges: Edge[]) => {
+      for (const edge of deletedEdges) {
+        const meta = graph.edgeMeta.get(`${edge.source}\u2192${edge.target}`)
+        if (!meta) continue
+        const sourceEntry = entries.find((e) => e.id === edge.source)
+        if (!sourceEntry) continue
+        const keyword = meta.matchedKeywords[0]
+        if (keyword) {
+          const newContent = removeKeywordMention(sourceEntry.content, keyword)
+          store.getState().updateEntry(edge.source, { content: newContent })
+        }
+      }
+    },
+    [graph, entries, store],
+  )
+
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      if (!connection.source || !connection.target) return
+      const targetEntry = entries.find((e) => e.id === connection.target)
+      if (!targetEntry || targetEntry.keys.length === 0) return
+      setPendingConnect({ sourceId: connection.source, targetId: connection.target })
+    },
+    [entries],
+  )
+
+  const handlePaneContextMenu = useCallback((event: MouseEvent | React.MouseEvent) => {
+    event.preventDefault()
+    const target = event.currentTarget as HTMLElement | null
+    const bounds = target?.getBoundingClientRect() ?? { left: 0, top: 0 }
+    setContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      flowX: event.clientX - bounds.left,
+      flowY: event.clientY - bounds.top,
+    })
+  }, [])
+
+  const handleContextMenuAddEntry = useCallback(() => {
+    if (!contextMenu) return
+    const id = store.getState().addEntry()
+    store.getState().setGraphPosition(id, { x: contextMenu.flowX, y: contextMenu.flowY })
+    store.getState().selectEntry(id)
+    setContextMenu(null)
+    onAddEntry?.()
+  }, [store, contextMenu, onAddEntry])
 
   const handleNodesChange = useCallback(
     (changes: NodeChange<EntryNodeType>[]) => { onNodesChange(changes) },
@@ -266,11 +377,14 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
         onNodesChange={handleNodesChange}
         onNodesDelete={handleNodesDelete}
         onEdgesChange={handleEdgesChange}
+        onEdgesDelete={handleEdgesDelete}
+        onConnect={handleConnect}
         deleteKeyCode={['Delete', 'Backspace']}
         onNodeDragStop={handleNodeDragStop}
         onNodeClick={handleNodeClick}
         onNodeDoubleClick={handleNodeDoubleClick}
         onPaneClick={handlePaneClick}
+        onPaneContextMenu={handlePaneContextMenu}
         fitView={false}
         colorMode={reactFlowColorMode}
         proOptions={{ hideAttribution: true }}
@@ -300,8 +414,43 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
           onCycleConnectionVisibility={handleCycleConnectionVisibility}
           edgeStyle={edgeStyle}
           onToggleEdgeStyle={handleToggleEdgeStyle}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
       </ReactFlow>
+
+      {/* Right-click context menu */}
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-ctp-surface0 border border-ctp-surface1 rounded shadow-lg py-1 text-xs"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          <button
+            onClick={handleContextMenuAddEntry}
+            className="w-full px-3 py-1.5 text-left text-ctp-subtext1 hover:bg-ctp-surface1 hover:text-ctp-text transition-colors"
+          >
+            Add entry here
+          </button>
+        </div>
+      )}
+
+      {/* Edge connect dialog */}
+      {pendingConnect && (
+        <EdgeConnectDialog
+          sourceId={pendingConnect.sourceId}
+          targetId={pendingConnect.targetId}
+          entries={entries}
+          onConfirm={(keyword) => {
+            const sourceEntry = entries.find((e) => e.id === pendingConnect.sourceId)
+            if (sourceEntry) {
+              const newContent = addKeywordMention(sourceEntry.content, keyword)
+              store.getState().updateEntry(pendingConnect.sourceId, { content: newContent })
+            }
+            setPendingConnect(null)
+          }}
+          onCancel={() => setPendingConnect(null)}
+        />
+      )}
     </div>
   )
 }

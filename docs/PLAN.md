@@ -193,13 +193,14 @@
 4. Entry type inference: auto-detect entry type (character, location, rule, etc.) from content/configuration patterns for visual styling
 5. Keyboard shortcuts: Cmd/Ctrl+Z undo, Cmd/Ctrl+Shift+Z redo, Cmd/Ctrl+S save, etc.
 6. Search and filter in graph: highlight matching entries, dim others
-7. Multi-select operations: bulk enable/disable, bulk delete, bulk position change
-8. Import from character card: when a card is dropped, show picker for which lorebook to extract
-9. Status bar: health score, entry count, total token count, constant token overhead
-10. Welcome/empty state: guidance when no file is open
-11. Error boundaries and user-facing error messages
-12. Responsive panel resizing
-13. Panel state persistence (widths, collapse) was completed in Phase 5. Phase 7 focus: keyboard shortcuts, multi-select operations, welcome/empty state UX
+7. Node + Connector highlighting for the simulator, showing activation orders/chains
+8. Multi-select operations: bulk enable/disable, bulk delete, bulk position change
+9. Import from character card: when a card is dropped, show picker for which lorebook to extract, or to extract all
+10. Status bar: health score, entry count, total token count, constant token overhead
+11. Welcome/empty state: guidance when no file is open
+12. Error boundaries and user-facing error messages
+13. Responsive panel resizing
+14. Panel state persistence (widths, collapse) was completed in Phase 5. Phase 7 focus: keyboard shortcuts, multi-select operations, welcome/empty state UX
 
 **Delivers:** A polished, productive editor. The graph becomes a real editing surface, not just a viewer.
 

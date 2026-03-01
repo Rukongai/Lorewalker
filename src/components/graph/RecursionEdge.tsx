@@ -6,6 +6,7 @@ export interface RecursionEdgeData {
   isCyclic: boolean
   isHighlighted?: boolean
   isIncoming?: boolean
+  isActivated?: boolean
   edgeStyle?: 'bezier' | 'straight' | 'smoothstep'
   [key: string]: unknown
 }
@@ -26,14 +27,19 @@ export function RecursionEdge({
   const blocked = data?.blocked ?? false
   const isCyclic = data?.isCyclic ?? false
   const isIncoming = data?.isIncoming ?? false
+  const isActivated = data?.isActivated ?? false
 
-  const color = isCyclic
+  const color = isActivated
+    ? 'var(--color-ctp-yellow)'
+    : isCyclic
     ? 'var(--edge-cycle)'
     : blocked
     ? 'var(--edge-blocked)'
     : isIncoming
     ? 'var(--edge-incoming)'
     : 'var(--edge-active)'
+
+  const strokeWidth = isActivated ? 2.5 : 1.5
 
   const [edgePath] =
     data?.edgeStyle === 'straight'
@@ -48,7 +54,7 @@ export function RecursionEdge({
         id={id}
         d={edgePath}
         fill="none"
-        style={{ stroke: color, strokeWidth: 1.5, strokeDasharray: blocked ? '5 3' : undefined }}
+        style={{ stroke: color, strokeWidth, strokeDasharray: blocked ? '5 3' : undefined }}
         markerEnd={markerEnd}
         className="react-flow__edge-path"
       />

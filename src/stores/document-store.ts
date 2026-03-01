@@ -69,6 +69,12 @@ export interface DocumentState {
   // Graph position actions
   setGraphPosition(id: string, pos: { x: number; y: number }): void
 
+  // Bulk actions
+  bulkEnable(ids: string[]): void
+  bulkDisable(ids: string[]): void
+  bulkRemove(ids: string[]): void
+  clearMultiSelect(): void
+
   // Selection actions
   selectEntry(id: string | null): void
   toggleMultiSelect(id: string): void
@@ -225,6 +231,45 @@ export function createDocumentStore(init: DocumentStoreInit) {
               if (entry) Object.assign(entry, changes)
             }
           })
+        },
+
+        // --- Bulk actions ---
+
+        bulkEnable(ids) {
+          set((state) => {
+            const idSet = new Set(ids)
+            for (const entry of state.entries) {
+              if (idSet.has(entry.id)) entry.enabled = true
+            }
+          })
+        },
+
+        bulkDisable(ids) {
+          set((state) => {
+            const idSet = new Set(ids)
+            for (const entry of state.entries) {
+              if (idSet.has(entry.id)) entry.enabled = false
+            }
+          })
+        },
+
+        bulkRemove(ids) {
+          set((state) => {
+            const idSet = new Set(ids)
+            state.entries = state.entries.filter((e) => !idSet.has(e.id))
+            for (const id of ids) state.graphPositions.delete(id)
+            if (state.selection.selectedEntryId && idSet.has(state.selection.selectedEntryId)) {
+              state.selection.selectedEntryId = null
+            }
+            state.selection.multiSelect = []
+          })
+        },
+
+        clearMultiSelect() {
+          store.setState((state) => ({
+            ...state,
+            selection: { ...state.selection, multiSelect: [] },
+          }))
         },
 
         // --- BookMeta actions ---

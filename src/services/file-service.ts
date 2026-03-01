@@ -13,6 +13,7 @@ import type { RawSTBook } from './transform-service'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import type { FileMeta, LorebookFormat } from '@/types'
+import type { LorebookMeta } from '@/components/workspace/LorebookPickerDialog'
 
 export class FileImportError extends Error {
   readonly cause: unknown
@@ -60,7 +61,10 @@ function resolveFormat(fmt: string): LorebookFormat {
  *
  * Returns the tabId of the newly opened tab.
  */
-export async function importFile(file: File): Promise<string> {
+export async function importFile(
+  file: File,
+  _onLorebookPick?: (lorebooks: LorebookMeta[]) => Promise<number[]>
+): Promise<string> {
   let buffer: Uint8Array
   try {
     buffer = await readFileBuffer(file)

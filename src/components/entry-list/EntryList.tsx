@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, ChevronDown, ChevronUp } from 'lucide-react'
+import { Search, ChevronDown, ChevronUp, CheckCheck, XCircle } from 'lucide-react'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
@@ -24,6 +24,7 @@ export function EntryList() {
   const activeStore = realStore ?? EMPTY_STORE
   const entries: WorkingEntry[] = activeStore((s) => s.entries)
   const selectedId = activeStore((s) => s.selection.selectedEntryId)
+  const multiSelect = activeStore((s) => s.selection.multiSelect)
   const findings = activeStore((s) => s.findings)
 
   // Compute worst severity per entry
@@ -42,9 +43,54 @@ export function EntryList() {
     realStore?.getState().selectEntry(id)
   }
 
+  function handleMultiToggle(id: string) {
+    realStore?.getState().toggleMultiSelect(id)
+  }
+
+  function handleShiftSelect(id: string) {
+    if (!realStore) return
+    const state = realStore.getState()
+    // Find anchor: last item in multiSelect, or the currently selected item
+    const anchor = state.selection.multiSelect[state.selection.multiSelect.length - 1]
+      ?? state.selection.selectedEntryId
+    if (!anchor) {
+      realStore.getState().toggleMultiSelect(id)
+      return
+    }
+    const allIds = sorted.map((e) => e.id)
+    const anchorIdx = allIds.indexOf(anchor)
+    const targetIdx = allIds.indexOf(id)
+    if (anchorIdx === -1 || targetIdx === -1) {
+      realStore.getState().toggleMultiSelect(id)
+      return
+    }
+    const [lo, hi] = anchorIdx < targetIdx ? [anchorIdx, targetIdx] : [targetIdx, anchorIdx]
+    const rangeIds = allIds.slice(lo, hi + 1)
+    for (const rid of rangeIds) {
+      if (!state.selection.multiSelect.includes(rid)) {
+        realStore.getState().toggleMultiSelect(rid)
+      }
+    }
+  }
+
   function handleToggleEnabled(id: string) {
     const entry = entries.find((e) => e.id === id)
     if (entry) realStore?.getState().updateEntry(id, { enabled: !entry.enabled })
+  }
+
+  function handleBulkEnable() {
+    realStore?.getState().bulkEnable(multiSelect)
+    realStore?.getState().clearMultiSelect()
+  }
+
+  function handleBulkDisable() {
+    realStore?.getState().bulkDisable(multiSelect)
+    realStore?.getState().clearMultiSelect()
+  }
+
+  function handleBulkDelete() {
+    if (!window.confirm(`Delete ${multiSelect.length} selected entries?`)) return
+    realStore?.getState().bulkRemove(multiSelect)
   }
 
   const filtered = search.trim()
@@ -100,6 +146,39 @@ export function EntryList() {
           />
         </div>
       </div>
+
+      {/* Bulk action bar (shown when items are multi-selected) */}
+      {multiSelect.length > 0 && (
+        <div className="px-2 py-1.5 border-b border-ctp-surface0 bg-ctp-blue/10 flex items-center gap-1 flex-wrap">
+          <span className="text-xs text-ctp-blue font-medium mr-1">{multiSelect.length} selected</span>
+          <button
+            onClick={handleBulkEnable}
+            className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-ctp-green/20 text-ctp-green border border-ctp-green/30 rounded hover:bg-ctp-green/30 transition-colors"
+          >
+            <CheckCheck size={10} />
+            Enable
+          </button>
+          <button
+            onClick={handleBulkDisable}
+            className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-ctp-yellow/20 text-ctp-yellow border border-ctp-yellow/30 rounded hover:bg-ctp-yellow/30 transition-colors"
+          >
+            Disable
+          </button>
+          <button
+            onClick={handleBulkDelete}
+            className="flex items-center gap-1 px-1.5 py-0.5 text-[10px] bg-ctp-red/20 text-ctp-red border border-ctp-red/30 rounded hover:bg-ctp-red/30 transition-colors"
+          >
+            Delete
+          </button>
+          <button
+            onClick={() => realStore?.getState().clearMultiSelect()}
+            className="ml-auto p-0.5 text-ctp-overlay1 hover:text-ctp-subtext1 transition-colors"
+            title="Clear selection"
+          >
+            <XCircle size={13} />
+          </button>
+        </div>
+      )}
 
       {/* Entry count + collapsible sort controls */}
       <div className="px-3 py-1 border-b border-ctp-surface0 flex flex-col gap-0.5">
@@ -224,7 +303,10 @@ export function EntryList() {
               key={entry.id}
               entry={entry}
               isSelected={selectedId === entry.id}
+              isMultiSelected={multiSelect.includes(entry.id)}
               onSelect={handleSelect}
+              onMultiToggle={handleMultiToggle}
+              onShiftSelect={handleShiftSelect}
               onToggleEnabled={handleToggleEnabled}
               displayMetric={displayMetric}
               severity={entryWorstSeverity.get(entry.id) ?? null}

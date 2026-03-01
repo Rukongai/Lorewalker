@@ -6,7 +6,10 @@ import { severityColor } from '@/lib/severity-color'
 interface EntryListItemProps {
   entry: WorkingEntry
   isSelected: boolean
+  isMultiSelected: boolean
   onSelect: (id: string) => void
+  onMultiToggle: (id: string) => void
+  onShiftSelect: (id: string) => void
   onToggleEnabled: (id: string) => void
   displayMetric: 'tokens' | 'order'
   severity: FindingSeverity | null
@@ -20,19 +23,43 @@ function getTypeBadge(entry: WorkingEntry): { label: string; color: string } {
   return { label: 'KW', color: 'bg-ctp-blue/50 text-ctp-blue ring-1 ring-ctp-blue/40' }
 }
 
-export function EntryListItem({ entry, isSelected, onSelect, onToggleEnabled, displayMetric, severity }: EntryListItemProps) {
+export function EntryListItem({
+  entry,
+  isSelected,
+  isMultiSelected,
+  onSelect,
+  onMultiToggle,
+  onShiftSelect,
+  onToggleEnabled,
+  displayMetric,
+  severity,
+}: EntryListItemProps) {
   const badge = getTypeBadge(entry)
+
+  function handleClick(e: React.MouseEvent) {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault()
+      onMultiToggle(entry.id)
+    } else if (e.shiftKey) {
+      e.preventDefault()
+      onShiftSelect(entry.id)
+    } else {
+      onSelect(entry.id)
+    }
+  }
 
   return (
     <div
-      onClick={() => onSelect(entry.id)}
+      onClick={handleClick}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(entry.id) }}
       tabIndex={0}
       role="option"
       aria-selected={isSelected}
       className={cn(
         'w-full flex items-center gap-2 px-3 py-2 text-left border-b border-ctp-surface0 transition-colors text-sm cursor-default',
-        isSelected
+        isMultiSelected
+          ? 'bg-ctp-blue/20 text-ctp-text border-l-2 border-l-ctp-blue'
+          : isSelected
           ? 'bg-ctp-accent/20 text-ctp-text border-l-2 border-l-ctp-accent'
           : 'text-ctp-subtext1 hover:bg-ctp-surface0',
         !entry.enabled && 'opacity-50'
