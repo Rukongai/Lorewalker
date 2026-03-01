@@ -182,6 +182,13 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick }: GraphCanvasInnerProps) {
     setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 50)
   }, [entries, graph, graphSettings, store, fitView])
 
+  const handleNodesDelete = useCallback(
+    (deleted: Node[]) => {
+      deleted.forEach((node) => store.getState().removeEntry(node.id))
+    },
+    [store],
+  )
+
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => { onNodesChange(changes) },
     [onNodesChange],
@@ -223,7 +230,9 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick }: GraphCanvasInnerProps) {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={handleNodesChange}
+        onNodesDelete={handleNodesDelete}
         onEdgesChange={handleEdgesChange}
+        deleteKeyCode={['Delete', 'Backspace']}
         onNodeDragStop={handleNodeDragStop}
         onNodeClick={handleNodeClick}
         onNodeDoubleClick={handleNodeDoubleClick}

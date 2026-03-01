@@ -168,6 +168,9 @@ export function createDocumentStore(init: DocumentStoreInit) {
             const idx = state.entries.findIndex((e) => e.id === id)
             if (idx !== -1) state.entries.splice(idx, 1)
 
+            // Clean up graph position for removed entry
+            state.graphPositions.delete(id)
+
             // Clear selection if removed entry was selected
             if (state.selection.selectedEntryId === id) {
               state.selection.selectedEntryId = null
