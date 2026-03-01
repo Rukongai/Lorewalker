@@ -7,6 +7,7 @@ export interface RecursionEdgeData {
   isHighlighted?: boolean
   isIncoming?: boolean
   isActivated?: boolean
+  isSkippedTarget?: boolean
   edgeStyle?: 'bezier' | 'straight' | 'smoothstep'
   recursionDepth?: number
   [key: string]: unknown
@@ -29,6 +30,7 @@ export function RecursionEdge({
   const isCyclic = data?.isCyclic ?? false
   const isIncoming = data?.isIncoming ?? false
   const isActivated = data?.isActivated ?? false
+  const isSkippedTarget = data?.isSkippedTarget ?? false
   const recursionDepth = data?.recursionDepth
 
   const inConnectionsMode = recursionDepth !== undefined
@@ -38,6 +40,8 @@ export function RecursionEdge({
       : recursionDepth === 1 ? 'var(--color-ctp-yellow)'
       : recursionDepth === 2 ? 'var(--color-ctp-peach)'
       : 'var(--color-ctp-red)')
+    : isSkippedTarget
+    ? 'var(--color-ctp-red)'
     : isActivated
     ? 'var(--color-ctp-yellow)'
     : isCyclic
@@ -48,7 +52,7 @@ export function RecursionEdge({
     ? 'var(--edge-incoming)'
     : 'var(--edge-active)'
 
-  const strokeWidth = inConnectionsMode ? 3 : isActivated ? 2.5 : 1.5
+  const strokeWidth = inConnectionsMode ? 3 : (isActivated || isSkippedTarget) ? 2.5 : 1.5
 
   const [edgePath] =
     data?.edgeStyle === 'straight'
@@ -63,7 +67,7 @@ export function RecursionEdge({
         id={id}
         d={edgePath}
         fill="none"
-        style={{ stroke: color, strokeWidth, strokeDasharray: blocked ? '5 3' : undefined }}
+        style={{ stroke: color, strokeWidth, strokeDasharray: (blocked || isSkippedTarget) ? '5 3' : undefined }}
         markerEnd={markerEnd}
         className="react-flow__edge-path"
       />

@@ -225,22 +225,39 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
         const isActivated = activatedEntryIds.has(sourceId) && activatedEntryIds.has(targetId)
 
         if (connectionsMode) {
-          // In connections mode: only show edges where BOTH endpoints are activated
-          if (!isActivated) continue
-          const recursionDepth = entryDepthMap.get(targetId) ?? 0
-          const depthColor =
-            recursionDepth === 0 ? 'var(--color-ctp-green)'
-            : recursionDepth === 1 ? 'var(--color-ctp-yellow)'
-            : recursionDepth === 2 ? 'var(--color-ctp-peach)'
-            : 'var(--color-ctp-red)'
-          newEdges.push({
-            id: edgeKey,
-            source: sourceId,
-            target: targetId,
-            type: 'recursionEdge',
-            markerEnd: { type: MarkerType.ArrowClosed, color: depthColor },
-            data: { blocked, isCyclic, isIncoming: false, isActivated, edgeStyle, recursionDepth },
-          })
+          // Blocked edges (preventRecursion / excludeRecursion) don't fire in simulation — don't show them
+          if (blocked) continue
+
+          const targetStatus = activationStatusMap.get(targetId)
+          const isSkippedTarget = targetStatus === 'skipped' && activatedEntryIds.has(sourceId)
+
+          if (!isActivated && !isSkippedTarget) continue
+
+          if (isSkippedTarget) {
+            newEdges.push({
+              id: edgeKey,
+              source: sourceId,
+              target: targetId,
+              type: 'recursionEdge',
+              markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--color-ctp-red)' },
+              data: { blocked: false, isCyclic, isIncoming: false, isActivated: false, edgeStyle, isSkippedTarget: true },
+            })
+          } else {
+            const recursionDepth = entryDepthMap.get(targetId) ?? 0
+            const depthColor =
+              recursionDepth === 0 ? 'var(--color-ctp-green)'
+              : recursionDepth === 1 ? 'var(--color-ctp-yellow)'
+              : recursionDepth === 2 ? 'var(--color-ctp-peach)'
+              : 'var(--color-ctp-red)'
+            newEdges.push({
+              id: edgeKey,
+              source: sourceId,
+              target: targetId,
+              type: 'recursionEdge',
+              markerEnd: { type: MarkerType.ArrowClosed, color: depthColor },
+              data: { blocked: false, isCyclic, isIncoming: false, isActivated: true, edgeStyle, recursionDepth },
+            })
+          }
           continue
         }
 
@@ -278,7 +295,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
       }
     }
     setEdges(newEdges)
-  }, [graph, cycleInfo, showBlockedEdges, connectionVisibility, selectedEntryId, edgeStyle, activatedEntryIds, connectionsMode, entryDepthMap, setEdges])
+  }, [graph, cycleInfo, showBlockedEdges, connectionVisibility, selectedEntryId, edgeStyle, activatedEntryIds, connectionsMode, entryDepthMap, activationStatusMap, setEdges])
 
   // Fit view on first load — wait until positions are computed and at least one node is measured
   useEffect(() => {
