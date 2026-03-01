@@ -441,6 +441,7 @@ export function WorkspaceShell() {
                   const id = realStore?.getState().selection.selectedEntryId
                   if (id) setModalEntryId(id)
                 }}
+                isModalOpen={modalEntryId !== null}
               />
             </ErrorBoundary>
           )}

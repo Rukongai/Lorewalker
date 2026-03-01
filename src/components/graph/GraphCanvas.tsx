@@ -37,9 +37,10 @@ interface GraphCanvasInnerProps {
   tabId: string
   onNodeDoubleClick?: (entryId: string) => void
   onAddEntry?: () => void
+  isModalOpen?: boolean
 }
 
-function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasInnerProps) {
+function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }: GraphCanvasInnerProps) {
   const graphSettings = useWorkspaceStore((s) => s.graphSettings)
   const checkRecursionLoops = useWorkspaceStore((s) => s.checkRecursionLoops)
   const theme = useWorkspaceStore((s) => s.theme)
@@ -127,6 +128,12 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
   )
   const didInitialFitRef = useRef(false)
   const lastClickRef = useRef<{ id: string; time: number } | null>(null)
+
+  useEffect(() => {
+    if (!isModalOpen) {
+      lastClickRef.current = null
+    }
+  }, [isModalOpen])
 
   const cycleInfo = useMemo(() => {
     if (!checkRecursionLoops) return { cycleNodeIds: new Set<string>(), cycleEdgeIds: new Set<string>() }
@@ -462,12 +469,13 @@ interface GraphCanvasProps {
   tabId: string
   onNodeDoubleClick?: (entryId: string) => void
   onAddEntry?: () => void
+  isModalOpen?: boolean
 }
 
-export function GraphCanvas({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasProps) {
+export function GraphCanvas({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }: GraphCanvasProps) {
   return (
     <ReactFlowProvider>
-      <GraphCanvasInner tabId={tabId} onNodeDoubleClick={onNodeDoubleClick} onAddEntry={onAddEntry} />
+      <GraphCanvasInner tabId={tabId} onNodeDoubleClick={onNodeDoubleClick} onAddEntry={onAddEntry} isModalOpen={isModalOpen} />
     </ReactFlowProvider>
   )
 }
