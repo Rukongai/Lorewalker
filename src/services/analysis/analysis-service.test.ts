@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { runDeterministic, computeHealthScore } from './analysis-service'
 import { defaultRubric } from './default-rubric'
 import { buildGraph } from '@/services/graph-service'
-import type { WorkingEntry, Finding, AnalysisContext } from '@/types'
+import type { WorkingEntry, Finding, AnalysisContext, BookMeta } from '@/types'
 
 // Minimal WorkingEntry factory
 function makeEntry(overrides: Partial<WorkingEntry> = {}): WorkingEntry {
@@ -56,8 +56,30 @@ function makeEntry(overrides: Partial<WorkingEntry> = {}): WorkingEntry {
   }
 }
 
-function makeContext(entries: WorkingEntry[]): AnalysisContext {
-  return { entries, graph: buildGraph(entries) }
+function makeBookMeta(overrides: Partial<BookMeta> = {}): BookMeta {
+  return {
+    name: '',
+    description: '',
+    scanDepth: 4,
+    tokenBudget: 2048,
+    recursiveScan: false,
+    caseSensitive: false,
+    matchWholeWords: false,
+    extensions: {},
+    minActivations: 0,
+    maxDepth: 0,
+    maxRecursionSteps: 0,
+    insertionStrategy: 'evenly',
+    includeNames: false,
+    useGroupScoring: false,
+    alertOnOverflow: false,
+    budgetCap: 0,
+    ...overrides,
+  }
+}
+
+function makeContext(entries: WorkingEntry[], bookMeta?: Partial<BookMeta>): AnalysisContext {
+  return { entries, bookMeta: makeBookMeta(bookMeta), graph: buildGraph(entries) }
 }
 
 // ─── computeHealthScore ──────────────────────────────────────────────────────
@@ -239,5 +261,57 @@ describe('runDeterministic — structure/uid-consistency', () => {
     const ctx = makeContext([a, b])
     const findings = await runDeterministic(ctx, defaultRubric)
     expect(findings.find((f) => f.ruleId === 'structure/uid-consistency')).toBeUndefined()
+  })
+})
+
+// ─── keywords/substring-overlap ──────────────────────────────────────────────
+
+describe('keywords/substring-overlap rule', () => {
+  it('warns when shorter keyword is a substring of a longer keyword (default matchWholeWords=false)', async () => {
+    const entries = [
+      makeEntry({ id: 'e1', keys: ['dragon'] }),
+      makeEntry({ id: 'e2', keys: ['dragonfly'] }),
+    ]
+    const findings = await runDeterministic(makeContext(entries), defaultRubric)
+    const overlap = findings.filter((f) => f.ruleId === 'keywords/substring-overlap')
+    expect(overlap.length).toBeGreaterThan(0)
+    expect(overlap[0].entryIds).toContain('e1')
+    expect(overlap[0].entryIds).toContain('e2')
+  })
+
+  it('does NOT warn when the shorter keyword entry has matchWholeWords=true (entry-level override)', async () => {
+    const entries = [
+      makeEntry({ id: 'e1', keys: ['dragon'], matchWholeWords: true }),
+      makeEntry({ id: 'e2', keys: ['dragonfly'] }),
+    ]
+    const findings = await runDeterministic(makeContext(entries), defaultRubric)
+    const overlap = findings.filter((f) => f.ruleId === 'keywords/substring-overlap')
+    expect(overlap).toHaveLength(0)
+  })
+
+  it('does NOT warn when global matchWholeWords=true and entry has no override (null)', async () => {
+    const entries = [
+      makeEntry({ id: 'e1', keys: ['dragon'], matchWholeWords: null }),
+      makeEntry({ id: 'e2', keys: ['dragonfly'] }),
+    ]
+    const findings = await runDeterministic(
+      makeContext(entries, { matchWholeWords: true }),
+      defaultRubric,
+    )
+    const overlap = findings.filter((f) => f.ruleId === 'keywords/substring-overlap')
+    expect(overlap).toHaveLength(0)
+  })
+
+  it('still warns when entry explicitly sets matchWholeWords=false even though global is true', async () => {
+    const entries = [
+      makeEntry({ id: 'e1', keys: ['dragon'], matchWholeWords: false }),
+      makeEntry({ id: 'e2', keys: ['dragonfly'] }),
+    ]
+    const findings = await runDeterministic(
+      makeContext(entries, { matchWholeWords: true }),
+      defaultRubric,
+    )
+    const overlap = findings.filter((f) => f.ruleId === 'keywords/substring-overlap')
+    expect(overlap.length).toBeGreaterThan(0)
   })
 })

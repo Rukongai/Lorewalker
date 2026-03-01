@@ -1,4 +1,4 @@
-import type { WorkingEntry } from './entry'
+import type { BookMeta, WorkingEntry } from './entry'
 import type { RecursionGraph } from './graph'
 
 export type RuleCategory =
@@ -13,6 +13,7 @@ export type FindingSeverity = 'error' | 'warning' | 'suggestion';
 
 export interface AnalysisContext {
   entries: WorkingEntry[];
+  bookMeta: BookMeta;
   graph: RecursionGraph;
   llmService?: unknown;           // Only provided during LLM analysis runs (typed as LLMService in llm.ts)
 }

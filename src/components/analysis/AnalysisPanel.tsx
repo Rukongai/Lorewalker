@@ -56,6 +56,7 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
   const llmFindings = activeStore((s) => s.llmFindings)
   const healthScore = activeStore((s) => s.healthScore)
   const entries = activeStore((s) => s.entries)
+  const bookMeta = activeStore((s) => s.bookMeta)
 
   const allFindings: Finding[] = [...findings, ...llmFindings].sort(
     (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
@@ -178,7 +179,7 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
       {deepAnalysisOpen && activeLlmProviderId && (
         <DeepAnalysisDialog
           providerId={activeLlmProviderId}
-          context={{ entries, graph }}
+          context={{ entries, bookMeta, graph }}
           onComplete={handleDeepAnalysisComplete}
           onClose={() => setDeepAnalysisOpen(false)}
         />

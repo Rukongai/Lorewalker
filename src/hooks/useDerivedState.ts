@@ -72,11 +72,10 @@ export function useDerivedState(tabId: string | null): DerivedState {
   const realStore = tabId ? documentStoreRegistry.get(tabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
   const entries = activeStore((s) => s.entries)
-  const bookCaseSensitive = activeStore((s) => s.bookMeta.caseSensitive)
-  const bookMatchWholeWords = activeStore((s) => s.bookMeta.matchWholeWords)
+  const bookMeta = activeStore((s) => s.bookMeta)
   const bookMatchOptions = useMemo(
-    () => ({ caseSensitive: bookCaseSensitive, matchWholeWords: bookMatchWholeWords }),
-    [bookCaseSensitive, bookMatchWholeWords],
+    () => ({ caseSensitive: bookMeta.caseSensitive, matchWholeWords: bookMeta.matchWholeWords }),
+    [bookMeta.caseSensitive, bookMeta.matchWholeWords],
   )
 
   const persistMissingPositions = useCallback(
@@ -107,7 +106,7 @@ export function useDerivedState(tabId: string | null): DerivedState {
   const runAnalysis = useCallback(
     async (currentEntries: WorkingEntry[], newGraph: RecursionGraph) => {
       const newFindings = await runDeterministic(
-        { entries: currentEntries, graph: newGraph },
+        { entries: currentEntries, bookMeta, graph: newGraph },
         defaultRubric,
       )
       const newHealthScore = computeHealthScore(newFindings, defaultRubric)
@@ -117,7 +116,7 @@ export function useDerivedState(tabId: string | null): DerivedState {
       setFindings(newFindings)
       setHealthScore(newHealthScore)
     },
-    [realStore],
+    [realStore, bookMeta],
   )
 
   const recompute = useCallback(

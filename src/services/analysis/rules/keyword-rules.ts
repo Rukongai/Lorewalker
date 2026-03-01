@@ -137,11 +137,12 @@ const substringOverlapRule: Rule = {
   async evaluate(context: AnalysisContext): Promise<Finding[]> {
     const findings: Finding[] = []
 
-    // Collect all (entryId, normalizedKey) pairs
-    const allKeys: Array<{ entryId: string; key: string }> = []
+    // Collect all (entryId, normalizedKey, matchWholeWords) pairs
+    const allKeys: Array<{ entryId: string; key: string; matchWholeWords: boolean }> = []
     for (const entry of context.entries) {
+      const matchWholeWords = entry.matchWholeWords ?? context.bookMeta.matchWholeWords
       for (const key of entry.keys) {
-        allKeys.push({ entryId: entry.id, key: key.trim().toLowerCase() })
+        allKeys.push({ entryId: entry.id, key: key.trim().toLowerCase(), matchWholeWords })
       }
     }
 
@@ -151,6 +152,9 @@ const substringOverlapRule: Rule = {
         if (i === j) continue
         const a = allKeys[i]
         const b = allKeys[j]
+        // If 'a' uses whole-word matching, it won't fire word-internally inside 'b'
+        // (word boundaries prevent substring activation), so no overlap concern.
+        if (a.matchWholeWords) continue
         // a.key is a strict substring of b.key
         if (a.key !== b.key && b.key.includes(a.key)) {
           findings.push({
