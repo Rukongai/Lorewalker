@@ -249,30 +249,33 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
               className={inputClass}
             />
           </Field>
-          <Field label="Delay" help="Minimum number of messages that must exist in the chat before this entry can activate. Useful for content that shouldn't appear until the conversation has progressed.">
+          <Field label="Delay" help="Minimum number of messages that must exist in the chat before this entry can activate. Leave empty to use the global default.">
             <input
               type="number"
               min={0}
-              value={entry.delay}
-              onChange={(e) => handleChange('delay', Number(e.target.value))}
+              value={entry.delay ?? ''}
+              placeholder="Global default"
+              onChange={(e) => handleChange('delay', e.target.value === '' ? null : Number(e.target.value))}
               className={inputClass}
             />
           </Field>
-          <Field label="Cooldown Duration" help="After this entry activates, it cannot activate again for this many messages. Prevents the same content from repeating too frequently.">
+          <Field label="Cooldown Duration" help="After this entry activates, it cannot activate again for this many messages. Leave empty to use the global default.">
             <input
               type="number"
               min={0}
-              value={entry.cooldown}
-              onChange={(e) => handleChange('cooldown', Number(e.target.value))}
+              value={entry.cooldown ?? ''}
+              placeholder="Global default"
+              onChange={(e) => handleChange('cooldown', e.target.value === '' ? null : Number(e.target.value))}
               className={inputClass}
             />
           </Field>
-          <Field label="Sticky Duration" help="After activating, the entry stays injected for this many additional messages without needing keyword triggers. Probability checks are skipped during the sticky period.">
+          <Field label="Sticky Duration" help="After activating, the entry stays injected for this many additional messages without needing keyword triggers. Leave empty to use the global default.">
             <input
               type="number"
               min={0}
-              value={entry.sticky}
-              onChange={(e) => handleChange('sticky', Number(e.target.value))}
+              value={entry.sticky ?? ''}
+              placeholder="Global default"
+              onChange={(e) => handleChange('sticky', e.target.value === '' ? null : Number(e.target.value))}
               className={inputClass}
             />
           </Field>

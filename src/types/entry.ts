@@ -51,9 +51,9 @@ export interface WorkingEntry {
   depth: number;                  // Context depth for injection
 
   // === Timed Effects ===
-  delay: number;                  // Messages before entry can activate (0 = immediate)
-  cooldown: number;               // Messages entry can't activate after deactivation
-  sticky: number;                 // Messages entry stays active after trigger (0 = keyword-only)
+  delay: number | null;           // Messages before entry can activate (null = use global default, 0 = immediate)
+  cooldown: number | null;        // Messages entry can't activate after deactivation (null = use global default)
+  sticky: number | null;          // Messages entry stays active after trigger (null = use global default, 0 = keyword-only)
   probability: number;            // Percent chance to activate when triggered (1-100)
 
   // === Recursion Control ===

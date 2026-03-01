@@ -18,9 +18,9 @@ import type {
 
 // SillyTavern-specific fields stored in extensions.sillytavern after normalization
 interface STExtensions {
-  delay?: number
-  cooldown?: number
-  sticky?: number
+  delay?: number | null
+  cooldown?: number | null
+  sticky?: number | null
   ignoreBudget?: boolean
   excludeRecursion?: boolean
   preventRecursion?: boolean
@@ -101,6 +101,66 @@ function normalizeSelectiveLogic(
   return 0
 }
 
+// Raw SillyTavern entry as it appears in the JSON lorebook file
+export type RawSTEntry = {
+  uid?: number
+  key?: string[]
+  keysecondary?: string[]
+  comment?: string
+  content?: string
+  constant?: boolean
+  selective?: boolean
+  selectiveLogic?: number
+  addMemo?: boolean
+  order?: number
+  position?: number
+  disable?: boolean
+  probability?: number
+  useProbability?: boolean
+  depth?: number
+  delay?: number
+  cooldown?: number
+  sticky?: number
+  vectorized?: boolean
+  ignoreBudget?: boolean
+  excludeRecursion?: boolean
+  preventRecursion?: boolean
+  group?: string
+  groupOverride?: boolean
+  groupWeight?: number
+  useGroupScoring?: boolean | null
+  scanDepth?: number | null
+  caseSensitive?: boolean | null
+  matchWholeWords?: boolean | null
+  matchPersonaDescription?: boolean
+  matchCharacterDescription?: boolean
+  matchCharacterPersonality?: boolean
+  matchCharacterDepthPrompt?: boolean
+  matchScenario?: boolean
+  matchCreatorNotes?: boolean
+  role?: number
+  automationId?: string
+  outletName?: string
+  displayIndex?: number
+  delayUntilRecursion?: number
+  triggers?: string[]
+  characterFilter?: { isExclude: boolean; names: string[]; tags: string[] }
+}
+
+// Raw SillyTavern lorebook (top-level JSON structure)
+export type RawSTBook = {
+  name?: string
+  description?: string
+  scan_depth?: number
+  token_budget?: number
+  recursive_scanning?: boolean
+  extensions?: {
+    sillytavern?: Record<string, unknown>
+    [key: string]: unknown
+  }
+  entries?: Record<string, RawSTEntry>
+}
+
 /**
  * inflate: CCv3CharacterBook → InflateResult
  *
@@ -132,9 +192,9 @@ export function inflate(book: CCv3CharacterBook): InflateResult {
       order: raw.insertion_order,
       depth: raw.depth ?? 4,
 
-      delay: stExt.delay ?? 0,
-      cooldown: stExt.cooldown ?? 0,
-      sticky: stExt.sticky ?? 0,
+      delay: stExt.delay ?? null,
+      cooldown: stExt.cooldown ?? null,
+      sticky: stExt.sticky ?? null,
       probability: raw.probability ?? 100,
 
       preventRecursion: stExt.preventRecursion ?? false,
@@ -162,7 +222,7 @@ export function inflate(book: CCv3CharacterBook): InflateResult {
       outletName: stExt.outletName ?? '',
       vectorized: stExt.vectorized ?? false,
       useProbability: stExt.useProbability ?? true,
-      addMemo: stExt.addMemo ?? true,
+      addMemo: stExt.addMemo ?? false,
       displayIndex: stExt.displayIndex ?? 0,
       delayUntilRecursion: stExt.delayUntilRecursion ?? 0,
       triggers: Array.isArray(stExt.triggers) ? stExt.triggers : [],
@@ -201,6 +261,108 @@ export function inflate(book: CCv3CharacterBook): InflateResult {
     alertOnOverflow: (stBookExt['alert_on_overflow'] as boolean | undefined) ?? false,
     budgetCap: (stBookExt['budget_cap'] as number | undefined) ?? 0,
     extensions: book.extensions ?? {},
+  }
+
+  return { entries, bookMeta }
+}
+
+/**
+ * inflateFromRawST: RawSTBook → InflateResult
+ *
+ * Parses a SillyTavern lorebook JSON directly, bypassing parseLorebook() normalization.
+ * Avoids lossy position mapping and missing-field gaps in character-foundry's ST normalizer.
+ */
+export function inflateFromRawST(raw: RawSTBook): InflateResult {
+  const rawEntries = raw.entries ?? {}
+  const entries: WorkingEntry[] = Object.values(rawEntries).map((e, index) => {
+    const content = e.content ?? ''
+    const tokenCount = safeCountTokens(content)
+
+    const entry: WorkingEntry = {
+      id: generateId(),
+      uid: e.uid ?? index,
+
+      name: e.comment ?? '',
+      content,
+      keys: e.key ?? [],
+      secondaryKeys: e.keysecondary ?? [],
+
+      constant: e.constant ?? false,
+      selective: e.selective ?? false,
+      selectiveLogic: normalizeSelectiveLogic(e.selectiveLogic ?? 0),
+      enabled: !(e.disable ?? false),
+
+      position: normalizePosition(e.position ?? 0),
+      order: e.order ?? 0,
+      depth: e.depth ?? 4,
+
+      delay: e.delay ?? null,
+      cooldown: e.cooldown ?? null,
+      sticky: e.sticky ?? null,
+      probability: e.probability ?? 100,
+
+      preventRecursion: e.preventRecursion ?? false,
+      excludeRecursion: e.excludeRecursion ?? false,
+      ignoreBudget: e.ignoreBudget ?? false,
+
+      group: e.group ?? '',
+      groupOverride: e.groupOverride ?? false,
+      groupWeight: e.groupWeight ?? 100,
+      useGroupScoring: e.useGroupScoring ?? null,
+
+      scanDepth: e.scanDepth ?? null,
+      caseSensitive: e.caseSensitive ?? null,
+      matchWholeWords: e.matchWholeWords ?? null,
+
+      matchPersonaDescription: e.matchPersonaDescription ?? false,
+      matchCharacterDescription: e.matchCharacterDescription ?? false,
+      matchCharacterPersonality: e.matchCharacterPersonality ?? false,
+      matchCharacterDepthPrompt: e.matchCharacterDepthPrompt ?? false,
+      matchScenario: e.matchScenario ?? false,
+      matchCreatorNotes: e.matchCreatorNotes ?? false,
+
+      role: e.role ?? 0,
+      automationId: e.automationId ?? '',
+      outletName: e.outletName ?? '',
+      vectorized: e.vectorized ?? false,
+      useProbability: e.useProbability ?? true,
+      addMemo: e.addMemo ?? false,
+      displayIndex: e.displayIndex ?? 0,
+      delayUntilRecursion: e.delayUntilRecursion ?? 0,
+      triggers: Array.isArray(e.triggers) ? e.triggers : [],
+      characterFilter: e.characterFilter ?? { isExclude: false, names: [], tags: [] },
+
+      tokenCount,
+      extensions: {},
+    }
+
+    return entry
+  })
+
+  const stBookExt = (raw.extensions?.sillytavern ?? {}) as Record<string, unknown>
+
+  const bookMeta: BookMeta = {
+    name: raw.name ?? '',
+    description: raw.description ?? '',
+    scanDepth: raw.scan_depth ?? 4,
+    tokenBudget: raw.token_budget ?? 4096,
+    recursiveScan: raw.recursive_scanning ?? false,
+    caseSensitive: (stBookExt['case_sensitive'] as boolean | undefined) ?? false,
+    matchWholeWords: (stBookExt['match_whole_words'] as boolean | undefined) ?? false,
+    minActivations: (stBookExt['min_activations'] as number | undefined) ?? 0,
+    maxDepth: (stBookExt['max_depth'] as number | undefined) ?? 0,
+    maxRecursionSteps: (stBookExt['max_recursion_steps'] as number | undefined) ?? 0,
+    insertionStrategy: (() => {
+      const s = stBookExt['insertion_strategy'] as string | undefined
+      if (s === 'character_lore_first') return 'character_lore_first'
+      if (s === 'global_lore_first') return 'global_lore_first'
+      return 'evenly'
+    })(),
+    includeNames: (stBookExt['include_names'] as boolean | undefined) ?? false,
+    useGroupScoring: (stBookExt['use_group_scoring'] as boolean | undefined) ?? false,
+    alertOnOverflow: (stBookExt['alert_on_overflow'] as boolean | undefined) ?? false,
+    budgetCap: (stBookExt['budget_cap'] as number | undefined) ?? 0,
+    extensions: raw.extensions ?? {},
   }
 
   return { entries, bookMeta }

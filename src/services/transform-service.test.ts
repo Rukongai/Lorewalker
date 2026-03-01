@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { inflate, deflate } from './transform-service'
+import { inflate, deflate, inflateFromRawST } from './transform-service'
+import type { RawSTBook } from './transform-service'
 import type { CCv3CharacterBook } from '@character-foundry/character-foundry/loader'
 
 function makeBook(overrides: Partial<CCv3CharacterBook> = {}): CCv3CharacterBook {
@@ -190,9 +191,10 @@ describe('TransformService', () => {
         ],
       }
       const { entries } = inflate(book)
-      expect(entries[0].delay).toBe(0)
-      expect(entries[0].cooldown).toBe(0)
-      expect(entries[0].sticky).toBe(0)
+      expect(entries[0].delay).toBe(null)
+      expect(entries[0].cooldown).toBe(null)
+      expect(entries[0].sticky).toBe(null)
+      expect(entries[0].addMemo).toBe(false)
       expect(entries[0].constant).toBe(false)
       expect(entries[0].probability).toBe(100)
     })
@@ -214,6 +216,14 @@ describe('TransformService', () => {
       expect(entries[0].excludeRecursion).toBe(false)
     })
 
+    it('preserves non-default depth values', () => {
+      const book = makeBook()
+      const entry = book.entries[0] as CCv3CharacterBook['entries'][0] & { depth: number }
+      entry.depth = 2
+      const { entries } = inflate(book)
+      expect(entries[0].depth).toBe(2)
+    })
+
     it('maps ST excludeRecursion directly to WorkingEntry excludeRecursion', () => {
       const book = makeBook({
         entries: [
@@ -231,6 +241,197 @@ describe('TransformService', () => {
       expect(entries[0].preventRecursion).toBe(false)
     })
   })
+
+describe('inflateFromRawST', () => {
+  function makeRawSTBook(entryOverrides: Partial<RawSTBook['entries']>[0] = {}): RawSTBook {
+    return {
+      name: 'ST Book',
+      description: 'A SillyTavern lorebook',
+      scan_depth: 4,
+      token_budget: 4096,
+      recursive_scanning: false,
+      entries: {
+        '0': {
+          uid: 0,
+          key: ['dragon', 'wyrm'],
+          keysecondary: [],
+          comment: 'Dragon',
+          content: 'Dragons are ancient winged creatures.',
+          constant: false,
+          selective: false,
+          selectiveLogic: 0,
+          addMemo: true,
+          order: 100,
+          position: 1,
+          disable: false,
+          probability: 100,
+          useProbability: true,
+          depth: 4,
+          delay: 0,
+          cooldown: 0,
+          sticky: 0,
+          vectorized: false,
+          ignoreBudget: false,
+          excludeRecursion: false,
+          preventRecursion: false,
+          group: '',
+          groupOverride: false,
+          groupWeight: 100,
+          useGroupScoring: null,
+          scanDepth: null,
+          caseSensitive: null,
+          matchWholeWords: null,
+          matchPersonaDescription: false,
+          matchCharacterDescription: false,
+          matchCharacterPersonality: false,
+          matchCharacterDepthPrompt: false,
+          matchScenario: false,
+          matchCreatorNotes: false,
+          role: 0,
+          automationId: '',
+          outletName: '',
+          displayIndex: 0,
+          delayUntilRecursion: 0,
+          triggers: [],
+          characterFilter: { isExclude: false, names: [], tags: [] },
+          ...entryOverrides,
+        },
+      },
+    }
+  }
+
+  it('maps core fields correctly (comment→name, key→keys, disable→enabled inversion)', () => {
+    const raw = makeRawSTBook({ comment: 'My Entry', key: ['hero'], disable: false })
+    const { entries } = inflateFromRawST(raw)
+    expect(entries[0].name).toBe('My Entry')
+    expect(entries[0].keys).toEqual(['hero'])
+    expect(entries[0].enabled).toBe(true)
+  })
+
+  it('inverts disable flag for enabled field', () => {
+    const raw = makeRawSTBook({ disable: true })
+    const { entries } = inflateFromRawST(raw)
+    expect(entries[0].enabled).toBe(false)
+  })
+
+  it('preserves position 4 (@ Depth) correctly — regression for mapSTPosition bug', () => {
+    const raw = makeRawSTBook({ position: 4 })
+    const { entries } = inflateFromRawST(raw)
+    expect(entries[0].position).toBe(4)
+  })
+
+  it('preserves all ST position values 0–7', () => {
+    for (let pos = 0; pos <= 7; pos++) {
+      const raw = makeRawSTBook({ position: pos })
+      const { entries } = inflateFromRawST(raw)
+      expect(entries[0].position).toBe(pos)
+    }
+  })
+
+  it('preserves non-default depth values — regression for depth bug', () => {
+    const raw = makeRawSTBook({ depth: 2 })
+    const { entries } = inflateFromRawST(raw)
+    expect(entries[0].depth).toBe(2)
+  })
+
+  it('reads preventRecursion and ignoreBudget directly from ST entry', () => {
+    const raw = makeRawSTBook({ preventRecursion: true, ignoreBudget: true })
+    const { entries } = inflateFromRawST(raw)
+    expect(entries[0].preventRecursion).toBe(true)
+    expect(entries[0].ignoreBudget).toBe(true)
+  })
+
+  it('applies defaults for missing optional fields', () => {
+    const raw: RawSTBook = {
+      entries: {
+        '0': { content: 'Minimal' },
+      },
+    }
+    const { entries } = inflateFromRawST(raw)
+    expect(entries[0].delay).toBe(null)
+    expect(entries[0].cooldown).toBe(null)
+    expect(entries[0].sticky).toBe(null)
+    expect(entries[0].addMemo).toBe(false)
+    expect(entries[0].constant).toBe(false)
+    expect(entries[0].probability).toBe(100)
+    expect(entries[0].preventRecursion).toBe(false)
+    expect(entries[0].ignoreBudget).toBe(false)
+    expect(entries[0].enabled).toBe(true)
+    expect(entries[0].position).toBe(0)
+    expect(entries[0].depth).toBe(4)
+    expect(entries[0].group).toBe('')
+    expect(entries[0].triggers).toEqual([])
+    expect(entries[0].characterFilter).toEqual({ isExclude: false, names: [], tags: [] })
+  })
+
+  it('preserves sticky: null through inflate (null = use global default)', () => {
+    const raw: RawSTBook = {
+      entries: {
+        '0': { content: 'Test', sticky: undefined, delay: undefined, cooldown: undefined },
+      },
+    }
+    const { entries } = inflateFromRawST(raw)
+    expect(entries[0].sticky).toBe(null)
+    expect(entries[0].delay).toBe(null)
+    expect(entries[0].cooldown).toBe(null)
+  })
+
+  it('maps book-level metadata correctly', () => {
+    const raw = makeRawSTBook()
+    const { bookMeta } = inflateFromRawST(raw)
+    expect(bookMeta.name).toBe('ST Book')
+    expect(bookMeta.description).toBe('A SillyTavern lorebook')
+    expect(bookMeta.scanDepth).toBe(4)
+    expect(bookMeta.tokenBudget).toBe(4096)
+    expect(bookMeta.recursiveScan).toBe(false)
+  })
+
+  it('assigns stable UUIDs and uses uid from entry', () => {
+    const raw = makeRawSTBook({ uid: 42 })
+    const { entries } = inflateFromRawST(raw)
+    expect(entries[0].id).toMatch(/^[0-9a-f-]{36}$/)
+    expect(entries[0].uid).toBe(42)
+  })
+
+  it('computes a non-zero token count for non-empty content', () => {
+    const raw = makeRawSTBook({ content: 'Dragons are ancient winged creatures.' })
+    const { entries } = inflateFromRawST(raw)
+    expect(entries[0].tokenCount).toBeGreaterThan(0)
+  })
+
+  it('maps all Category B fields correctly', () => {
+    const raw = makeRawSTBook({
+      displayIndex: 5,
+      matchPersonaDescription: true,
+      matchCharacterDescription: true,
+      matchCharacterPersonality: true,
+      matchCharacterDepthPrompt: true,
+      matchScenario: true,
+      matchCreatorNotes: true,
+      delayUntilRecursion: 2,
+      outletName: 'sidebar',
+      useGroupScoring: true,
+      addMemo: false,
+      triggers: ['combat', 'stealth'],
+      characterFilter: { isExclude: true, names: ['Mordred'], tags: ['villain'] },
+    })
+    const { entries } = inflateFromRawST(raw)
+    const e = entries[0]
+    expect(e.displayIndex).toBe(5)
+    expect(e.matchPersonaDescription).toBe(true)
+    expect(e.matchCharacterDescription).toBe(true)
+    expect(e.matchCharacterPersonality).toBe(true)
+    expect(e.matchCharacterDepthPrompt).toBe(true)
+    expect(e.matchScenario).toBe(true)
+    expect(e.matchCreatorNotes).toBe(true)
+    expect(e.delayUntilRecursion).toBe(2)
+    expect(e.outletName).toBe('sidebar')
+    expect(e.useGroupScoring).toBe(true)
+    expect(e.addMemo).toBe(false)
+    expect(e.triggers).toEqual(['combat', 'stealth'])
+    expect(e.characterFilter).toEqual({ isExclude: true, names: ['Mordred'], tags: ['villain'] })
+  })
+})
 
   describe('deflate', () => {
     it('produces an entry for each WorkingEntry', () => {

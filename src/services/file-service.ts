@@ -7,9 +7,9 @@
  */
 
 import { parseLorebook, parseCard } from '@character-foundry/character-foundry/loader'
-import type { CCv3CharacterBook } from '@character-foundry/character-foundry/loader'
 import { generateId } from '@/lib/uuid'
-import { inflate, deflate } from './transform-service'
+import { inflate, inflateFromRawST, deflate } from './transform-service'
+import type { RawSTBook } from './transform-service'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import type { FileMeta, LorebookFormat } from '@/types'
@@ -33,78 +33,6 @@ export class FileExportError extends Error {
     super(message)
     this.name = 'FileExportError'
     this.cause = cause
-  }
-}
-
-/**
- * Patches missing SillyTavern fields (preventRecursion, ignoreBudget) into the normalized book.
- *
- * character-foundry's normalizeSillyTavern() extracts most ST fields into extensions.sillytavern,
- * but omits preventRecursion and ignoreBudget. This function re-reads the raw JSON to recover them.
- */
-type RawSTEntry = {
-  uid?: number
-  preventRecursion?: boolean
-  ignoreBudget?: boolean
-  displayIndex?: number
-  matchPersonaDescription?: boolean
-  matchCharacterDescription?: boolean
-  matchCharacterPersonality?: boolean
-  matchCharacterDepthPrompt?: boolean
-  matchScenario?: boolean
-  matchCreatorNotes?: boolean
-  delayUntilRecursion?: number
-  outletName?: string
-  useGroupScoring?: boolean | null
-  addMemo?: boolean
-  triggers?: string[]
-  characterFilter?: { isExclude: boolean; names: string[]; tags: string[] }
-}
-
-const CATEGORY_B_FIELDS = [
-  'displayIndex',
-  'matchPersonaDescription',
-  'matchCharacterDescription',
-  'matchCharacterPersonality',
-  'matchCharacterDepthPrompt',
-  'matchScenario',
-  'matchCreatorNotes',
-  'delayUntilRecursion',
-  'outletName',
-  'useGroupScoring',
-  'addMemo',
-  'triggers',
-  'characterFilter',
-  'preventRecursion',
-  'ignoreBudget',
-] as const
-
-function patchSillyTavernMissingFields(buffer: Uint8Array, book: CCv3CharacterBook): void {
-  try {
-    const text = new TextDecoder().decode(buffer)
-    const raw = JSON.parse(text) as { entries?: Record<string, RawSTEntry> }
-    if (!raw.entries || typeof raw.entries !== 'object') return
-
-    // Build lookup: uid → raw ST entry fields
-    const byUid = new Map<number, RawSTEntry>()
-    for (const entry of Object.values(raw.entries)) {
-      if (typeof entry.uid === 'number') {
-        byUid.set(entry.uid, entry)
-      }
-    }
-
-    // Patch missing fields into the normalized book entries
-    for (const entry of book.entries) {
-      const uid = typeof entry.id === 'number' ? entry.id : -1
-      const missing = byUid.get(uid)
-      if (!missing) continue
-      const stExt = ((entry.extensions ??= {})['sillytavern'] ??= {}) as Record<string, unknown>
-      for (const key of CATEGORY_B_FIELDS) {
-        if (missing[key] !== undefined) stExt[key] = missing[key]
-      }
-    }
-  } catch {
-    // If raw JSON parse fails, continue — inflate() will fall back to defaults
   }
 }
 
@@ -171,19 +99,30 @@ export async function importFile(file: File): Promise<string> {
       return tabId
     } else {
       // Standalone lorebook JSON
-      const result = parseLorebook(buffer)
+      const text = new TextDecoder().decode(buffer)
+      const rawJson = JSON.parse(text) as Record<string, unknown>
 
-      // character-foundry doesn't extract preventRecursion / ignoreBudget for SillyTavern format
-      if (result.lorebookFormat === 'sillytavern') {
-        patchSillyTavernMissingFields(buffer, result.book)
+      let entries, bookMeta, originalFormat: LorebookFormat
+
+      if (rawJson.entries !== null && typeof rawJson.entries === 'object' && !Array.isArray(rawJson.entries)) {
+        // SillyTavern format: entries is a keyed object, not an array
+        const stResult = inflateFromRawST(rawJson as RawSTBook)
+        entries = stResult.entries
+        bookMeta = stResult.bookMeta
+        originalFormat = 'sillytavern'
+      } else {
+        // CCv3 and other formats: use parseLorebook normalization
+        const result = parseLorebook(buffer)
+        const inflated = inflate(result.book)
+        entries = inflated.entries
+        bookMeta = inflated.bookMeta
+        originalFormat = resolveFormat(result.lorebookFormat)
       }
-
-      const { entries, bookMeta } = inflate(result.book)
 
       const tabId = generateId()
       const fileMeta: FileMeta = {
         fileName: file.name,
-        originalFormat: resolveFormat(result.lorebookFormat),
+        originalFormat,
         lastSavedAt: null,
         sourceType: 'standalone',
       }
@@ -221,7 +160,31 @@ export function exportFile(tabId: string, fileName?: string): void {
   }
 
   // Serialize to the SillyTavern lorebook format (entries keyed by UID)
-  const stExport: { entries: Record<string, unknown> } = { entries: {} }
+  const stBookExt: Record<string, unknown> = {
+    min_activations: bookMeta.minActivations,
+    max_depth: bookMeta.maxDepth,
+    max_recursion_steps: bookMeta.maxRecursionSteps,
+    insertion_strategy: bookMeta.insertionStrategy,
+    include_names: bookMeta.includeNames,
+    use_group_scoring: bookMeta.useGroupScoring,
+    alert_on_overflow: bookMeta.alertOnOverflow,
+    budget_cap: bookMeta.budgetCap,
+    case_sensitive: bookMeta.caseSensitive,
+    match_whole_words: bookMeta.matchWholeWords,
+  }
+
+  const stExport: Record<string, unknown> = {
+    name: bookMeta.name,
+    description: bookMeta.description,
+    scan_depth: bookMeta.scanDepth,
+    token_budget: bookMeta.tokenBudget,
+    recursive_scanning: bookMeta.recursiveScan,
+    extensions: { sillytavern: stBookExt },
+    entries: {} as Record<string, unknown>,
+  }
+
+  const stExportEntries = stExport.entries as Record<string, unknown>
+
   book.entries.forEach((entry, index) => {
     const stExt = (entry.extensions?.['sillytavern'] ?? {}) as Record<string, unknown>
     const stEntry = {
@@ -233,16 +196,16 @@ export function exportFile(tabId: string, fileName?: string): void {
       constant: entry.constant ?? false,
       selective: entry.selective ?? false,
       selectiveLogic: entry.selective_logic ?? 0,
-      addMemo: stExt.addMemo ?? true,
+      addMemo: stExt.addMemo ?? false,
       order: entry.insertion_order,
       position: entry.position,
       disable: !entry.enabled,
       probability: entry.probability ?? 100,
       useProbability: stExt.useProbability ?? true,
       depth: entry.depth ?? 4,
-      delay: stExt.delay ?? 0,
-      cooldown: stExt.cooldown ?? 0,
-      sticky: stExt.sticky ?? 0,
+      delay: (stExt.delay as number | null) ?? null,
+      cooldown: (stExt.cooldown as number | null) ?? null,
+      sticky: (stExt.sticky as number | null) ?? null,
       vectorized: stExt.vectorized ?? false,
       ignoreBudget: stExt.ignoreBudget ?? false,
       excludeRecursion: stExt.excludeRecursion ?? false,
@@ -268,7 +231,7 @@ export function exportFile(tabId: string, fileName?: string): void {
       triggers: stExt.triggers ?? [],
       characterFilter: stExt.characterFilter ?? { isExclude: false, names: [], tags: [] },
     }
-    stExport.entries[String(index)] = stEntry
+    stExportEntries[String(index)] = stEntry
   })
 
   const json = JSON.stringify(stExport, null, 2)
