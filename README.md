@@ -12,6 +12,10 @@ Lorewalker is a local-first lorebook editor, visualizer, and analysis tool for A
 
 ---
 
+![Lorewalker](docs/lorewalker.png)
+
+![Entry Editor](docs/editor-modal.png)
+
 ## What's Working Now (Phases 0–2)
 
 - **Import / Export** — drag-and-drop or file picker; full SillyTavern lorebook JSON round-trip
