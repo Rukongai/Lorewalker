@@ -15,8 +15,9 @@ import { EntryEditorModal } from '@/components/editor/EntryEditorModal'
 import { Toggle } from '@/components/shared/Toggle'
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel'
 import { InspectorPanel } from '@/components/analysis/InspectorPanel'
+import { SimulatorPanel } from '@/components/simulator/SimulatorPanel'
 
-type RightPanelTab = 'entry' | 'analysis' | 'inspector'
+type RightPanelTab = 'entry' | 'analysis' | 'inspector' | 'simulator'
 
 export function WorkspaceShell() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
@@ -323,7 +324,7 @@ export function WorkspaceShell() {
               {/* Panel header with tabs */}
               <div className="border-b border-ctp-surface0 shrink-0 flex items-center justify-between px-1">
                 <div className="flex">
-                  {(['entry', 'analysis', 'inspector'] as RightPanelTab[]).map((tab) => (
+                  {(['entry', 'analysis', 'inspector', 'simulator'] as RightPanelTab[]).map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setRightPanelTab(tab)}
@@ -423,6 +424,11 @@ export function WorkspaceShell() {
               {/* Tab: Inspector */}
               {rightPanelTab === 'inspector' && (
                 <InspectorPanel tabId={activeTabId} graph={graph} />
+              )}
+
+              {/* Tab: Simulator */}
+              {rightPanelTab === 'simulator' && (
+                <SimulatorPanel tabId={activeTabId} />
               )}
             </>
           )}

@@ -79,5 +79,18 @@ export interface ActivationResult {
 
 export interface ConversationStep {
   messageIndex: number;
+  message: SimMessage;
   result: ActivationResult;
+}
+
+export interface ActivationEngine {
+  id: string;
+  name: string;
+  description: string;
+  supportedFeatures: EngineFeature[];
+  simulate(
+    entries: import('./entry').WorkingEntry[],
+    context: SimulationContext,
+    priorState?: TimedEffectState,
+  ): ActivationResult;
 }

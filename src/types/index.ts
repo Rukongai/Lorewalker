@@ -41,6 +41,7 @@ export type {
   RecursionStep,
   ActivationResult,
   ConversationStep,
+  ActivationEngine,
 } from './simulator'
 
 export type {
