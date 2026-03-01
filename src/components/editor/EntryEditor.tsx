@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { ChevronDown, ChevronRight, Maximize2 } from 'lucide-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
@@ -113,17 +113,7 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
   return (
     <div className="flex-1 overflow-y-auto text-sm">
       {/* Entry */}
-      <FieldGroup
-        label={entry.name || 'Entry'}
-        headerRight={
-          <button
-            className="text-gray-600 hover:text-gray-400 transition-colors px-2 pt-2 pb-1"
-            title="Expand editor"
-          >
-            <Maximize2 size={10} />
-          </button>
-        }
-      >
+      <FieldGroup label="Identity">
         <Field label="Name" help="Display label for this entry in the lorebook editor. Not injected into the AI's context.">
           <input
             type="text"
