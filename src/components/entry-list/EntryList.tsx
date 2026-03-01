@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, ChevronDown, ChevronUp } from 'lucide-react'
+import { Search, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
@@ -42,10 +42,11 @@ export function EntryList() {
 
   function compare(a: WorkingEntry, b: WorkingEntry, key: SortKey): number {
     switch (key) {
-      case 'uid':        return a.uid - b.uid
-      case 'name':       return a.name.localeCompare(b.name)
-      case 'tokenCount': return a.tokenCount - b.tokenCount
-      case 'order':      return a.order - b.order
+      case 'uid':          return a.uid - b.uid
+      case 'name':         return a.name.localeCompare(b.name)
+      case 'tokenCount':   return a.tokenCount - b.tokenCount
+      case 'order':        return a.order - b.order
+      case 'displayIndex': return (a.displayIndex ?? a.uid) - (b.displayIndex ?? b.uid)
     }
   }
 
@@ -60,13 +61,6 @@ export function EntryList() {
     const cmp2 = compare(a, b, sortBy2)
     return sortDir2 === 'asc' ? cmp2 : -cmp2
   })
-
-  const sortKeyLabel: Record<SortKey, string> = { uid: 'UID', name: 'Name', tokenCount: 'Tok', order: 'Ord' }
-  const sortSummary = (() => {
-    const p = `${sortKeyLabel[sortBy]} ${sortDir === 'asc' ? '↑' : '↓'}`
-    if (sortBy2 === null) return p
-    return `${p}, ${sortKeyLabel[sortBy2]} ${sortDir2 === 'asc' ? '↑' : '↓'}`
-  })()
 
   if (!activeTabId) {
     return (
@@ -103,81 +97,126 @@ export function EntryList() {
             className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
           >
             {sortExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-            <span>{sortSummary}</span>
+            <span>Sort Options</span>
           </button>
         </div>
         {sortExpanded && (
-          <>
-            {/* Pin constants + display metric */}
-            <div className="flex items-center justify-between mt-0.5">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-gray-600">📌 Pin constants</span>
-                <button
-                  onClick={() => setPinConstantsToTop((v) => !v)}
-                  title="Pin Constant entries to top"
-                  className={`text-xs font-medium leading-none px-1 py-0.5 rounded transition-colors ${pinConstantsToTop ? 'text-indigo-400 bg-indigo-950' : 'text-gray-700 hover:text-gray-500'}`}
-                >
-                  {pinConstantsToTop ? '✓' : '—'}
-                </button>
+          <div className="flex flex-col gap-1.5 mt-1 pb-0.5">
+
+            {/* Pin Constants */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-400">Pin Constants</span>
+                <HelpCircle
+                  size={11}
+                  className="text-gray-600 cursor-help"
+                  title="Always show constant entries at the top of the list, regardless of sort order"
+                />
+              </div>
+              <button
+                role="switch"
+                aria-checked={pinConstantsToTop}
+                onClick={() => setPinConstantsToTop((v) => !v)}
+                className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${pinConstantsToTop ? 'bg-indigo-500' : 'bg-gray-700'}`}
+              >
+                <span className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform duration-200 ${pinConstantsToTop ? 'translate-x-3' : 'translate-x-0'}`} />
+              </button>
+            </div>
+
+            {/* Display metric */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-400">Display</span>
+                <HelpCircle
+                  size={11}
+                  className="text-gray-600 cursor-help"
+                  title="Choose what metric to show on each entry row: token count or insertion order"
+                />
               </div>
               <div className="flex items-center rounded overflow-hidden border border-gray-700 text-xs">
                 <button
                   onClick={() => setDisplayMetric('tokens')}
                   className={`px-1.5 py-0.5 leading-none transition-colors ${displayMetric === 'tokens' ? 'text-indigo-400 bg-indigo-950' : 'text-gray-600 hover:text-gray-400'}`}
                 >
-                  Tok
+                  Tokens
                 </button>
-                <span className="text-gray-700 leading-none">|</span>
+                <span className="text-gray-700 leading-none select-none">|</span>
                 <button
                   onClick={() => setDisplayMetric('order')}
                   className={`px-1.5 py-0.5 leading-none transition-colors ${displayMetric === 'order' ? 'text-indigo-400 bg-indigo-950' : 'text-gray-600 hover:text-gray-400'}`}
                 >
-                  Ord
+                  Order
                 </button>
               </div>
             </div>
+
             {/* Primary sort */}
-            <div className="flex items-center gap-1 mt-0.5">
-              <span className="text-xs text-gray-600">Sort:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortKey)}
-                className="bg-transparent text-xs text-gray-500 outline-none cursor-pointer hover:text-gray-300 transition-colors"
-              >
-                <option value="uid">UID</option>
-                <option value="name">Name</option>
-                <option value="tokenCount">Tokens</option>
-                <option value="order">Order</option>
-              </select>
-              <button
-                onClick={() => setSortDir((d) => d === 'asc' ? 'desc' : 'asc')}
-                className="text-gray-500 hover:text-gray-300 transition-colors leading-none"
-                title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
-              >
-                {sortDir === 'asc' ? '↑' : '↓'}
-              </button>
-              <span className="text-xs text-gray-700 ml-1">then</span>
-              <select
-                value={sortBy2 ?? ''}
-                onChange={(e) => setSortBy2(e.target.value === '' ? null : e.target.value as SortKey)}
-                className="bg-transparent text-xs text-gray-700 outline-none cursor-pointer hover:text-gray-400 transition-colors"
-              >
-                <option value="">— none —</option>
-                <option value="uid">UID</option>
-                <option value="name">Name</option>
-                <option value="tokenCount">Tokens</option>
-                <option value="order">Order</option>
-              </select>
-              <button
-                onClick={() => setSortDir2((d) => d === 'asc' ? 'desc' : 'asc')}
-                className={`leading-none transition-colors ${sortBy2 === null ? 'text-gray-700 cursor-default' : 'text-gray-500 hover:text-gray-300 cursor-pointer'}`}
-                title={sortDir2 === 'asc' ? 'Ascending' : 'Descending'}
-                disabled={sortBy2 === null}
-              >
-                {sortDir2 === 'asc' ? '↑' : '↓'}
-              </button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-400">Sort</span>
+                <HelpCircle
+                  size={11}
+                  className="text-gray-600 cursor-help"
+                  title="Primary sort field for the entry list"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortKey)}
+                  className="bg-transparent text-xs text-gray-400 outline-none cursor-pointer hover:text-gray-200 transition-colors"
+                >
+                  <option value="uid">UID</option>
+                  <option value="name">Name</option>
+                  <option value="tokenCount">Tokens</option>
+                  <option value="order">Order</option>
+                  <option value="displayIndex">Display Index</option>
+                </select>
+                <button
+                  onClick={() => setSortDir((d) => d === 'asc' ? 'desc' : 'asc')}
+                  className="text-gray-500 hover:text-gray-300 transition-colors leading-none w-4 text-center"
+                  title={sortDir === 'asc' ? 'Ascending — click to reverse' : 'Descending — click to reverse'}
+                >
+                  {sortDir === 'asc' ? '↑' : '↓'}
+                </button>
+              </div>
             </div>
-          </>
+
+            {/* Secondary sort */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-400">Then</span>
+                <HelpCircle
+                  size={11}
+                  className="text-gray-600 cursor-help"
+                  title="Secondary sort field, applied when the primary sort produces a tie"
+                />
+              </div>
+              <div className="flex items-center gap-1">
+                <select
+                  value={sortBy2 ?? ''}
+                  onChange={(e) => setSortBy2(e.target.value === '' ? null : e.target.value as SortKey)}
+                  className="bg-transparent text-xs text-gray-400 outline-none cursor-pointer hover:text-gray-200 transition-colors"
+                >
+                  <option value="">— none —</option>
+                  <option value="uid">UID</option>
+                  <option value="name">Name</option>
+                  <option value="tokenCount">Tokens</option>
+                  <option value="order">Order</option>
+                  <option value="displayIndex">Display Index</option>
+                </select>
+                <button
+                  onClick={() => setSortDir2((d) => d === 'asc' ? 'desc' : 'asc')}
+                  className={`leading-none transition-colors w-4 text-center ${sortBy2 === null ? 'text-gray-700 cursor-default' : 'text-gray-500 hover:text-gray-300 cursor-pointer'}`}
+                  title={sortDir2 === 'asc' ? 'Ascending — click to reverse' : 'Descending — click to reverse'}
+                  disabled={sortBy2 === null}
+                >
+                  {sortDir2 === 'asc' ? '↑' : '↓'}
+                </button>
+              </div>
+            </div>
+
+          </div>
         )}
       </div>
 
