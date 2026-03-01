@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { EntryEditor } from './EntryEditor'
 
@@ -8,6 +8,8 @@ interface EntryEditorModalProps {
 }
 
 export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
+  const [currentEntryId, setCurrentEntryId] = useState(entryId)
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -42,7 +44,7 @@ export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
 
         {/* Editor panels */}
         <div className="flex-1 overflow-hidden">
-          <EntryEditor entryId={entryId} layout="wide" />
+          <EntryEditor entryId={currentEntryId} layout="wide" onNavigate={setCurrentEntryId} />
         </div>
       </div>
     </div>

@@ -9,6 +9,7 @@ import { ContentEditor } from './ContentEditor'
 import { KeywordInput } from './KeywordInput'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
+import { ActivationLinks } from './ActivationLinks'
 
 function FieldGroup({ label, stOnly, defaultCollapsed = false, labelSuffix, headerRight, children }: {
   label: string
@@ -58,9 +59,10 @@ type InsertionStrategy = 'constant' | 'normal' | 'vectorized'
 interface EntryEditorProps {
   entryId: string
   layout?: 'single' | 'wide'
+  onNavigate?: (entryId: string) => void
 }
 
-export function EntryEditor({ entryId, layout = 'single' }: EntryEditorProps) {
+export function EntryEditor({ entryId, layout = 'single', onNavigate }: EntryEditorProps) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
@@ -556,10 +558,19 @@ export function EntryEditor({ entryId, layout = 'single' }: EntryEditorProps) {
   if (layout === 'wide') {
     return (
       <div className="flex flex-row h-full text-sm">
-        {/* Left panel: Name + Content */}
-        <div className="w-[60%] overflow-y-auto border-r border-gray-700 p-3 space-y-3">
-          {nameField}
-          {contentField}
+        {/* Left panel: Identity (top) + Activation Links (bottom) */}
+        <div className="w-[60%] flex flex-col border-r border-gray-700 min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
+            {nameField}
+            {contentField}
+          </div>
+          <div className="shrink-0 h-52 border-t border-gray-700">
+            <ActivationLinks
+              entryId={entryId}
+              graph={graph}
+              onNavigate={onNavigate ?? (() => {})}
+            />
+          </div>
         </div>
         {/* Right panel: all field groups */}
         <div className="w-[40%] overflow-y-auto">
