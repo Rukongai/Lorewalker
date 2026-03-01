@@ -23,7 +23,7 @@ export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
     >
       <div
         className="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl flex flex-col overflow-hidden"
-        style={{ width: 'min(800px, 90vw)', height: '90vh' }}
+        style={{ width: '85vw', minWidth: '640px', height: '90vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -40,9 +40,9 @@ export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
           </button>
         </div>
 
-        {/* Scrollable editor */}
-        <div className="flex-1 overflow-y-auto">
-          <EntryEditor entryId={entryId} />
+        {/* Editor panels */}
+        <div className="flex-1 overflow-hidden">
+          <EntryEditor entryId={entryId} layout="wide" />
         </div>
       </div>
     </div>

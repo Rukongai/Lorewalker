@@ -57,9 +57,10 @@ type InsertionStrategy = 'constant' | 'normal' | 'vectorized'
 
 interface EntryEditorProps {
   entryId: string
+  layout?: 'single' | 'wide'
 }
 
-export function EntryEditor({ entryId }: EntryEditorProps) {
+export function EntryEditor({ entryId, layout = 'single' }: EntryEditorProps) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
@@ -109,35 +110,37 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
 
   const strategy: InsertionStrategy = entry.constant ? 'constant' : entry.vectorized ? 'vectorized' : 'normal'
 
-  return (
-    <div className="flex-1 overflow-y-auto text-sm">
-      {/* Entry */}
-      <FieldGroup label="Identity">
-        <Field label="Name" help="Display label for this entry in the lorebook editor. Not injected into the AI's context.">
-          <input
-            type="text"
-            value={entry.name}
-            onChange={(e) => handleChange('name', e.target.value)}
-            className={inputClass}
-            placeholder="Entry name"
-          />
-        </Field>
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] text-gray-500 flex items-center">
-            {`Content (${entry.tokenCount} tokens)`}
-            <HelpTooltip text="The text injected into the AI's context when this entry activates. Supports Markdown-style formatting depending on your AI platform." />
-          </span>
-          <ContentEditor
-            value={entry.content}
-            entryId={entryId}
-            graph={graph}
-            onChange={(v) => handleChange('content', v)}
-            inputClass={inputClass}
-            preventRecursion={entry.preventRecursion}
-          />
-        </div>
-      </FieldGroup>
+  const nameField = (
+    <Field label="Name" help="Display label for this entry in the lorebook editor. Not injected into the AI's context.">
+      <input
+        type="text"
+        value={entry.name}
+        onChange={(e) => handleChange('name', e.target.value)}
+        className={inputClass}
+        placeholder="Entry name"
+      />
+    </Field>
+  )
 
+  const contentField = (
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] text-gray-500 flex items-center">
+        {`Content (${entry.tokenCount} tokens)`}
+        <HelpTooltip text="The text injected into the AI's context when this entry activates. Supports Markdown-style formatting depending on your AI platform." />
+      </span>
+      <ContentEditor
+        value={entry.content}
+        entryId={entryId}
+        graph={graph}
+        onChange={(v) => handleChange('content', v)}
+        inputClass={inputClass}
+        preventRecursion={entry.preventRecursion}
+      />
+    </div>
+  )
+
+  const fieldGroups = (
+    <>
       {/* Activation */}
       <FieldGroup label="Activation">
         <Field
@@ -545,6 +548,32 @@ export function EntryEditor({ entryId }: EntryEditorProps) {
           <HelpTooltip text="Attaches a reference note to this entry visible in SillyTavern's editor. Not injected into context." />
         </label>
       </FieldGroup>
+    </>
+  )
+
+  if (layout === 'wide') {
+    return (
+      <div className="flex flex-row h-full text-sm">
+        {/* Left panel: Name + Content */}
+        <div className="w-[60%] overflow-y-auto border-r border-gray-700 p-3 space-y-3">
+          {nameField}
+          {contentField}
+        </div>
+        {/* Right panel: all field groups */}
+        <div className="w-[40%] overflow-y-auto">
+          {fieldGroups}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto text-sm">
+      <FieldGroup label="Identity">
+        {nameField}
+        {contentField}
+      </FieldGroup>
+      {fieldGroups}
     </div>
   )
 }
