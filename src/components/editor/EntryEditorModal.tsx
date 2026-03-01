@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
+import { useWorkspaceStore } from '@/stores/workspace-store'
+import { useDerivedState } from '@/hooks/useDerivedState'
 import { EntryEditor } from './EntryEditor'
+import { InspectorPanel } from '@/components/analysis/InspectorPanel'
+import { ModalFindingsPane } from '@/components/analysis/ModalFindingsPane'
 
 interface EntryEditorModalProps {
   entryId: string
@@ -9,6 +13,8 @@ interface EntryEditorModalProps {
 
 export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
   const [currentEntryId, setCurrentEntryId] = useState(entryId)
+  const activeTabId = useWorkspaceStore((s) => s.activeTabId)
+  const { graph } = useDerivedState(activeTabId ?? '')
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -25,7 +31,7 @@ export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
     >
       <div
         className="bg-ctp-mantle border border-ctp-surface1 rounded-lg shadow-2xl flex flex-col overflow-hidden"
-        style={{ width: '85vw', minWidth: '640px', height: '90vh' }}
+        style={{ width: '90vw', minWidth: '640px', height: '90vh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -42,9 +48,28 @@ export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
           </button>
         </div>
 
-        {/* Editor panels */}
+        {/* Quadrant editor */}
         <div className="flex-1 overflow-hidden">
-          <EntryEditor entryId={currentEntryId} layout="wide" onNavigate={setCurrentEntryId} />
+          <EntryEditor
+            entryId={currentEntryId}
+            layout="quadrant"
+            onNavigate={setCurrentEntryId}
+            renderTopRight={() => (
+              <InspectorPanel
+                tabId={activeTabId}
+                graph={graph}
+                showFindings={false}
+                onNavigate={setCurrentEntryId}
+                selectedEntryIdOverride={currentEntryId}
+              />
+            )}
+            renderBottomRight={() => (
+              <ModalFindingsPane
+                tabId={activeTabId}
+                entryId={currentEntryId}
+              />
+            )}
+          />
         </div>
       </div>
     </div>

@@ -6,17 +6,22 @@ import type { RecursionGraph } from '@/types'
 interface InspectorPanelProps {
   tabId: string | null
   graph: RecursionGraph
+  showFindings?: boolean
+  onNavigate?: (id: string) => void
+  selectedEntryIdOverride?: string
 }
 
-export function InspectorPanel({ tabId, graph }: InspectorPanelProps) {
+export function InspectorPanel({ tabId, graph, showFindings = true, onNavigate, selectedEntryIdOverride }: InspectorPanelProps) {
   const realStore = tabId ? documentStoreRegistry.get(tabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
-  const selectedEntryId = activeStore((s) => s.selection.selectedEntryId)
+  const storeSelectedEntryId = activeStore((s) => s.selection.selectedEntryId)
+  const selectedEntryId = selectedEntryIdOverride ?? storeSelectedEntryId
   const entries = activeStore((s) => s.entries)
   const findings = activeStore((s) => s.findings)
 
   function handleSelectEntry(entryId: string) {
     realStore?.getState().selectEntry(entryId)
+    onNavigate?.(entryId)
   }
 
   if (!tabId || !selectedEntryId) {
@@ -36,7 +41,7 @@ export function InspectorPanel({ tabId, graph }: InspectorPanelProps) {
     )
   }
 
-  const entryFindings = findings.filter((f) => f.entryIds.includes(selectedEntryId))
+  const entryFindings = showFindings ? findings.filter((f) => f.entryIds.includes(selectedEntryId)) : []
   const incomingIds = [...(graph.reverseEdges.get(selectedEntryId) ?? [])]
   const outgoingIds = [...(graph.edges.get(selectedEntryId) ?? [])]
 

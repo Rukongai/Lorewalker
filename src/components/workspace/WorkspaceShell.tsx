@@ -50,7 +50,7 @@ export function WorkspaceShell() {
   const [isResizing, setIsResizing] = useState(false)
   const [lorebookSettingsOpen, setLorebookSettingsOpen] = useState(false)
   const [editorOpen, setEditorOpen] = useState(true)
-  const [editorModalOpen, setEditorModalOpen] = useState(false)
+  const [modalEntryId, setModalEntryId] = useState<string | null>(null)
   const [showRecovery, setShowRecovery] = useState(false)
   const [recoveryDocs, setRecoveryDocs] = useState<PersistedDocument[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -245,7 +245,7 @@ export function WorkspaceShell() {
     if (!realStore) return
     const id = realStore.getState().addEntry()
     realStore.getState().selectEntry(id)
-    setEditorModalOpen(true)
+    setModalEntryId(id)
   }, [realStore])
 
   const handleClearSelection = useCallback(() => {
@@ -415,7 +415,7 @@ export function WorkspaceShell() {
                   </button>
                 </div>
               </div>
-              <EntryList />
+              <EntryList onOpenModal={setModalEntryId} />
             </>
           )}
         </aside>
@@ -436,8 +436,11 @@ export function WorkspaceShell() {
             <ErrorBoundary label="Graph">
               <GraphCanvas
                 tabId={activeTabId}
-                onNodeDoubleClick={() => setEditorModalOpen(true)}
-                onAddEntry={() => setEditorModalOpen(true)}
+                onNodeDoubleClick={() => { if (selectedEntryId) setModalEntryId(selectedEntryId) }}
+                onAddEntry={() => {
+                  const id = realStore?.getState().selection.selectedEntryId
+                  if (id) setModalEntryId(id)
+                }}
               />
             </ErrorBoundary>
           )}
@@ -538,7 +541,7 @@ export function WorkspaceShell() {
                         </div>
                         {selectedEntryId && (
                           <button
-                            onClick={() => setEditorModalOpen(true)}
+                            onClick={() => setModalEntryId(selectedEntryId)}
                             title="Open in full editor"
                             className="p-1.5 mr-2 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
                           >
@@ -592,10 +595,10 @@ export function WorkspaceShell() {
       {/* Status bar */}
       <StatusBar activeTabId={activeTabId} fileName={activeTab?.fileMeta.fileName} />
 
-      {editorModalOpen && selectedEntryId && (
+      {modalEntryId && (
         <EntryEditorModal
-          entryId={selectedEntryId}
-          onClose={() => setEditorModalOpen(false)}
+          entryId={modalEntryId}
+          onClose={() => setModalEntryId(null)}
         />
       )}
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />

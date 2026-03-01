@@ -11,6 +11,7 @@ interface EntryListItemProps {
   onMultiToggle: (id: string) => void
   onShiftSelect: (id: string) => void
   onToggleEnabled: (id: string) => void
+  onOpenModal?: () => void
   displayMetric: 'tokens' | 'order'
   severity: FindingSeverity | null
 }
@@ -31,6 +32,7 @@ export function EntryListItem({
   onMultiToggle,
   onShiftSelect,
   onToggleEnabled,
+  onOpenModal,
   displayMetric,
   severity,
 }: EntryListItemProps) {
@@ -51,6 +53,7 @@ export function EntryListItem({
   return (
     <div
       onClick={handleClick}
+      onDoubleClick={onOpenModal}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onSelect(entry.id) }}
       tabIndex={0}
       role="option"

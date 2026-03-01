@@ -8,7 +8,11 @@ import { EntryListItem } from './EntryListItem'
 import { Toggle } from '@/components/shared/Toggle'
 import type { WorkingEntry, SortKey, FindingSeverity } from '@/types'
 
-export function EntryList() {
+interface EntryListProps {
+  onOpenModal?: (entryId: string) => void
+}
+
+export function EntryList({ onOpenModal }: EntryListProps = {}) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const entriesListDefaults = useWorkspaceStore((s) => s.entriesListDefaults)
   const [search, setSearch] = useState('')
@@ -308,6 +312,7 @@ export function EntryList() {
               onMultiToggle={handleMultiToggle}
               onShiftSelect={handleShiftSelect}
               onToggleEnabled={handleToggleEnabled}
+              onOpenModal={onOpenModal ? () => onOpenModal(entry.id) : undefined}
               displayMetric={displayMetric}
               severity={entryWorstSeverity.get(entry.id) ?? null}
             />

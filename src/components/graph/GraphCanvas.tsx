@@ -126,6 +126,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
     graphDisplayDefaults.edgeStyle,
   )
   const didInitialFitRef = useRef(false)
+  const lastClickRef = useRef<{ id: string; time: number } | null>(null)
 
   const cycleInfo = useMemo(() => {
     if (!checkRecursionLoops) return { cycleNodeIds: new Set<string>(), cycleEdgeIds: new Set<string>() }
@@ -249,14 +250,17 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
   const handleNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
       store.getState().selectEntry(node.id)
-    },
-    [store],
-  )
-
-  const handleNodeDoubleClick = useCallback(
-    (_event: React.MouseEvent, node: Node) => {
-      store.getState().selectEntry(node.id)
-      onNodeDoubleClick?.(node.id)
+      const now = Date.now()
+      if (
+        lastClickRef.current &&
+        lastClickRef.current.id === node.id &&
+        now - lastClickRef.current.time < 300
+      ) {
+        onNodeDoubleClick?.(node.id)
+        lastClickRef.current = null
+      } else {
+        lastClickRef.current = { id: node.id, time: now }
+      }
     },
     [store, onNodeDoubleClick],
   )
@@ -382,7 +386,6 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry }: GraphCanvasI
         deleteKeyCode={['Delete', 'Backspace']}
         onNodeDragStop={handleNodeDragStop}
         onNodeClick={handleNodeClick}
-        onNodeDoubleClick={handleNodeDoubleClick}
         onPaneClick={handlePaneClick}
         onPaneContextMenu={handlePaneContextMenu}
         fitView={false}
