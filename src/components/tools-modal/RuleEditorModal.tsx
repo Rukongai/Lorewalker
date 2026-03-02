@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
-import type { CustomRule, RuleCategory, FindingSeverity } from '@/types'
+import type { CustomRule, Rule, RuleCategory, FindingSeverity } from '@/types'
 import { ConditionBuilder } from './ConditionBuilder'
 import { RuleTestingPane } from './RuleTestingPane'
 import { TemplateField } from './TemplateField'
@@ -21,21 +21,22 @@ const EMPTY_EVALUATION: SerializedEvaluation = { logic: 'AND', items: [] }
 
 interface RuleEditorModalProps {
   initialRule: CustomRule | null
+  copySource?: Rule
   tabId: string | null
   onSave: (rule: CustomRule, scope: RuleScope) => void
   onClose: () => void
 }
 
-export function RuleEditorModal({ initialRule, tabId, onSave, onClose }: RuleEditorModalProps) {
+export function RuleEditorModal({ initialRule, copySource, tabId, onSave, onClose }: RuleEditorModalProps) {
   const isEditing = initialRule !== null
 
   const [activeTab, setActiveTab] = useState<EditorTab>('metadata')
   const [scope, setScope] = useState<RuleScope>('workspace')
-  const [name, setName] = useState(initialRule?.name ?? '')
-  const [description, setDescription] = useState(initialRule?.description ?? '')
-  const [category, setCategory] = useState<RuleCategory>(initialRule?.category ?? 'keywords')
-  const [severity, setSeverity] = useState<FindingSeverity>(initialRule?.severity ?? 'warning')
-  const [requiresLLM, setRequiresLLM] = useState(initialRule?.requiresLLM ?? false)
+  const [name, setName] = useState(initialRule?.name ?? copySource?.name ?? '')
+  const [description, setDescription] = useState(initialRule?.description ?? copySource?.description ?? '')
+  const [category, setCategory] = useState<RuleCategory>(initialRule?.category ?? copySource?.category ?? 'keywords')
+  const [severity, setSeverity] = useState<FindingSeverity>(initialRule?.severity ?? copySource?.severity ?? 'warning')
+  const [requiresLLM, setRequiresLLM] = useState(initialRule?.requiresLLM ?? copySource?.requiresLLM ?? false)
   const [enabled, setEnabled] = useState(initialRule?.enabled ?? true)
   const [evaluation, setEvaluation] = useState<SerializedEvaluation>(
     initialRule?.evaluation ?? EMPTY_EVALUATION
@@ -290,6 +291,11 @@ export function RuleEditorModal({ initialRule, tabId, onSave, onClose }: RuleEdi
                   </select>
                   {scope === 'document' && !tabId && (
                     <p className="mt-1 text-xs text-ctp-yellow">No document is currently open.</p>
+                  )}
+                  {copySource && (
+                    <p className="mt-2 text-xs text-ctp-peach bg-ctp-peach/10 border border-ctp-peach/30 rounded px-2 py-1.5">
+                      Saving will also disable <strong>{copySource.name}</strong> at the selected scope.
+                    </p>
                   )}
                 </div>
               )}

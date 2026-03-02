@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Plus, Edit2, Trash2 } from 'lucide-react'
+import { Plus, Edit2, Trash2, Copy } from 'lucide-react'
+import { INCOMPATIBLE_RULE_IDS } from '@/services/analysis/copy-compatibility'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
@@ -41,6 +42,7 @@ export function RulesTabContent({ tabId }: RulesTabContentProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [editorOpen, setEditorOpen] = useState(false)
   const [editingRule, setEditingRule] = useState<CustomRule | null>(null)
+  const [copySourceId, setCopySourceId] = useState<string | null>(null)
 
   const wsCustomRules = useWorkspaceStore((s) => s.customRules)
   const disabledBuiltinRuleIds = useWorkspaceStore((s) => s.disabledBuiltinRuleIds)
@@ -112,6 +114,7 @@ export function RulesTabContent({ tabId }: RulesTabContentProps) {
   }
 
   function handleNewRule() {
+    setCopySourceId(null)
     setEditingRule(null)
     setEditorOpen(true)
   }
@@ -119,6 +122,17 @@ export function RulesTabContent({ tabId }: RulesTabContentProps) {
   function handleEditRule(rule: CustomRule) {
     setEditingRule(rule)
     setEditorOpen(true)
+  }
+
+  function handleCopyRule(rule: Rule) {
+    setCopySourceId(rule.id)
+    setEditingRule(null)
+    setEditorOpen(true)
+  }
+
+  function handleEditorClose() {
+    setCopySourceId(null)
+    setEditorOpen(false)
   }
 
   function handleSaveRule(rule: CustomRule, scope: 'workspace' | 'document') {
@@ -129,12 +143,17 @@ export function RulesTabContent({ tabId }: RulesTabContentProps) {
         updateDocumentRule(rule.id, rule)
       }
     } else {
+      const now = new Date().toISOString()
+      const newId = generateId()
       if (scope === 'workspace') {
-        addCustomRule({ ...rule, id: generateId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
+        addCustomRule({ ...rule, id: newId, createdAt: now, updatedAt: now })
+        if (copySourceId) toggleBuiltinRule(copySourceId, false)
       } else {
-        addDocumentRule({ ...rule, id: generateId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
+        addDocumentRule({ ...rule, id: newId, createdAt: now, updatedAt: now })
+        if (copySourceId) setDocumentRuleOverride(copySourceId, true)
       }
     }
+    setCopySourceId(null)
     setEditorOpen(false)
   }
 
@@ -264,26 +283,48 @@ export function RulesTabContent({ tabId }: RulesTabContentProps) {
                 <h2 className="text-sm font-semibold text-ctp-text">{selectedRow.rule.name}</h2>
                 <p className="text-xs text-ctp-subtext0 mt-0.5">{selectedRow.rule.description}</p>
               </div>
-              {selectedRow.kind === 'custom' && (
-                <div className="flex gap-1 shrink-0">
-                  <button
-                    onClick={() => handleEditRule((selectedRow as CustomRuleRow).rule)}
-                    className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
-                    title="Edit rule"
-                  >
-                    <Edit2 size={11} />
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteCustom(selectedRow as CustomRuleRow)}
-                    className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-ctp-red/70 hover:text-ctp-red hover:bg-ctp-red/10 transition-colors"
-                    title="Delete rule"
-                  >
-                    <Trash2 size={11} />
-                    Delete
-                  </button>
-                </div>
-              )}
+              <div className="flex gap-1 shrink-0">
+                {selectedRow.kind === 'custom' && (
+                  <>
+                    <button
+                      onClick={() => handleEditRule((selectedRow as CustomRuleRow).rule)}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
+                      title="Edit rule"
+                    >
+                      <Edit2 size={11} />
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeleteCustom(selectedRow as CustomRuleRow)}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-ctp-red/70 hover:text-ctp-red hover:bg-ctp-red/10 transition-colors"
+                      title="Delete rule"
+                    >
+                      <Trash2 size={11} />
+                      Delete
+                    </button>
+                  </>
+                )}
+                {selectedRow.kind === 'default' && (() => {
+                  const compatible = !INCOMPATIBLE_RULE_IDS.has(selectedRow.rule.id)
+                  return (
+                    <button
+                      onClick={compatible ? () => handleCopyRule(selectedRow.rule) : undefined}
+                      disabled={!compatible}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                        compatible
+                          ? 'text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0'
+                          : 'text-ctp-overlay0 cursor-not-allowed opacity-50'
+                      }`}
+                      title={compatible
+                        ? 'Copy and customize this rule'
+                        : 'Incompatible — this rule uses complex multi-entry or graph analysis that cannot be expressed in the Rule Editor'}
+                    >
+                      <Copy size={11} />
+                      Copy
+                    </button>
+                  )
+                })()}
+              </div>
             </div>
 
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
@@ -347,9 +388,10 @@ export function RulesTabContent({ tabId }: RulesTabContentProps) {
       {editorOpen && (
         <RuleEditorModal
           initialRule={editingRule}
+          copySource={copySourceId ? defaultRubric.rules.find((r) => r.id === copySourceId) : undefined}
           tabId={tabId}
           onSave={handleSaveRule}
-          onClose={() => setEditorOpen(false)}
+          onClose={handleEditorClose}
         />
       )}
     </div>
