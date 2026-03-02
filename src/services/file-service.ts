@@ -14,8 +14,20 @@ import { inflate, inflateFromRawST, deflate } from './transform-service'
 import type { RawSTBook } from './transform-service'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
-import type { FileMeta, LorebookFormat, CardPayload } from '@/types'
+import type { FileMeta, LorebookFormat, CardPayload, WorkingEntry } from '@/types'
 import type { LorebookMeta } from '@/components/workspace/LorebookPickerDialog'
+
+/** Returns true if any entry has an empty name but has at least one keyword. */
+export function hasUnnamedEntries(entries: WorkingEntry[]): boolean {
+  return entries.some(e => e.name === '' && e.keys.length > 0)
+}
+
+/** Returns a new array where entries with empty names use their first keyword as the name. Entries with no keys are left unchanged. */
+export function applyKeywordNames(entries: WorkingEntry[]): WorkingEntry[] {
+  return entries.map(e =>
+    e.name === '' && e.keys.length > 0 ? { ...e, name: e.keys[0] } : e
+  )
+}
 
 export class FileImportError extends Error {
   readonly cause: unknown
@@ -65,7 +77,8 @@ function resolveFormat(fmt: string): LorebookFormat {
  */
 export async function importFile(
   file: File,
-  _onLorebookPick?: (lorebooks: LorebookMeta[]) => Promise<number[]>
+  _onLorebookPick?: (lorebooks: LorebookMeta[]) => Promise<number[]>,
+  onKeywordName?: (entries: WorkingEntry[]) => Promise<boolean>
 ): Promise<string> {
   let buffer: Uint8Array
   try {
@@ -92,7 +105,17 @@ export async function importFile(
       }
 
       const { lorebookDefaults } = useWorkspaceStore.getState()
-      const { entries, bookMeta } = inflate(book, lorebookDefaults)
+      const inflated = inflate(book, lorebookDefaults)
+      let entries = inflated.entries
+      const bookMeta = inflated.bookMeta
+
+      if (onKeywordName && hasUnnamedEntries(entries)) {
+        const shouldApply = await onKeywordName(entries)
+        if (shouldApply) {
+          entries = applyKeywordNames(entries)
+        }
+      }
+
       const tabId = generateId()
       const fileMeta: FileMeta = {
         fileName: file.name,
@@ -133,6 +156,13 @@ export async function importFile(
         entries = inflated.entries
         bookMeta = inflated.bookMeta
         originalFormat = resolveFormat(result.lorebookFormat)
+      }
+
+      if (onKeywordName && hasUnnamedEntries(entries)) {
+        const shouldApply = await onKeywordName(entries)
+        if (shouldApply) {
+          entries = applyKeywordNames(entries)
+        }
       }
 
       const tabId = generateId()
