@@ -10,11 +10,14 @@ export function WelcomeScreen({ onOpenFile }: WelcomeScreenProps) {
     <div className="flex-1 flex items-center justify-center pointer-events-none">
       <div className="text-center space-y-6 max-w-sm">
         {/* App name + tagline */}
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-ctp-accent">Lorewalker</h1>
-          <p className="text-sm text-ctp-subtext0">
-            Lorebook editor, visualizer &amp; analyzer
-          </p>
+        <div className="flex items-center gap-4">
+          <img src="/lorewalker.svg" alt="Lorewalker" className="h-40 w-40 shrink-0" />
+          <div className="text-left space-y-1">
+            <h1 className="text-3xl font-bold text-ctp-accent">Lorewalker</h1>
+            <p className="text-sm text-ctp-subtext0">
+              Lorebook editor, visualizer &amp; analyzer
+            </p>
+          </div>
         </div>
 
         {/* Drag-drop zone */}

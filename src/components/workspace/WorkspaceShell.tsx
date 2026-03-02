@@ -317,6 +317,7 @@ export function WorkspaceShell() {
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-2 bg-ctp-mantle border-b border-ctp-surface0 shrink-0">
         <div className="flex items-center gap-3">
+          <img src="/lorewalker.svg" alt="Lorewalker" className="h-9 w-9" />
           <span className="text-lg font-semibold text-ctp-accent">Lorewalker</span>
           {activeTab && (
             <span className="text-xs text-ctp-overlay1">{activeTab.fileMeta.fileName}</span>

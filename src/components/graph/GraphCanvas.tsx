@@ -452,9 +452,10 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
 
   if (entries.length === 0) {
     return (
-      <div className="relative flex-1 flex items-center justify-center text-ctp-overlay1 text-sm">
+      <div className="relative flex-1 flex flex-col items-center justify-center gap-3 text-ctp-overlay1 text-sm">
+        <img src="/lorewalker.svg" alt="" className="h-14 w-14 opacity-30" />
+        <span>No entries to display</span>
         <GraphAddButton onAdd={handleAddEntry} disabled={!realStore} />
-        No entries to display
       </div>
     )
   }
