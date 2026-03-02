@@ -43,6 +43,7 @@ export interface PanelLayout {
   leftCollapsed: boolean;
   rightCollapsed: boolean;
   rightPanelTab: 'lorebook' | 'entry' | 'analysis' | 'inspector' | 'simulator';
+  leftPanelTab: 'files' | 'entries';
 }
 
 export type ThemeId =

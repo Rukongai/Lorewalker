@@ -58,6 +58,7 @@ export type {
   PersistedDocument,
   PersistedPreferences,
   PersistedProvider,
+  PersistedSnapshot,
 } from './persistence'
 
 export type {
