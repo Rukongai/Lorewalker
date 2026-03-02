@@ -116,7 +116,7 @@ export function GraphControls({
         </button>
       </Tooltip>
 
-      <div className="relative">
+      <div className="relative flex items-center">
         <Tooltip text={legendOpen ? 'Close legend' : 'Show graph legend'}>
           <button
             onClick={onToggleLegend}
