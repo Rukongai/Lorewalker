@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { modKey } from '@/lib/platform'
 import { useStore } from 'zustand'
-import { Upload, Download, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2, BarChart2, Scale, Zap } from 'lucide-react'
+import { Upload, Download, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2, BarChart2, Scale, Zap, Github } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { FilesPanel } from './FilesPanel'
 import { SaveSnapshotDialog } from './SaveSnapshotDialog'
@@ -325,6 +325,18 @@ export function WorkspaceShell() {
         </div>
 
         <div className="flex items-center gap-1">
+          {/* GitHub Issue Link */}
+          <Tooltip text="Open an Issue" placement="below">
+            <a
+              href="https://github.com/Rukongai/Lorewalker/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
+            >
+              <Github size={16} />
+            </a>
+          </Tooltip>
+          <div className="w-px h-4 bg-ctp-surface1 mx-0.5" />
           {/* Undo */}
           <Tooltip text={`Undo (${modKey}+Z)`} placement="below">
             <button
