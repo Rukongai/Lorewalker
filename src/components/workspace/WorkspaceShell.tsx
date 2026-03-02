@@ -9,6 +9,8 @@ import { WelcomeScreen } from './WelcomeScreen'
 import { StatusBar } from './StatusBar'
 import { LorebookPickerDialog } from './LorebookPickerDialog'
 import type { LorebookMeta } from './LorebookPickerDialog'
+import { KeywordNameDialog } from './KeywordNameDialog'
+import type { WorkingEntry } from '@/types'
 import { EntryList } from '@/components/entry-list/EntryList'
 const EntryEditor = lazy(() => import('@/components/editor/EntryEditor').then(m => ({ default: m.EntryEditor })))
 import { importFile, exportFileAs } from '@/services/file-service'
@@ -69,6 +71,12 @@ export function WorkspaceShell() {
     lorebooks: LorebookMeta[]
     resolve: (indices: number[]) => void
     reject: () => void
+  } | null>(null)
+
+  // Keyword name dialog state
+  const [keywordNameState, setKeywordNameState] = useState<{
+    entries: WorkingEntry[]
+    resolve: (value: boolean) => void
   } | null>(null)
 
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -181,14 +189,20 @@ export function WorkspaceShell() {
     })
   }, [])
 
+  const onKeywordName = useCallback((entries: WorkingEntry[]): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setKeywordNameState({ entries, resolve })
+    })
+  }, [])
+
   const handleImportFile = useCallback(async (file: File) => {
     setImportError(null)
     try {
-      await importFile(file, onLorebookPick)
+      await importFile(file, onLorebookPick, onKeywordName)
     } catch (err) {
       setImportError(err instanceof Error ? err.message : 'Failed to import file')
     }
-  }, [onLorebookPick])
+  }, [onLorebookPick, onKeywordName])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -749,6 +763,21 @@ export function WorkspaceShell() {
           onCancel={() => {
             lorebookPickerState.reject()
             setLorebookPickerState(null)
+          }}
+        />
+      )}
+
+      {/* Keyword name dialog */}
+      {keywordNameState && (
+        <KeywordNameDialog
+          entries={keywordNameState.entries}
+          onConfirm={() => {
+            keywordNameState.resolve(true)
+            setKeywordNameState(null)
+          }}
+          onCancel={() => {
+            keywordNameState.resolve(false)
+            setKeywordNameState(null)
           }}
         />
       )}
