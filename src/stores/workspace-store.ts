@@ -99,7 +99,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
   immer((set) => ({
     tabs: [],
     activeTabId: null,
-    theme: 'dark' as const,
+    theme: 'one-dark' as ThemeId,
     graphSettings: DEFAULT_GRAPH_SETTINGS,
     checkRecursionLoops: false,
     graphDisplayDefaults: DEFAULT_GRAPH_DISPLAY_DEFAULTS,
