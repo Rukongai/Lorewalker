@@ -392,6 +392,8 @@ export function createDocumentStore(init: DocumentStoreInit) {
           bookMeta: state.bookMeta,
         }),
         limit: 100,    // max undo steps
+        equality: (a, b) =>
+          a.entries === b.entries && a.bookMeta === b.bookMeta,
         handleSet: (handleSet) => {
           // Debounce temporal checkpoint recording so rapid keystrokes
           // collapse into a single undo step (500ms trailing window).
