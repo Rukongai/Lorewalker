@@ -277,7 +277,10 @@ export async function exportFileAs(
   fileName?: string
 ): Promise<void> {
   if (format === 'json') {
-    exportFile(tabId, fileName)
+    const baseName = fileName
+      ? fileName.replace(/\.(json|png|charx)$/i, '')
+      : undefined
+    exportFile(tabId, baseName ? `${baseName}.json` : undefined)
     return
   }
 

@@ -87,7 +87,7 @@ export function ExportButton({ tabId, fileMeta, cardPayload, onExport }: ExportB
             className="w-full text-left px-3 py-1.5 text-ctp-text hover:bg-ctp-surface1 transition-colors"
             onClick={() => handleSelect('json')}
           >
-            Export as JSON <span className="text-ctp-subtext0">(lorebook only)</span>
+            Export Lorebook Only <span className="text-ctp-subtext0">· .json</span>
           </button>
           <button
             className="w-full text-left px-3 py-1.5 text-ctp-text hover:bg-ctp-surface1 transition-colors"
