@@ -70,7 +70,10 @@ Lorewalker is a local-first lorebook editor, visualizer, and analysis tool for A
 | Phase | Feature |
 |-------|---------|
 | 8 | **Desktop app** — Tauri-based native wrapper with native file dialogs and system keychain for API keys |
-
+| 8 | **Every Format** - Export to any and every lorebook format you can think of |
+| 8 | **Rule Editor Expansion** - Support more custom rules logics |
+| 8 | **Rule Editor Exports** - Share you rulesets with others! |
+| ?? | **User Login** - Big maybe on this. One day it might be nice to make it so your user settings can be saved in the cloud |
 ---
 
 ## Running Locally
