@@ -38,7 +38,7 @@ function GeneralSettingsPanel() {
           value={theme}
           onChange={(e) => setTheme(e.target.value as ThemeId)}
         >
-          <option value="dark">Default Dark</option>
+          <option value="dark">Indigo Dark</option>
           <option value="catppuccin-latte">Catppuccin Latte</option>
           <option value="catppuccin-frappe">Catppuccin Frappé</option>
           <option value="catppuccin-macchiato">Catppuccin Macchiato</option>

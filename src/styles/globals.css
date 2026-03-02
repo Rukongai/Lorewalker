@@ -5,7 +5,7 @@
 /* ─── Graph / Node CSS vars ─────────────────────────────────────────────── */
 
 :root,
-:root.theme-default {
+:root.theme-indigo-dark {
   --edge-active: #818cf8;
   --edge-selected: #c7d2fe;
   --edge-incoming: #2dd4bf;
@@ -35,7 +35,7 @@
 /* @theme (no inline) emits CSS vars at :root so runtime theme overrides work */
 
 @theme {
-  /* Default Dark (maps current grays/indigos to CTP concepts) */
+  /* Indigo Dark (maps current grays/indigos to CTP concepts) */
   --color-ctp-base:      #030712;
   --color-ctp-mantle:    #111827;
   --color-ctp-crust:     #030712;

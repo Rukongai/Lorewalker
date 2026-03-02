@@ -11,11 +11,11 @@ enableMapSet()
 
 // Apply dark mode class by default; theme class is managed reactively below
 document.documentElement.classList.add('dark')
-document.documentElement.classList.add('theme-default')
+document.documentElement.classList.add('theme-one-dark')
 
 // Subscribe to theme changes and apply/remove theme classes on <html>
 const themeClasses = [
-  'theme-default',
+  'theme-indigo-dark',
   'theme-catppuccin-macchiato',
   'theme-catppuccin-latte',
   'theme-catppuccin-frappe',
@@ -41,7 +41,7 @@ function applyTheme(theme: ThemeId) {
     html.classList.add(`theme-${theme}`)
   } else {
     html.classList.add('dark')
-    if (theme === 'dark') html.classList.add('theme-default')
+    if (theme === 'dark') html.classList.add('theme-indigo-dark')
     else html.classList.add(`theme-${theme}`)
   }
 }
