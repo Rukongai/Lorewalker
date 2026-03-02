@@ -1,6 +1,6 @@
 > [!WARNING]
-> **This is early alpha software — here be dragons.**
-> Analysis and simulation features are rough drafts and not yet fully reliable. Open issues when you find problems. Real-world use cases help more than anything.
+> **This is early beta - it's probably broken**
+> Analysis and simulation features are getting there but not yet fully reliable. Open issues when you find problems. Real-world use cases help more than anything.
 
 ---
 
@@ -10,9 +10,7 @@ Lorewalker is a local-first lorebook editor, visualizer, and analysis tool for A
 
 ---
 
-![Lorewalker](docs/lorewalker-ss.png)
-
-![Entry Editor](docs/editor-modal-ss.png)
+![Lorewalker Tour](docs/lorewalker-tour.gif)
 
 ## Features
 
