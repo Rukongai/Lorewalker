@@ -112,9 +112,9 @@ const ruleContentMismatchRule: Rule = {
 const fixedValueDeviationsRule: Rule = {
   id: 'config/fixed-value-deviations',
   name: 'Non-Default Fixed Values',
-  description: 'Flags entries where vectorized is enabled, useProbability is disabled, or addMemo is disabled — deviations from standard defaults.',
+  description: 'Flags entries where vectorized is enabled or useProbability is enabled — deviations from standard defaults.',
   category: 'config',
-  severity: 'warning',
+  severity: 'suggestion',
   requiresLLM: false,
   async evaluate(context: AnalysisContext): Promise<Finding[]> {
     const findings: Finding[] = []
@@ -123,17 +123,14 @@ const fixedValueDeviationsRule: Rule = {
       if (entry.vectorized === true) {
         deviations.push('vectorized is enabled')
       }
-      if (entry.useProbability === false) {
-        deviations.push('useProbability is disabled')
-      }
-      if (entry.addMemo === false) {
-        deviations.push('addMemo is disabled')
+      if (entry.useProbability === true) {
+        deviations.push('useProbability is enabled')
       }
       if (deviations.length > 0) {
         findings.push({
           id: generateId(),
           ruleId: 'config/fixed-value-deviations',
-          severity: 'warning',
+          severity: 'suggestion',
           category: 'config',
           message: `Entry "${entry.name}" has non-default fixed values: ${deviations.join('; ')}.`,
           entryIds: [entry.id],
