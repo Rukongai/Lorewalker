@@ -236,6 +236,9 @@ export function computeChainDepths(graph: RecursionGraph, entries: WorkingEntry[
     const children = graph.edges.get(id) ?? new Set()
     let max = 0
     for (const child of children) {
+      const edgeKey = `${id}\u2192${child}`
+      const meta = graph.edgeMeta.get(edgeKey)
+      if (meta?.blockedByPreventRecursion || meta?.blockedByExcludeRecursion) continue
       max = Math.max(max, 1 + dfs(child, stack))
     }
     stack.delete(id)
@@ -250,6 +253,26 @@ export function computeChainDepths(graph: RecursionGraph, entries: WorkingEntry[
   }
 
   return depths
+}
+
+export function findLongestChain(graph: RecursionGraph, startId: string): string[] {
+  function longestFrom(id: string, visited: Set<string>): string[] {
+    if (visited.has(id)) return []
+    const newVisited = new Set(visited).add(id)
+    const children = graph.edges.get(id) ?? new Set()
+    let best: string[] = [id]
+    for (const child of children) {
+      const edgeKey = `${id}\u2192${child}`
+      const meta = graph.edgeMeta.get(edgeKey)
+      if (meta?.blockedByPreventRecursion || meta?.blockedByExcludeRecursion) continue
+      const childChain = longestFrom(child, newVisited)
+      if (childChain.length > 0 && 1 + childChain.length > best.length) {
+        best = [id, ...childChain]
+      }
+    }
+    return best
+  }
+  return longestFrom(startId, new Set())
 }
 
 const NODE_WIDTH = 180

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildGraph, findCycles, findOrphans, findDeadLinks, incrementalUpdate } from './graph-service'
+import { buildGraph, findCycles, findOrphans, findDeadLinks, incrementalUpdate, computeChainDepths, findLongestChain } from './graph-service'
 import type { WorkingEntry } from '@/types'
 
 function makeEntry(overrides: Partial<WorkingEntry> = {}): WorkingEntry {
@@ -254,6 +254,135 @@ describe('findDeadLinks', () => {
     expect(deadLinks.length).toBeGreaterThan(0)
     expect(deadLinks[0].sourceEntryId).toBe('b')
     expect(deadLinks[0].mentionedName).toBe('Dragon Keep')
+  })
+})
+
+describe('computeChainDepths', () => {
+  it('returns depth 0 for a leaf node with no outgoing edges', () => {
+    const entries = [
+      makeEntry({ id: 'leaf', content: '', keys: ['wolf'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    const depths = computeChainDepths(graph, entries)
+    expect(depths.get('leaf')).toBe(0)
+  })
+
+  it('returns correct depth for a simple chain A→B→C', () => {
+    const entries = [
+      makeEntry({ id: 'a', content: 'mentions beta', keys: [] }),
+      makeEntry({ id: 'b', content: 'mentions gamma', keys: ['beta'] }),
+      makeEntry({ id: 'c', content: '', keys: ['gamma'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    const depths = computeChainDepths(graph, entries)
+    expect(depths.get('a')).toBe(2)
+    expect(depths.get('b')).toBe(1)
+    expect(depths.get('c')).toBe(0)
+  })
+
+  it('does not count hops through edges blocked by preventRecursion', () => {
+    // a→b is blocked (a has preventRecursion), b→c is active
+    // depth of 'a' should be 0 (its only edge is blocked)
+    const entries = [
+      makeEntry({ id: 'a', content: 'mentions beta', keys: [], preventRecursion: true }),
+      makeEntry({ id: 'b', content: 'mentions gamma', keys: ['beta'] }),
+      makeEntry({ id: 'c', content: '', keys: ['gamma'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    const depths = computeChainDepths(graph, entries)
+    expect(depths.get('a')).toBe(0)
+    expect(depths.get('b')).toBe(1)
+  })
+
+  it('does not count hops through edges blocked by excludeRecursion', () => {
+    // a→b is blocked (b has excludeRecursion), b→c is active
+    const entries = [
+      makeEntry({ id: 'a', content: 'mentions beta', keys: [] }),
+      makeEntry({ id: 'b', content: 'mentions gamma', keys: ['beta'], excludeRecursion: true }),
+      makeEntry({ id: 'c', content: '', keys: ['gamma'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    const depths = computeChainDepths(graph, entries)
+    expect(depths.get('a')).toBe(0)
+    expect(depths.get('b')).toBe(1)
+  })
+
+  it('handles cycles gracefully without hanging', () => {
+    const entries = [
+      makeEntry({ id: 'a', content: 'see the wolf', keys: ['castle'] }),
+      makeEntry({ id: 'b', content: 'see the castle', keys: ['wolf'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    // Should complete without hanging; cycle guard truncates the path at repeat nodes
+    const depths = computeChainDepths(graph, entries)
+    expect(depths.has('a')).toBe(true)
+    expect(depths.has('b')).toBe(true)
+  })
+})
+
+describe('findLongestChain', () => {
+  it('returns [startId] for a leaf with no outgoing edges', () => {
+    const entries = [
+      makeEntry({ id: 'leaf', content: '', keys: ['wolf'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(findLongestChain(graph, 'leaf')).toEqual(['leaf'])
+  })
+
+  it('returns ordered chain [a, b, c] for a→b→c', () => {
+    const entries = [
+      makeEntry({ id: 'a', content: 'mentions beta', keys: [] }),
+      makeEntry({ id: 'b', content: 'mentions gamma', keys: ['beta'] }),
+      makeEntry({ id: 'c', content: '', keys: ['gamma'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(findLongestChain(graph, 'a')).toEqual(['a', 'b', 'c'])
+  })
+
+  it('skips edges blocked by preventRecursion', () => {
+    // a→b is blocked (a has preventRecursion)
+    const entries = [
+      makeEntry({ id: 'a', content: 'mentions beta', keys: [], preventRecursion: true }),
+      makeEntry({ id: 'b', content: '', keys: ['beta'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(findLongestChain(graph, 'a')).toEqual(['a'])
+  })
+
+  it('skips edges blocked by excludeRecursion', () => {
+    // a→b is blocked (b has excludeRecursion)
+    const entries = [
+      makeEntry({ id: 'a', content: 'mentions beta', keys: [] }),
+      makeEntry({ id: 'b', content: '', keys: ['beta'], excludeRecursion: true }),
+    ]
+    const graph = buildGraph(entries, opts)
+    expect(findLongestChain(graph, 'a')).toEqual(['a'])
+  })
+
+  it('follows the longest branch when multiple children exist', () => {
+    // a→b (b has no children), a→c→d (longer)
+    const entries = [
+      makeEntry({ id: 'a', content: 'mentions beta and gamma', keys: [] }),
+      makeEntry({ id: 'b', content: '', keys: ['beta'] }),
+      makeEntry({ id: 'c', content: 'mentions delta', keys: ['gamma'] }),
+      makeEntry({ id: 'd', content: '', keys: ['delta'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    const chain = findLongestChain(graph, 'a')
+    expect(chain).toEqual(['a', 'c', 'd'])
+    expect(chain.length).toBe(3)
+  })
+
+  it('handles cycles without infinite loop', () => {
+    const entries = [
+      makeEntry({ id: 'a', content: 'see the wolf', keys: ['castle'] }),
+      makeEntry({ id: 'b', content: 'see the castle', keys: ['wolf'] }),
+    ]
+    const graph = buildGraph(entries, opts)
+    // Should not throw or hang; returns a finite chain
+    const chain = findLongestChain(graph, 'a')
+    expect(chain.length).toBeGreaterThanOrEqual(1)
+    expect(chain[0]).toBe('a')
   })
 })
 

@@ -5,7 +5,7 @@ import {
   findOrphans,
   findDeadLinks,
   findIslands,
-  computeChainDepths,
+  findLongestChain,
 } from '@/services/graph-service'
 
 // const circularReferences: Rule = {
@@ -58,11 +58,11 @@ const longChains: Rule = {
   severity: 'suggestion',
   requiresLLM: false,
   async evaluate(context: AnalysisContext): Promise<Finding[]> {
-    const depths = computeChainDepths(context.graph, context.entries)
     const findings: Finding[] = []
 
     for (const entry of context.entries) {
-      const depth = depths.get(entry.id) ?? 0
+      const chain = findLongestChain(context.graph, entry.id)
+      const depth = chain.length - 1
       if (depth > 3) {
         findings.push({
           id: generateId(),
@@ -70,7 +70,7 @@ const longChains: Rule = {
           severity: 'suggestion',
           category: 'recursion',
           message: `Entry triggers a chain of ${depth} hops (consider flattening)`,
-          entryIds: [entry.id],
+          entryIds: chain,
         })
       }
     }
