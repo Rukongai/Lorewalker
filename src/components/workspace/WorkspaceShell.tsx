@@ -474,8 +474,8 @@ export function WorkspaceShell() {
           ) : (
             <>
               {/* Panel header with tabs */}
-              <div className="border-b border-ctp-surface0 shrink-0 flex items-center justify-between px-1">
-                <div className="flex">
+              <div className="border-b border-ctp-surface0 shrink-0 flex flex-wrap items-center px-1">
+                <div className="flex flex-wrap flex-1">
                   {(['lorebook', 'entry', 'analysis', 'inspector', 'simulator'] as RightPanelTab[]).map((tab) => (
                     <button
                       key={tab}
