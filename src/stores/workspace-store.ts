@@ -46,6 +46,18 @@ const DEFAULT_LOREBOOK_DEFAULTS: LorebookDefaults = {
   insertionStrategy: 'evenly',
 }
 
+export interface LlmCategorizationSettings {
+  enabled: boolean
+  providerId?: string
+  skipManualOverrides: boolean
+}
+
+const DEFAULT_LLM_CATEGORIZATION: LlmCategorizationSettings = {
+  enabled: false,
+  providerId: undefined,
+  skipManualOverrides: true,
+}
+
 interface WorkspaceState {
   tabs: TabMeta[]
   activeTabId: string | null
@@ -57,6 +69,7 @@ interface WorkspaceState {
   entriesListDefaults: EntriesListDefaults
   lorebookDefaults: LorebookDefaults
   activeLlmProviderId: string | null
+  llmCategorization: LlmCategorizationSettings
 
   // Actions
   openTab(tabId: string, name: string, fileMeta: FileMeta): void
@@ -71,6 +84,7 @@ interface WorkspaceState {
   setEntriesListDefaults(settings: EntriesListDefaults): void
   setLorebookDefaults(patch: Partial<LorebookDefaults>): void
   setActiveLlmProviderId(id: string | null): void
+  setLlmCategorizationSettings(patch: Partial<LlmCategorizationSettings>): void
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -85,6 +99,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     entriesListDefaults: DEFAULT_ENTRIES_LIST_DEFAULTS,
     lorebookDefaults: DEFAULT_LOREBOOK_DEFAULTS,
     activeLlmProviderId: null,
+    llmCategorization: DEFAULT_LLM_CATEGORIZATION,
 
     openTab(tabId, name, fileMeta) {
       set((state) => {
@@ -161,6 +176,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
     setActiveLlmProviderId(id) {
       set((state) => { state.activeLlmProviderId = id })
+    },
+
+    setLlmCategorizationSettings(patch) {
+      set((state) => { state.llmCategorization = { ...state.llmCategorization, ...patch } })
     },
   }))
 )

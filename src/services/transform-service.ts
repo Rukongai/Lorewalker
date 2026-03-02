@@ -17,6 +17,11 @@ import type {
   LorebookDefaults,
 } from '@/types'
 
+// Lorewalker-specific fields stored in extensions.lorewalker
+interface LorewalkerExtensions {
+  userCategory?: string
+}
+
 // SillyTavern-specific fields stored in extensions.sillytavern after normalization
 interface STExtensions {
   delay?: number | null
@@ -172,6 +177,7 @@ export function inflate(book: CCv3CharacterBook, defaults?: LorebookDefaults): I
   const entries: WorkingEntry[] = book.entries.map((raw, index) => {
     // Pull SillyTavern-specific extensions if present
     const stExt = (raw.extensions?.['sillytavern'] ?? {}) as STExtensions
+    const lwExt = (raw.extensions?.['lorewalker'] ?? {}) as LorewalkerExtensions
 
     const content = raw.content ?? ''
     const tokenCount = safeCountTokens(content)
@@ -232,7 +238,9 @@ export function inflate(book: CCv3CharacterBook, defaults?: LorebookDefaults): I
 
       tokenCount,
 
-      // Passthrough: store everything except 'sillytavern' key for round-trip
+      userCategory: lwExt.userCategory,
+
+      // Passthrough: store everything except 'sillytavern' and 'lorewalker' keys for round-trip
       extensions: buildPassthrough(raw.extensions),
     }
 
@@ -415,10 +423,17 @@ export function deflate(entries: WorkingEntry[], bookMeta: BookMeta): CCv3Charac
       characterFilter: entry.characterFilter,
     }
 
-    // Rebuild extensions: passthrough + sillytavern
+    // Lorewalker-specific fields
+    const lwExt: LorewalkerExtensions = {}
+    if (entry.userCategory !== undefined) {
+      lwExt.userCategory = entry.userCategory
+    }
+
+    // Rebuild extensions: passthrough + sillytavern + lorewalker
     const extensions: Record<string, unknown> = {
       ...entry.extensions,
       sillytavern: stExt,
+      ...(Object.keys(lwExt).length > 0 ? { lorewalker: lwExt } : {}),
     }
 
     return {
@@ -493,7 +508,7 @@ function buildPassthrough(
   if (!extensions) return {}
   const result: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(extensions)) {
-    if (key !== 'sillytavern') {
+    if (key !== 'sillytavern' && key !== 'lorewalker') {
       result[key] = value
     }
   }

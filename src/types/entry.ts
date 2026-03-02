@@ -97,6 +97,9 @@ export interface WorkingEntry {
   // === Computed (read-only, set by TransformService) ===
   tokenCount: number;             // Estimated token count of content field
 
+  // === Lorewalker-specific ===
+  userCategory?: string;          // Manual or LLM-assigned category override (stored in extensions.lorewalker.userCategory)
+
   // === Passthrough ===
   extensions: Record<string, unknown>;  // Preserves unknown platform-specific extensions for round-trip fidelity
 }
