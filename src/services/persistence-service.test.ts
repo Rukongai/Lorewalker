@@ -118,6 +118,7 @@ function makeDoc(overrides: Partial<PersistedDocument> = {}): PersistedDocument 
       connectionsMode: false,
     },
     ruleOverrides: { disabledRuleIds: [], customRules: [] },
+    cardPayload: null,
     savedAt: new Date().toISOString(),
     ...overrides,
   }
