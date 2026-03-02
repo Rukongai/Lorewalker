@@ -333,7 +333,7 @@ export async function exportFileAs(
     ? fileName.replace(/\.(json|png|charx)$/i, '')
     : bookMeta.name || 'character'
 
-  const blob = new Blob([result], { type: result.mimeType })
+  const blob = new Blob([new Uint8Array(result.buffer)], { type: result.mimeType })
   const url = URL.createObjectURL(blob)
 
   const a = document.createElement('a')
