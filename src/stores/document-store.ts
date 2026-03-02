@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { temporal } from 'zundo'
 import { generateId } from '@/lib/uuid'
+import { debounce } from '@/lib/debounce'
 import type { WorkingEntry, BookMeta, SimulatorState, SimulationSettings, Finding, HealthScore, SimMessage, ActivationResult, ConversationStep } from '@/types'
 
 // --- Selection state ---
@@ -391,6 +392,16 @@ export function createDocumentStore(init: DocumentStoreInit) {
           bookMeta: state.bookMeta,
         }),
         limit: 100,    // max undo steps
+        handleSet: (handleSet) => {
+          // Debounce temporal checkpoint recording so rapid keystrokes
+          // collapse into a single undo step (500ms trailing window).
+          // Actual immer state updates immediately — only checkpoint recording is debounced.
+          const debouncedHandleSet = debounce(
+            handleSet as (...args: unknown[]) => void,
+            500
+          )
+          return (state) => debouncedHandleSet(state)
+        },
       }
     )
   )

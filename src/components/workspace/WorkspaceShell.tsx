@@ -27,6 +27,9 @@ import { BookMetaEditor } from '@/components/editor/BookMetaEditor'
 import { SettingsDialog } from '@/components/settings/SettingsDialog'
 import { EntryEditorModal } from '@/components/editor/EntryEditorModal'
 import { Toggle } from '@/components/shared/Toggle'
+import { ToastStack } from '@/components/shared/ToastStack'
+import type { UndoToast } from '@/components/shared/ToastStack'
+import { describeStateChange } from '@/lib/undo-describe'
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel'
 import { InspectorPanel } from '@/components/analysis/InspectorPanel'
 import { SimulatorPanel } from '@/components/simulator/SimulatorPanel'
@@ -66,6 +69,7 @@ export function WorkspaceShell() {
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('entry')
+  const [toasts, setToasts] = useState<UndoToast[]>([])
 
   // Autosave the active document to IndexedDB
   useAutosave(activeTabId)
@@ -217,13 +221,35 @@ export function WorkspaceShell() {
     if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
   }
 
+  const addToast = useCallback((message: string, type: 'undo' | 'redo') => {
+    const id = generateId()
+    setToasts((prev) => [...prev, { id, message, type }])
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id))
+    }, 3500)
+  }, [])
+
   const handleUndo = useCallback(() => {
-    realStore?.temporal.getState().undo()
-  }, [realStore])
+    if (!realStore) return
+    const temporal = realStore.temporal.getState()
+    if (temporal.pastStates.length === 0) return
+    const restoredState = temporal.pastStates[temporal.pastStates.length - 1]
+    const currentState = { entries: realStore.getState().entries, bookMeta: realStore.getState().bookMeta }
+    temporal.undo()
+    const msg = describeStateChange(currentState, restoredState as typeof currentState)
+    addToast(`Undid: ${msg}`, 'undo')
+  }, [realStore, addToast])
 
   const handleRedo = useCallback(() => {
-    realStore?.temporal.getState().redo()
-  }, [realStore])
+    if (!realStore) return
+    const temporal = realStore.temporal.getState()
+    if (temporal.futureStates.length === 0) return
+    const restoredState = temporal.futureStates[temporal.futureStates.length - 1]
+    const currentState = { entries: realStore.getState().entries, bookMeta: realStore.getState().bookMeta }
+    temporal.redo()
+    const msg = describeStateChange(currentState, restoredState as typeof currentState)
+    addToast(`Redid: ${msg}`, 'redo')
+  }, [realStore, addToast])
 
   const handleNewEntry = useCallback(() => {
     if (!realStore) return
@@ -635,6 +661,8 @@ export function WorkspaceShell() {
           }}
         />
       )}
+
+      <ToastStack toasts={toasts} />
     </div>
   )
 }
