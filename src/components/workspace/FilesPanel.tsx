@@ -29,6 +29,7 @@ export function FilesPanel({ onRestoreDoc }: FilesPanelProps) {
   const [historySection, setHistorySection] = useState(true)
   const [expandedTabIds, setExpandedTabIds] = useState<Set<string>>(new Set())
   const [snapshots, setSnapshots] = useState<Record<string, PersistedSnapshot[]>>({})
+  const [openSnapshotIds, setOpenSnapshotIds] = useState<Record<string, string>>({})
 
   const refreshHistory = useCallback(async () => {
     try {
@@ -44,6 +45,9 @@ export function FilesPanel({ onRestoreDoc }: FilesPanelProps) {
   }, [refreshHistory])
 
   async function handleDeleteDoc(tabId: string) {
+    const doc = historyDocs.find((d) => d.tabId === tabId)
+    const name = doc?.fileMeta.fileName ?? 'this file'
+    if (!window.confirm(`Delete "${name}" from history? This cannot be undone.`)) return
     try {
       await deleteDocument(tabId)
       setHistoryDocs((prev) => prev.filter((d) => d.tabId !== tabId))
@@ -83,6 +87,9 @@ export function FilesPanel({ onRestoreDoc }: FilesPanelProps) {
   }
 
   async function handleDeleteSnapshot(tabId: string, snapshotId: string) {
+    const snap = snapshots[tabId]?.find((s) => s.id === snapshotId)
+    const name = snap?.name ?? 'this snapshot'
+    if (!window.confirm(`Delete snapshot "${name}"? This cannot be undone.`)) return
     try {
       await deleteSnapshot(tabId, snapshotId)
       setSnapshots((prev) => ({
@@ -105,6 +112,7 @@ export function FilesPanel({ onRestoreDoc }: FilesPanelProps) {
       cardPayload: doc.cardPayload ?? null,
     })
     useWorkspaceStore.getState().openTab(doc.tabId, doc.fileMeta.fileName, doc.fileMeta)
+    setOpenSnapshotIds((prev) => ({ ...prev, [doc.tabId]: snap.id }))
   }
 
   return (
@@ -171,31 +179,7 @@ export function FilesPanel({ onRestoreDoc }: FilesPanelProps) {
               return (
               <li key={doc.tabId}>
                 {/* Doc row */}
-                <div className="flex items-center gap-1 px-3 py-1.5 hover:bg-ctp-surface0 group">
-                  <Tooltip text={isOpen ? 'Switch to open tab' : 'Restore this session'}>
-                    <button
-                      className="flex items-center gap-1.5 flex-1 text-left text-ctp-text hover:text-ctp-text min-w-0"
-                      onClick={() => onRestoreDoc(doc)}
-                    >
-                      {isOpen
-                        ? <span className="w-[11px] h-[11px] shrink-0" />
-                        : <RotateCcw size={11} className="shrink-0 text-ctp-overlay1" />
-                      }
-                      <span className="truncate flex-1">{doc.fileMeta.fileName}</span>
-                      {isOpen && (
-                        <span className="text-[10px] text-ctp-accent shrink-0 ml-1">open</span>
-                      )}
-                      <span className="text-ctp-overlay1 shrink-0 ml-1">{relativeTime(doc.savedAt)}</span>
-                    </button>
-                  </Tooltip>
-                  <Tooltip text="Delete from history">
-                    <button
-                      className="p-0.5 rounded text-ctp-overlay0 hover:text-ctp-red hover:bg-ctp-surface1 transition-colors opacity-0 group-hover:opacity-100"
-                      onClick={() => handleDeleteDoc(doc.tabId)}
-                    >
-                      <Trash2 size={11} />
-                    </button>
-                  </Tooltip>
+                <div className="flex items-center gap-1 px-3 py-1.5 hover:bg-ctp-surface0">
                   <Tooltip text="Show snapshots">
                     <button
                       className="p-0.5 rounded text-ctp-overlay0 hover:text-ctp-subtext1 hover:bg-ctp-surface1 transition-colors"
@@ -207,16 +191,44 @@ export function FilesPanel({ onRestoreDoc }: FilesPanelProps) {
                       }
                     </button>
                   </Tooltip>
+                  <span className="truncate flex-1 text-ctp-text px-1">{doc.fileMeta.fileName}</span>
+                  <Tooltip text="Delete from history">
+                    <button
+                      className="ml-auto p-0.5 rounded text-ctp-overlay0 hover:text-ctp-red hover:bg-ctp-surface1 transition-colors"
+                      onClick={() => handleDeleteDoc(doc.tabId)}
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </Tooltip>
                 </div>
 
                 {/* Snapshots */}
                 {expandedTabIds.has(doc.tabId) && (
                   <ul className="pl-6 border-l border-ctp-surface0 ml-4 mb-1">
+                    {/* Current state entry */}
+                    <li>
+                      <button
+                        className="flex items-center gap-1.5 w-full px-2 py-1 text-left hover:bg-ctp-surface0 rounded transition-colors"
+                        onClick={() => {
+                          onRestoreDoc(doc)
+                          setOpenSnapshotIds((prev) => { const next = { ...prev }; delete next[doc.tabId]; return next })
+                        }}
+                      >
+                        {isOpen && !openSnapshotIds[doc.tabId] && (
+                          <span className="text-[10px] text-ctp-accent shrink-0">open</span>
+                        )}
+                        <span className="flex-1 text-ctp-subtext1">Current state</span>
+                        <span className="text-ctp-overlay0 shrink-0 text-[10px]">{relativeTime(doc.savedAt)}</span>
+                      </button>
+                    </li>
                     {(snapshots[doc.tabId] ?? []).length === 0 && (
                       <li className="px-2 py-1 text-ctp-overlay0">No snapshots</li>
                     )}
                     {(snapshots[doc.tabId] ?? []).map((snap) => (
                       <li key={snap.id} className="flex items-center gap-1 px-2 py-1 hover:bg-ctp-surface0 group/snap rounded">
+                        {openSnapshotIds[doc.tabId] === snap.id && (
+                          <span className="text-[10px] text-ctp-accent shrink-0">open</span>
+                        )}
                         <div className="flex-1 min-w-0">
                           <div className="truncate text-ctp-subtext1">{snap.name}</div>
                           <div className="text-ctp-overlay0 text-[10px]">{relativeTime(snap.savedAt)}</div>
