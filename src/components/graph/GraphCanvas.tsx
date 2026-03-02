@@ -17,6 +17,7 @@ import { EntryNode } from './EntryNode'
 import { RecursionEdge } from './RecursionEdge'
 import { GraphControls } from './GraphControls'
 import type { ConnectionVisibility } from './GraphControls'
+import { GraphLegend } from './GraphLegend'
 import { GraphAddButton } from './GraphAddButton'
 import { EdgeConnectDialog } from './EdgeConnectDialog'
 import { useDerivedState, EMPTY_STORE } from '@/hooks/useDerivedState'
@@ -62,6 +63,9 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
 
   // Graph search
   const [searchQuery, setSearchQuery] = useState('')
+
+  // Legend
+  const [legendOpen, setLegendOpen] = useState(false)
 
   // Context menu for right-click
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; flowX: number; flowY: number } | null>(null)
@@ -504,6 +508,11 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
           onToggleEdgeStyle={handleToggleEdgeStyle}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+        />
+        <GraphLegend
+          isOpen={legendOpen}
+          onToggle={() => setLegendOpen((v) => !v)}
+          connectionsMode={connectionsMode}
         />
       </ReactFlow>
 
