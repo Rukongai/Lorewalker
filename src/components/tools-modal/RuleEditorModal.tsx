@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import type { CustomRule, RuleCategory, FindingSeverity } from '@/types'
 import { ConditionBuilder } from './ConditionBuilder'
 import { RuleTestingPane } from './RuleTestingPane'
+import { TemplateField } from './TemplateField'
+import { VariablePicker } from './VariablePicker'
 import type { SerializedEvaluation } from '@/types'
 
 const CATEGORIES: RuleCategory[] = ['structure', 'config', 'keywords', 'content', 'recursion', 'budget']
@@ -42,6 +44,57 @@ export function RuleEditorModal({ initialRule, tabId, onSave, onClose }: RuleEdi
   const [systemPrompt, setSystemPrompt] = useState(initialRule?.systemPrompt ?? '')
   const [userPrompt, setUserPrompt] = useState(initialRule?.userPrompt ?? '')
   const [errors, setErrors] = useState<string[]>([])
+
+  // Cursor tracking for each template field
+  const messageCursorRef = useRef(0)
+  const systemCursorRef = useRef(0)
+  const userCursorRef = useRef(0)
+  const messageFieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
+  const systemFieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
+  const userFieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null)
+
+  function insertVariable(path: string, target: 'message' | 'user' | 'system') {
+    const text = `{{${path}}}`
+
+    if (target === 'message') {
+      const cursor = messageCursorRef.current
+      const before = message.slice(0, cursor)
+      const after = message.slice(cursor)
+      setMessage(before + text + after)
+      const newCursor = cursor + text.length
+      requestAnimationFrame(() => {
+        const el = messageFieldRef.current
+        if (el) { el.focus(); el.setSelectionRange(newCursor, newCursor) }
+        messageCursorRef.current = newCursor
+      })
+    } else if (target === 'system') {
+      const cursor = systemCursorRef.current
+      const before = systemPrompt.slice(0, cursor)
+      const after = systemPrompt.slice(cursor)
+      setSystemPrompt(before + text + after)
+      const newCursor = cursor + text.length
+      requestAnimationFrame(() => {
+        const el = systemFieldRef.current
+        if (el) { el.focus(); el.setSelectionRange(newCursor, newCursor) }
+        systemCursorRef.current = newCursor
+      })
+    } else {
+      const cursor = userCursorRef.current
+      const before = userPrompt.slice(0, cursor)
+      const after = userPrompt.slice(cursor)
+      setUserPrompt(before + text + after)
+      const newCursor = cursor + text.length
+      requestAnimationFrame(() => {
+        const el = userFieldRef.current
+        if (el) { el.focus(); el.setSelectionRange(newCursor, newCursor) }
+        userCursorRef.current = newCursor
+      })
+    }
+  }
+
+  function handleCopy(path: string) {
+    void navigator.clipboard.writeText(`{{${path}}}`)
+  }
 
   // Escape key — capture phase so it fires before WorkspaceToolsModal's handler
   useEffect(() => {
@@ -260,16 +313,22 @@ export function RuleEditorModal({ initialRule, tabId, onSave, onClose }: RuleEdi
                   Message template <span className="text-ctp-red">*</span>
                 </label>
                 <p className="text-[11px] text-ctp-overlay0 mb-1">
-                  Use {'{{entry.name}}'}, {'{{entry.keys.length}}'}, etc. for interpolation.
+                  Type {'{{'}  to autocomplete variable references.
                 </p>
-                <input
-                  type="text"
+                <TemplateField
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={setMessage}
                   placeholder="e.g. Entry '{{entry.name}}' has only {{entry.keys.length}} key(s)"
-                  className="w-full px-2.5 py-1.5 rounded text-sm text-ctp-text bg-ctp-surface0 border border-ctp-surface2 focus:outline-none focus:border-ctp-accent font-mono"
+                  fieldRef={messageFieldRef}
+                  onCursorChange={(pos) => { messageCursorRef.current = pos }}
                 />
               </div>
+
+              <VariablePicker
+                mode="deterministic"
+                onInsert={insertVariable}
+                onCopy={handleCopy}
+              />
             </div>
           )}
 
@@ -277,36 +336,46 @@ export function RuleEditorModal({ initialRule, tabId, onSave, onClose }: RuleEdi
             <div className="space-y-4 max-w-2xl">
               <div>
                 <label className="block text-xs font-medium text-ctp-subtext1 mb-1">System Prompt</label>
-                <textarea
+                <TemplateField
                   value={systemPrompt}
-                  onChange={(e) => setSystemPrompt(e.target.value)}
-                  placeholder="Instructions for the LLM evaluator..."
+                  onChange={setSystemPrompt}
+                  multiline
                   rows={6}
-                  className="w-full px-2.5 py-1.5 rounded text-sm text-ctp-text bg-ctp-surface0 border border-ctp-surface2 focus:outline-none focus:border-ctp-accent resize-none font-mono"
+                  placeholder="Instructions for the LLM evaluator..."
+                  fieldRef={systemFieldRef}
+                  onCursorChange={(pos) => { systemCursorRef.current = pos }}
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-ctp-subtext1 mb-1">User Prompt</label>
-                <textarea
+                <TemplateField
                   value={userPrompt}
-                  onChange={(e) => setUserPrompt(e.target.value)}
-                  placeholder="Per-entry prompt template..."
+                  onChange={setUserPrompt}
+                  multiline
                   rows={4}
-                  className="w-full px-2.5 py-1.5 rounded text-sm text-ctp-text bg-ctp-surface0 border border-ctp-surface2 focus:outline-none focus:border-ctp-accent resize-none font-mono"
+                  placeholder="Per-entry prompt template..."
+                  fieldRef={userFieldRef}
+                  onCursorChange={(pos) => { userCursorRef.current = pos }}
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-ctp-subtext1 mb-1">
                   Message template <span className="text-ctp-red">*</span>
                 </label>
-                <input
-                  type="text"
+                <TemplateField
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  onChange={setMessage}
                   placeholder="Finding message when rule triggers"
-                  className="w-full px-2.5 py-1.5 rounded text-sm text-ctp-text bg-ctp-surface0 border border-ctp-surface2 focus:outline-none focus:border-ctp-accent font-mono"
+                  fieldRef={messageFieldRef}
+                  onCursorChange={(pos) => { messageCursorRef.current = pos }}
                 />
               </div>
+
+              <VariablePicker
+                mode="llm"
+                onInsert={insertVariable}
+                onCopy={handleCopy}
+              />
             </div>
           )}
 

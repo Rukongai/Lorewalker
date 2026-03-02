@@ -11,7 +11,7 @@ interface VarDef {
   group: 'Entry' | 'Book'
 }
 
-const VARIABLE_DEFS: VarDef[] = [
+export const VARIABLE_DEFS: VarDef[] = [
   { path: 'entry.name', label: 'Name', type: 'string', group: 'Entry' },
   { path: 'entry.content', label: 'Content', type: 'string', group: 'Entry' },
   { path: 'entry.tokenCount', label: 'Token Count', type: 'number', group: 'Entry' },
@@ -113,7 +113,8 @@ function LeafRow({ leaf, onChange, onDelete }: LeafRowProps) {
     const newOps = getOpsForType(newType)
     const newOp = newOps.find((o) => o.op === leaf.operator)?.op ?? newOps[0].op
     const newRight = getDefaultRight(newType, newOp)
-    onChange({ ...leaf, left: path, operator: newOp, right: leaf.right || newRight })
+    const right = newType === varType ? leaf.right : newRight
+    onChange({ ...leaf, left: path, operator: newOp, right })
     setShowVarPicker(false)
     setVarSearch('')
   }
