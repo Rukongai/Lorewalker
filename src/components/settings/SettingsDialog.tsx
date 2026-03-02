@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import type { ThemeId } from '@/types'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
@@ -401,6 +401,18 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     window.addEventListener('mouseup', onUp)
   }
 
+  useEffect(() => {
+    if (!open) return
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.stopImmediatePropagation()
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown, { capture: true })
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
+  }, [open, onClose])
+
   if (!open) return null
 
   return (
@@ -418,6 +430,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
           <span className="text-sm font-semibold text-ctp-subtext1">Settings</span>
           <button
             onClick={onClose}
+            title="Close (Esc)"
             className="text-ctp-overlay0 hover:text-ctp-subtext0 transition-colors text-lg leading-none"
           >
             ✕
