@@ -5,6 +5,7 @@ import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
 import { LorebookSettingsPanel } from './LorebookSettingsPanel'
 import { ProviderSettingsPanel } from './ProviderSettingsPanel'
+import { LlmToolsPanel } from './LlmToolsPanel'
 import type { GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults } from '@/types'
 
 const inputClass =
@@ -379,7 +380,7 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
-  const [activeCategory, setActiveCategory] = useState<'general' | 'graph' | 'editor' | 'entries' | 'lorebook' | 'providers'>('general')
+  const [activeCategory, setActiveCategory] = useState<'general' | 'graph' | 'editor' | 'entries' | 'lorebook' | 'providers' | 'llm-tools'>('general')
   const [leftWidth, setLeftWidth] = useState(140)
   const dragRef = useRef<{ startX: number; startWidth: number } | null>(null)
 
@@ -427,7 +428,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         <div className="flex flex-1 overflow-hidden">
           {/* Left: category list */}
           <div className="shrink-0 border-r border-ctp-surface0 p-2 overflow-y-auto" style={{ width: leftWidth }}>
-            {(['general', 'graph', 'editor', 'entries', 'lorebook', 'providers'] as const).map((cat) => (
+            {(['general', 'graph', 'editor', 'entries', 'lorebook', 'providers', 'llm-tools'] as const).map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
@@ -437,7 +438,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                     : 'text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0/50'
                 } transition-colors`}
               >
-                {cat === 'general' ? 'General' : cat === 'graph' ? 'Workspace Settings' : cat === 'editor' ? 'Editor' : cat === 'entries' ? 'Entries' : cat === 'lorebook' ? 'Lorebook' : 'Providers'}
+                {cat === 'general' ? 'General' : cat === 'graph' ? 'Workspace Settings' : cat === 'editor' ? 'Editor' : cat === 'entries' ? 'Entries' : cat === 'lorebook' ? 'Lorebook' : cat === 'providers' ? 'Providers' : 'LLM Tools'}
               </button>
             ))}
           </div>
@@ -456,6 +457,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
             {activeCategory === 'entries' && <EntriesSettingsPanel />}
             {activeCategory === 'lorebook' && <LorebookSettingsPanel />}
             {activeCategory === 'providers' && <ProviderSettingsPanel />}
+            {activeCategory === 'llm-tools' && <LlmToolsPanel />}
           </div>
         </div>
       </div>

@@ -64,6 +64,8 @@ export interface DocumentState {
   removeEntry(id: string): void
   reorderEntries(ids: string[]): void
   batchUpdate(updates: Map<string, Partial<WorkingEntry>>): void
+  setEntryCategory(entryId: string, category: string | undefined): void
+  setCategoryBatch(updates: Record<string, string>): void
 
   // BookMeta actions
   updateBookMeta(changes: Partial<BookMeta>): void
@@ -233,6 +235,23 @@ export function createDocumentStore(init: DocumentStoreInit) {
             for (const [id, changes] of updates) {
               const entry = state.entries.find((e) => e.id === id)
               if (entry) Object.assign(entry, changes)
+            }
+          })
+        },
+
+        setEntryCategory(entryId, category) {
+          set((state) => {
+            const entry = state.entries.find((e) => e.id === entryId)
+            if (!entry) return
+            entry.userCategory = category
+          })
+        },
+
+        setCategoryBatch(updates) {
+          set((state) => {
+            for (const [id, category] of Object.entries(updates)) {
+              const entry = state.entries.find((e) => e.id === id)
+              if (entry) entry.userCategory = category
             }
           })
         },
