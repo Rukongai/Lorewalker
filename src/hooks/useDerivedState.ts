@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import type { RecursionGraph, WorkingEntry, KeywordMatchOptions, Finding, HealthScore } from '@/types'
+import type { RecursionGraph, WorkingEntry, KeywordMatchOptions, Finding, HealthScore, Rubric } from '@/types'
 import { buildGraph, incrementalUpdate, computeLayout } from '@/services/graph-service'
 import { runDeterministic, computeHealthScore } from '@/services/analysis/analysis-service'
 import { defaultRubric } from '@/services/analysis/default-rubric'
+import { customRuleToRule } from '@/services/analysis/custom-rule-adapter'
 import { createDocumentStore, type DocumentStore } from '@/stores/document-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -70,14 +71,43 @@ export function useDerivedState(tabId: string | null): DerivedState {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const graphSettings = useWorkspaceStore((s) => s.graphSettings)
+  const wsCustomRules = useWorkspaceStore((s) => s.customRules)
+  const disabledBuiltinRuleIds = useWorkspaceStore((s) => s.disabledBuiltinRuleIds)
   const realStore = tabId ? documentStoreRegistry.get(tabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
   const entries = activeStore((s) => s.entries)
   const bookMeta = activeStore((s) => s.bookMeta)
+  const ruleOverrides = activeStore((s) => s.ruleOverrides)
   const bookMatchOptions = useMemo(
     () => ({ caseSensitive: bookMeta.caseSensitive, matchWholeWords: bookMeta.matchWholeWords }),
     [bookMeta.caseSensitive, bookMeta.matchWholeWords],
   )
+
+  // Assemble active rubric:
+  // 1. Default rules minus workspace-disabled and doc-disabled
+  // 2. + workspace custom rules (enabled, not doc-disabled)
+  // 3. + doc custom rules (enabled)
+  const activeRubric = useMemo((): Rubric => {
+    const docDisabledIds = new Set(ruleOverrides.disabledRuleIds)
+    const wsDisabledIds = new Set(disabledBuiltinRuleIds)
+
+    const filteredDefault = defaultRubric.rules.filter(
+      (r) => !wsDisabledIds.has(r.id) && !docDisabledIds.has(r.id)
+    )
+
+    const filteredWsCustom = wsCustomRules
+      .filter((r) => r.enabled && !docDisabledIds.has(`custom/${r.id}`))
+      .map(customRuleToRule)
+
+    const filteredDocCustom = ruleOverrides.customRules
+      .filter((r) => r.enabled)
+      .map(customRuleToRule)
+
+    return {
+      ...defaultRubric,
+      rules: [...filteredDefault, ...filteredWsCustom, ...filteredDocCustom],
+    }
+  }, [wsCustomRules, disabledBuiltinRuleIds, ruleOverrides])
 
   const persistMissingPositions = useCallback(
     (currentEntries: WorkingEntry[], newGraph: RecursionGraph) => {
@@ -108,16 +138,16 @@ export function useDerivedState(tabId: string | null): DerivedState {
     async (currentEntries: WorkingEntry[], newGraph: RecursionGraph) => {
       const newFindings = await runDeterministic(
         { entries: currentEntries, bookMeta, graph: newGraph },
-        defaultRubric,
+        activeRubric,
       )
-      const newHealthScore = computeHealthScore(newFindings, defaultRubric)
+      const newHealthScore = computeHealthScore(newFindings, activeRubric)
       if (realStore) {
         realStore.setState((s) => ({ ...s, findings: newFindings, healthScore: newHealthScore }))
       }
       setFindings(newFindings)
       setHealthScore(newHealthScore)
     },
-    [realStore, bookMeta],
+    [realStore, bookMeta, activeRubric],
   )
 
   const recompute = useCallback(

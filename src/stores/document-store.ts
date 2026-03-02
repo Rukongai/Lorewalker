@@ -3,7 +3,7 @@ import { immer } from 'zustand/middleware/immer'
 import { temporal } from 'zundo'
 import { generateId } from '@/lib/uuid'
 import { debounce } from '@/lib/debounce'
-import type { WorkingEntry, BookMeta, SimulatorState, SimulationSettings, Finding, HealthScore, SimMessage, ActivationResult, ConversationStep } from '@/types'
+import type { WorkingEntry, BookMeta, SimulatorState, SimulationSettings, Finding, HealthScore, SimMessage, ActivationResult, ConversationStep, CustomRule, DocumentRuleOverrides } from '@/types'
 
 // --- Selection state ---
 
@@ -46,11 +46,18 @@ export interface DocumentState {
   // LLM findings (user-triggered, not cleared on entry edits)
   llmFindings: Finding[]
 
+  // Rule overrides (excluded from undo)
+  ruleOverrides: DocumentRuleOverrides
+
   // UI state (excluded from undo)
   selection: SelectionState
   simulatorState: SimulatorState
 
   setLlmFindings(findings: Finding[]): void
+  setDocumentRuleOverride(ruleId: string, disabled: boolean): void
+  addDocumentRule(rule: CustomRule): void
+  updateDocumentRule(id: string, updates: Partial<CustomRule>): void
+  removeDocumentRule(id: string): void
 
   // Undo / redo (provided by zundo)
   undo(): void
@@ -149,6 +156,12 @@ export interface DocumentStoreInit {
   bookMeta: BookMeta
   graphPositions?: Map<string, { x: number; y: number }>
   simulatorState?: SimulatorState
+  ruleOverrides?: DocumentRuleOverrides
+}
+
+const DEFAULT_RULE_OVERRIDES: DocumentRuleOverrides = {
+  disabledRuleIds: [],
+  customRules: [],
 }
 
 /**
@@ -179,6 +192,7 @@ export function createDocumentStore(init: DocumentStoreInit) {
           summary: 'No file open',
         },
 
+        ruleOverrides: init.ruleOverrides ?? DEFAULT_RULE_OVERRIDES,
         selection: { selectedEntryId: null, multiSelect: [] },
         simulatorState: init.simulatorState ?? DEFAULT_SIMULATOR_STATE,
 
@@ -395,6 +409,66 @@ export function createDocumentStore(init: DocumentStoreInit) {
           store.setState((state) => ({
             ...state,
             simulatorState: { ...state.simulatorState, connectionsMode: enabled },
+          }))
+        },
+
+        // --- Rule override actions (excluded from undo) ---
+
+        setDocumentRuleOverride(ruleId, disabled) {
+          store.setState((state) => {
+            const current = state.ruleOverrides
+            if (disabled) {
+              if (!current.disabledRuleIds.includes(ruleId)) {
+                return {
+                  ...state,
+                  ruleOverrides: {
+                    ...current,
+                    disabledRuleIds: [...current.disabledRuleIds, ruleId],
+                  },
+                }
+              }
+            } else {
+              return {
+                ...state,
+                ruleOverrides: {
+                  ...current,
+                  disabledRuleIds: current.disabledRuleIds.filter((id) => id !== ruleId),
+                },
+              }
+            }
+            return state
+          })
+        },
+
+        addDocumentRule(rule) {
+          store.setState((state) => ({
+            ...state,
+            ruleOverrides: {
+              ...state.ruleOverrides,
+              customRules: [...state.ruleOverrides.customRules, rule],
+            },
+          }))
+        },
+
+        updateDocumentRule(id, updates) {
+          store.setState((state) => ({
+            ...state,
+            ruleOverrides: {
+              ...state.ruleOverrides,
+              customRules: state.ruleOverrides.customRules.map((r) =>
+                r.id === id ? { ...r, ...updates } : r
+              ),
+            },
+          }))
+        },
+
+        removeDocumentRule(id) {
+          store.setState((state) => ({
+            ...state,
+            ruleOverrides: {
+              ...state.ruleOverrides,
+              customRules: state.ruleOverrides.customRules.filter((r) => r.id !== id),
+            },
           }))
         },
 

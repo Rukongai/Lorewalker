@@ -143,6 +143,7 @@ export function WorkspaceShell() {
       bookMeta: doc.bookMeta,
       graphPositions: positions,
       simulatorState: doc.simulatorState,
+      ruleOverrides: doc.ruleOverrides,
     })
     useWorkspaceStore.getState().openTab(doc.tabId, doc.fileMeta.fileName, doc.fileMeta)
   }
