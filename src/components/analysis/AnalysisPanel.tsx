@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
@@ -7,7 +8,7 @@ import { llmService } from '@/services/llm/llm-service'
 import { categorizeAll } from '@/services/categorize-service'
 import { FindingItem } from './FindingItem'
 import { DeepAnalysisDialog } from './DeepAnalysisDialog'
-import type { Finding, FindingSeverity, RecursionGraph } from '@/types'
+import type { Finding, FindingSeverity, RuleCategory, RecursionGraph } from '@/types'
 
 interface AnalysisPanelProps {
   tabId: string | null
@@ -28,7 +29,7 @@ function scoreBarColor(score: number): string {
   return 'bg-ctp-green'
 }
 
-const CATEGORIES = ['structure', 'config', 'keywords', 'recursion', 'budget'] as const
+const CATEGORIES: RuleCategory[] = ['structure', 'config', 'keywords', 'recursion', 'budget', 'content']
 
 const SEVERITY_ORDER: Record<FindingSeverity, number> = { error: 0, warning: 1, suggestion: 2 }
 
@@ -49,6 +50,7 @@ const LLM_RULE_IDS = new Set([
 
 export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
   const [filter, setFilter] = useState<Filter>('all')
+  const [collapsedCats, setCollapsedCats] = useState<Set<RuleCategory>>(new Set())
   const [deepAnalysisOpen, setDeepAnalysisOpen] = useState(false)
   const [categorizing, setCategorizing] = useState(false)
   const [categorizeProgress, setCategorizeProgress] = useState<{ done: number; total: number } | null>(null)
@@ -75,12 +77,28 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
 
   const filtered = filter === 'all' ? allFindings : allFindings.filter((f) => f.severity === filter)
 
+  const byCategory = new Map<RuleCategory, Finding[]>()
+  for (const finding of filtered) {
+    const cat = finding.category
+    if (!byCategory.has(cat)) byCategory.set(cat, [])
+    byCategory.get(cat)!.push(finding)
+  }
+
   function handleSelectEntry(entryId: string) {
     realStore?.getState().selectEntry(entryId)
   }
 
   function handleDeepAnalysisComplete(newLlmFindings: Finding[]) {
     realStore?.getState().setLlmFindings(newLlmFindings)
+  }
+
+  function toggleCategory(cat: RuleCategory) {
+    setCollapsedCats((prev) => {
+      const next = new Set(prev)
+      if (next.has(cat)) next.delete(cat)
+      else next.add(cat)
+      return next
+    })
   }
 
   const categorizationProviderId = llmCategorization.providerId ?? activeLlmProviderId ?? ''
@@ -225,19 +243,41 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
             </p>
           </div>
         ) : (
-          filtered.map((finding) => (
-            <div key={finding.id} className="relative">
-              {LLM_RULE_IDS.has(finding.ruleId) && (
-                <span className="absolute top-2 right-2 z-10">
-                  <AiBadge />
-                </span>
-              )}
-              <FindingItem
-                finding={finding}
-                onSelectEntry={handleSelectEntry}
-              />
-            </div>
-          ))
+          CATEGORIES.map((cat) => {
+            const catFindings = byCategory.get(cat)
+            if (!catFindings || catFindings.length === 0) return null
+            const collapsed = collapsedCats.has(cat)
+            return (
+              <div key={cat}>
+                <button
+                  onClick={() => toggleCategory(cat)}
+                  className="w-full flex items-center gap-1.5 px-2 py-1 bg-ctp-surface0 border-b border-ctp-surface1 text-left hover:bg-ctp-surface1 transition-colors"
+                >
+                  {collapsed
+                    ? <ChevronRight size={10} className="text-ctp-overlay1 shrink-0" />
+                    : <ChevronDown size={10} className="text-ctp-overlay1 shrink-0" />
+                  }
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ctp-subtext0 capitalize">
+                    {cat}
+                  </span>
+                  <span className="ml-auto text-[10px] text-ctp-overlay1">{catFindings.length}</span>
+                </button>
+                {!collapsed && catFindings.map((finding) => (
+                  <div key={finding.id} className="relative">
+                    {LLM_RULE_IDS.has(finding.ruleId) && (
+                      <span className="absolute top-2 right-2 z-10">
+                        <AiBadge />
+                      </span>
+                    )}
+                    <FindingItem
+                      finding={finding}
+                      onSelectEntry={handleSelectEntry}
+                    />
+                  </div>
+                ))}
+              </div>
+            )
+          })
         )}
       </div>
 
