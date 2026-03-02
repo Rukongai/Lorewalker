@@ -2,6 +2,7 @@ import type { WorkingEntry, BookMeta } from './entry'
 import type { FileMeta, TabMeta, PanelLayout, ThemeId } from './ui'
 import type { SimulationSettings, SimulatorState } from './ui'
 import type { LLMProviderType, ProviderConfig } from './llm'
+import type { DocumentRuleOverrides } from './analysis'
 
 export interface PersistedWorkspace {
   tabs: TabMeta[];
@@ -17,6 +18,7 @@ export interface PersistedDocument {
   bookMeta: BookMeta;
   fileMeta: FileMeta;
   simulatorState: SimulatorState;
+  ruleOverrides: DocumentRuleOverrides;
   savedAt: string;  // ISO timestamp
 }
 

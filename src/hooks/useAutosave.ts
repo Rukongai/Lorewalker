@@ -20,6 +20,7 @@ export function useAutosave(tabId: string | null): { isSaving: boolean } {
   const bookMeta = activeStore((s) => s.bookMeta)
   const graphPositions = activeStore((s) => s.graphPositions)
   const simulatorState = activeStore((s) => s.simulatorState)
+  const ruleOverrides = activeStore((s) => s.ruleOverrides)
 
   useEffect(() => {
     if (!tabId || !realStore) return
@@ -43,6 +44,7 @@ export function useAutosave(tabId: string | null): { isSaving: boolean } {
         bookMeta: state.bookMeta,
         fileMeta: tab.fileMeta,
         simulatorState: state.simulatorState,
+        ruleOverrides: state.ruleOverrides,
         savedAt: new Date().toISOString(),
       }
 
@@ -60,7 +62,7 @@ export function useAutosave(tabId: string | null): { isSaving: boolean } {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, bookMeta, graphPositions, simulatorState, tabId])
+  }, [entries, bookMeta, graphPositions, simulatorState, ruleOverrides, tabId])
 
   return { isSaving }
 }

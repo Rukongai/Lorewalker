@@ -1,5 +1,5 @@
 import { createStore, get, set, del, keys } from 'idb-keyval'
-import type { PersistedWorkspace, PersistedDocument, PersistedPreferences, PersistedProvider, PersistedSnapshot } from '@/types'
+import type { PersistedWorkspace, PersistedDocument, PersistedPreferences, PersistedProvider, PersistedSnapshot, CustomRule } from '@/types'
 
 // Named IndexedDB store so we don't pollute the default keyval store
 const store = createStore('lorewalker-db', 'keyval')
@@ -143,6 +143,30 @@ export async function deleteSnapshot(tabId: string, snapshotId: string): Promise
     await del(snapshotKey(tabId, snapshotId), store)
   } catch (err) {
     throw new PersistenceError(`Failed to delete snapshot ${snapshotId}`, err)
+  }
+}
+
+// --- Custom Rules ---
+
+interface PersistedCustomRules {
+  rules: CustomRule[]
+  disabledBuiltinIds: string[]
+}
+
+export async function saveCustomRules(rules: CustomRule[], disabledBuiltinIds: string[]): Promise<void> {
+  try {
+    await set('custom-rules', { rules, disabledBuiltinIds } satisfies PersistedCustomRules, store)
+  } catch (err) {
+    throw new PersistenceError('Failed to save custom rules', err)
+  }
+}
+
+export async function loadCustomRules(): Promise<{ rules: CustomRule[]; disabledBuiltinIds: string[] }> {
+  try {
+    const data = await get<PersistedCustomRules>('custom-rules', store)
+    return data ?? { rules: [], disabledBuiltinIds: [] }
+  } catch (err) {
+    throw new PersistenceError('Failed to load custom rules', err)
   }
 }
 

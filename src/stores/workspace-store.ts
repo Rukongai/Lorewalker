@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { TabMeta, FileMeta, GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults, LorebookDefaults, ThemeId } from '@/types'
+import type { TabMeta, FileMeta, GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults, LorebookDefaults, ThemeId, CustomRule } from '@/types'
 
 const DEFAULT_GRAPH_SETTINGS: GraphLayoutSettings = {
   acyclicer: 'greedy',
@@ -70,6 +70,8 @@ interface WorkspaceState {
   lorebookDefaults: LorebookDefaults
   activeLlmProviderId: string | null
   llmCategorization: LlmCategorizationSettings
+  customRules: CustomRule[]
+  disabledBuiltinRuleIds: string[]
 
   // Actions
   openTab(tabId: string, name: string, fileMeta: FileMeta): void
@@ -85,6 +87,12 @@ interface WorkspaceState {
   setLorebookDefaults(patch: Partial<LorebookDefaults>): void
   setActiveLlmProviderId(id: string | null): void
   setLlmCategorizationSettings(patch: Partial<LlmCategorizationSettings>): void
+  addCustomRule(rule: CustomRule): void
+  updateCustomRule(id: string, updates: Partial<CustomRule>): void
+  deleteCustomRule(id: string): void
+  toggleBuiltinRule(ruleId: string, enabled: boolean): void
+  setCustomRules(rules: CustomRule[]): void
+  setDisabledBuiltinRuleIds(ids: string[]): void
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -100,6 +108,8 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     lorebookDefaults: DEFAULT_LOREBOOK_DEFAULTS,
     activeLlmProviderId: null,
     llmCategorization: DEFAULT_LLM_CATEGORIZATION,
+    customRules: [],
+    disabledBuiltinRuleIds: [],
 
     openTab(tabId, name, fileMeta) {
       set((state) => {
@@ -180,6 +190,44 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
     setLlmCategorizationSettings(patch) {
       set((state) => { state.llmCategorization = { ...state.llmCategorization, ...patch } })
+    },
+
+    addCustomRule(rule) {
+      set((state) => { state.customRules.push(rule) })
+    },
+
+    updateCustomRule(id, updates) {
+      set((state) => {
+        const rule = state.customRules.find((r) => r.id === id)
+        if (rule) Object.assign(rule, updates)
+      })
+    },
+
+    deleteCustomRule(id) {
+      set((state) => {
+        const idx = state.customRules.findIndex((r) => r.id === id)
+        if (idx !== -1) state.customRules.splice(idx, 1)
+      })
+    },
+
+    toggleBuiltinRule(ruleId, enabled) {
+      set((state) => {
+        if (enabled) {
+          state.disabledBuiltinRuleIds = state.disabledBuiltinRuleIds.filter((id) => id !== ruleId)
+        } else {
+          if (!state.disabledBuiltinRuleIds.includes(ruleId)) {
+            state.disabledBuiltinRuleIds.push(ruleId)
+          }
+        }
+      })
+    },
+
+    setCustomRules(rules) {
+      set((state) => { state.customRules = rules })
+    },
+
+    setDisabledBuiltinRuleIds(ids) {
+      set((state) => { state.disabledBuiltinRuleIds = ids })
     },
   }))
 )
