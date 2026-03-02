@@ -250,6 +250,22 @@ function EditorSettingsPanel() {
           <option value="false">Hide</option>
         </select>
       </div>
+
+      {/* Category Selection Behavior */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-xs text-ctp-subtext0">
+          Category Selection
+          <HelpTooltip text="Controls whether the last selected category in the entry editor is remembered across sessions." />
+        </div>
+        <select
+          className={inputClass}
+          value={editorDefaults.categoryBehavior}
+          onChange={(e) => updateEditor('categoryBehavior', e.target.value as EditorDefaults['categoryBehavior'])}
+        >
+          <option value="reset">Reset to Activation</option>
+          <option value="remember">Remember Last</option>
+        </select>
+      </div>
     </div>
   )
 }

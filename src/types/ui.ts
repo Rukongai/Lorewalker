@@ -80,6 +80,8 @@ export interface GraphDisplayDefaults {
 
 export interface EditorDefaults {
   showKeywordHighlights: boolean
+  categoryBehavior: 'remember' | 'reset'
+  lastEditorCategory: string
 }
 
 export type SortKey = 'uid' | 'name' | 'tokenCount' | 'order' | 'displayIndex'

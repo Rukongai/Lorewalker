@@ -18,6 +18,8 @@ const DEFAULT_GRAPH_DISPLAY_DEFAULTS: GraphDisplayDefaults = {
 
 const DEFAULT_EDITOR_DEFAULTS: EditorDefaults = {
   showKeywordHighlights: true,
+  categoryBehavior: 'reset',
+  lastEditorCategory: 'Activation',
 }
 
 const DEFAULT_ENTRIES_LIST_DEFAULTS: EntriesListDefaults = {
