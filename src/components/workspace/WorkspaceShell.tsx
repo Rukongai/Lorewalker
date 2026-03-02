@@ -239,7 +239,7 @@ export function WorkspaceShell() {
   // Keyboard shortcuts
   useKeyboardShortcuts({
     activeTabId,
-    onSave: handleExport,
+    onSave: () => setShowSnapshotDialog(true),
     onUndo: handleUndo,
     onRedo: handleRedo,
     onNewEntry: handleNewEntry,
@@ -316,20 +316,10 @@ export function WorkspaceShell() {
           <button
             onClick={handleExport}
             disabled={!activeTabId}
-            title={`Export (${modKey}+S)`}
+            title="Export"
             className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
           >
             <Download size={16} />
-          </button>
-
-          {/* Save snapshot */}
-          <button
-            onClick={() => setShowSnapshotDialog(true)}
-            disabled={!activeTabId}
-            title="Save snapshot"
-            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
-          >
-            <BookmarkPlus size={16} />
           </button>
 
           {/* Open file */}
@@ -347,6 +337,16 @@ export function WorkspaceShell() {
               data-1p-ignore
             />
           </label>
+
+          {/* Save snapshot */}
+          <button
+            onClick={() => setShowSnapshotDialog(true)}
+            disabled={!activeTabId}
+            title={`Save snapshot (${modKey}+S)`}
+            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
+          >
+            <BookmarkPlus size={16} />
+          </button>
 
           {/* Settings */}
           <button
