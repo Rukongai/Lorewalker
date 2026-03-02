@@ -186,6 +186,10 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
     return map
   }, [lastResult])
 
+  const handleSetCategory = useCallback((entryId: string, category: string | undefined) => {
+    store.getState().setEntryCategory(entryId, category)
+  }, [store])
+
   // Sync entries + positions + selection → React Flow nodes
   useEffect(() => {
     setNodes((prev) => {
@@ -442,10 +446,6 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
     store.getState().selectEntry(id)
     onAddEntry?.()
   }, [store, onAddEntry])
-
-  const handleSetCategory = useCallback((entryId: string, category: string | undefined) => {
-    store.getState().setEntryCategory(entryId, category)
-  }, [store])
 
   if (entries.length === 0) {
     return (
