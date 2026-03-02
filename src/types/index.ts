@@ -69,6 +69,7 @@ export type {
 } from './persistence'
 
 export type {
+  CardPayload,
   FileMeta,
   TabMeta,
   EntryListFilter,

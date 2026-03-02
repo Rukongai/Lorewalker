@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { modKey } from '@/lib/platform'
 import { useStore } from 'zustand'
-import { Upload, Download, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2, BarChart2, Scale, Zap, Github } from 'lucide-react'
+import { Upload, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2, BarChart2, Scale, Zap, Github } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { FilesPanel } from './FilesPanel'
 import { SaveSnapshotDialog } from './SaveSnapshotDialog'
@@ -11,7 +11,8 @@ import { LorebookPickerDialog } from './LorebookPickerDialog'
 import type { LorebookMeta } from './LorebookPickerDialog'
 import { EntryList } from '@/components/entry-list/EntryList'
 const EntryEditor = lazy(() => import('@/components/editor/EntryEditor').then(m => ({ default: m.EntryEditor })))
-import { importFile, exportFile } from '@/services/file-service'
+import { importFile, exportFileAs } from '@/services/file-service'
+import { ExportButton } from './ExportButton'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
@@ -146,6 +147,7 @@ export function WorkspaceShell() {
       graphPositions: positions,
       simulatorState: doc.simulatorState,
       ruleOverrides: doc.ruleOverrides,
+      cardPayload: doc.cardPayload ?? null,
     })
     useWorkspaceStore.getState().openTab(doc.tabId, doc.fileMeta.fileName, doc.fileMeta)
   }
@@ -156,6 +158,7 @@ export function WorkspaceShell() {
   // EMPTY_STORE is a stable fallback used when no document is open.
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
+  const cardPayload = activeStore((s) => s.cardPayload)
   const selectedEntryId = activeStore((s) => s.selection.selectedEntryId)
   const selectedEntry = activeStore((s) => {
     const id = s.selection.selectedEntryId
@@ -216,9 +219,9 @@ export function WorkspaceShell() {
     [handleImportFile]
   )
 
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback(async (format: 'json' | 'png' | 'charx') => {
     if (!activeTabId || !activeTab) return
-    exportFile(activeTabId, activeTab.fileMeta.fileName)
+    await exportFileAs(activeTabId, format, activeTab.fileMeta.fileName)
   }, [activeTabId, activeTab])
 
   function handleToggleEnabled() {
@@ -360,15 +363,12 @@ export function WorkspaceShell() {
           </Tooltip>
 
           {/* Export */}
-          <Tooltip text="Export" placement="below">
-            <button
-              onClick={handleExport}
-              disabled={!activeTabId}
-              className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
-            >
-              <Download size={16} />
-            </button>
-          </Tooltip>
+          <ExportButton
+            tabId={activeTabId}
+            fileMeta={activeTab?.fileMeta ?? null}
+            cardPayload={cardPayload}
+            onExport={handleExport}
+          />
 
           {/* Open file */}
           <Tooltip text={`Open file (${modKey}+O)`} placement="below">

@@ -3,7 +3,7 @@ import { immer } from 'zustand/middleware/immer'
 import { temporal } from 'zundo'
 import { generateId } from '@/lib/uuid'
 import { debounce } from '@/lib/debounce'
-import type { WorkingEntry, BookMeta, SimulatorState, SimulationSettings, Finding, HealthScore, SimMessage, ActivationResult, ConversationStep, CustomRule, DocumentRuleOverrides } from '@/types'
+import type { WorkingEntry, BookMeta, SimulatorState, SimulationSettings, Finding, HealthScore, SimMessage, ActivationResult, ConversationStep, CustomRule, DocumentRuleOverrides, CardPayload } from '@/types'
 
 // --- Selection state ---
 
@@ -49,10 +49,14 @@ export interface DocumentState {
   // Rule overrides (excluded from undo)
   ruleOverrides: DocumentRuleOverrides
 
+  // Card payload (excluded from undo)
+  cardPayload: CardPayload | null
+
   // UI state (excluded from undo)
   selection: SelectionState
   simulatorState: SimulatorState
 
+  setCardPayload(payload: CardPayload | null): void
   setLlmFindings(findings: Finding[]): void
   setDocumentRuleOverride(ruleId: string, disabled: boolean): void
   addDocumentRule(rule: CustomRule): void
@@ -157,6 +161,7 @@ export interface DocumentStoreInit {
   graphPositions?: Map<string, { x: number; y: number }>
   simulatorState?: SimulatorState
   ruleOverrides?: DocumentRuleOverrides
+  cardPayload?: CardPayload | null
 }
 
 const DEFAULT_RULE_OVERRIDES: DocumentRuleOverrides = {
@@ -176,6 +181,7 @@ export function createDocumentStore(init: DocumentStoreInit) {
         entries: init.entries,
         graphPositions: init.graphPositions ?? new Map(),
         bookMeta: init.bookMeta,
+        cardPayload: init.cardPayload ?? null,
 
         findings: [],
         llmFindings: [],
@@ -470,6 +476,12 @@ export function createDocumentStore(init: DocumentStoreInit) {
               customRules: state.ruleOverrides.customRules.filter((r) => r.id !== id),
             },
           }))
+        },
+
+        // --- Card payload (excluded from undo) ---
+
+        setCardPayload(payload) {
+          store.setState((state) => ({ ...state, cardPayload: payload }))
         },
 
         // --- LLM findings (excluded from undo) ---

@@ -1,5 +1,13 @@
 import type { LorebookFormat } from './entry'
 import type { SimMessage, SimulationSettings, ActivationResult, ConversationStep } from './simulator'
+import type { CCv3Data, ExtractedAsset, ContainerFormat, Spec } from '@character-foundry/character-foundry/loader'
+
+export interface CardPayload {
+  card: CCv3Data
+  assets: ExtractedAsset[]
+  containerFormat: ContainerFormat
+  spec: Spec
+}
 
 export interface FileMeta {
   fileName: string;

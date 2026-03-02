@@ -1,5 +1,5 @@
 import type { WorkingEntry, BookMeta } from './entry'
-import type { FileMeta, TabMeta, PanelLayout, ThemeId } from './ui'
+import type { FileMeta, TabMeta, PanelLayout, ThemeId, CardPayload } from './ui'
 import type { SimulationSettings, SimulatorState } from './ui'
 import type { LLMProviderType, ProviderConfig } from './llm'
 import type { DocumentRuleOverrides } from './analysis'
@@ -19,6 +19,7 @@ export interface PersistedDocument {
   fileMeta: FileMeta;
   simulatorState: SimulatorState;
   ruleOverrides: DocumentRuleOverrides;
+  cardPayload: CardPayload | null;
   savedAt: string;  // ISO timestamp
 }
 

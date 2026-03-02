@@ -7,12 +7,14 @@
  */
 
 import { parseLorebook, parseCard } from '@character-foundry/character-foundry/loader'
+import { exportToPng, exportToCharx } from '@character-foundry/character-foundry/exporter'
+import type { ExportAsset } from '@character-foundry/character-foundry/exporter'
 import { generateId } from '@/lib/uuid'
 import { inflate, inflateFromRawST, deflate } from './transform-service'
 import type { RawSTBook } from './transform-service'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
-import type { FileMeta, LorebookFormat } from '@/types'
+import type { FileMeta, LorebookFormat, CardPayload } from '@/types'
 import type { LorebookMeta } from '@/components/workspace/LorebookPickerDialog'
 
 export class FileImportError extends Error {
@@ -99,7 +101,14 @@ export async function importFile(
         sourceType: 'embedded-in-card',
       }
 
-      documentStoreRegistry.create(tabId, { entries, bookMeta })
+      const cardPayload: CardPayload = {
+        card: cardResult.card,
+        assets: cardResult.assets,
+        containerFormat: cardResult.containerFormat,
+        spec: cardResult.spec,
+      }
+
+      documentStoreRegistry.create(tabId, { entries, bookMeta, cardPayload })
       useWorkspaceStore.getState().openTab(tabId, bookMeta.name || file.name, fileMeta)
       return tabId
     } else {
@@ -254,5 +263,86 @@ export function exportFile(tabId: string, fileName?: string): void {
   URL.revokeObjectURL(url)
 
   // Mark tab as clean after save
+  useWorkspaceStore.getState().markDirty(tabId, false)
+}
+
+/**
+ * Export the active document as PNG, charx, or JSON.
+ * - 'json': delegates to exportFile (lorebook-only JSON)
+ * - 'png' / 'charx': merges fresh deflated lorebook into the stored card and exports as binary
+ */
+export async function exportFileAs(
+  tabId: string,
+  format: 'json' | 'png' | 'charx',
+  fileName?: string
+): Promise<void> {
+  if (format === 'json') {
+    exportFile(tabId, fileName)
+    return
+  }
+
+  const store = documentStoreRegistry.get(tabId)
+  if (!store) throw new FileExportError(`No document found for tab: ${tabId}`)
+
+  const { entries, bookMeta, cardPayload } = store.getState()
+  if (!cardPayload) {
+    throw new FileExportError('No card data available for binary export')
+  }
+
+  let book
+  try {
+    book = deflate(entries, bookMeta)
+  } catch (err) {
+    throw new FileExportError('Failed to deflate entries for export', err)
+  }
+
+  // Merge the fresh lorebook into the stored card data
+  const cardWithBook = {
+    ...cardPayload.card,
+    data: {
+      ...cardPayload.card.data,
+      character_book: book,
+    },
+  }
+
+  // Map ExtractedAsset[] to ExportAsset[] (type field differs: 'unknown' → 'custom')
+  const exportAssets: ExportAsset[] = cardPayload.assets.map((a) => ({
+    name: a.name,
+    type: (a.type === 'unknown' ? 'custom' : a.type) as ExportAsset['type'],
+    ext: a.ext,
+    data: a.data,
+    isMain: a.isMain,
+    path: a.path,
+    tags: a.tags,
+  }))
+
+  let result
+  try {
+    if (format === 'png') {
+      result = exportToPng(cardWithBook, exportAssets, {
+        exportAsV2: cardPayload.spec === 'v2',
+      })
+    } else {
+      result = exportToCharx(cardWithBook, exportAssets)
+    }
+  } catch (err) {
+    throw new FileExportError(`Failed to export card as ${format}`, err)
+  }
+
+  const baseName = fileName
+    ? fileName.replace(/\.(json|png|charx)$/i, '')
+    : bookMeta.name || 'character'
+
+  const blob = new Blob([result.buffer], { type: result.mimeType })
+  const url = URL.createObjectURL(blob)
+
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${baseName}.${format}`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+
   useWorkspaceStore.getState().markDirty(tabId, false)
 }
