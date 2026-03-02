@@ -35,6 +35,7 @@ import { InspectorPanel } from '@/components/analysis/InspectorPanel'
 import { SimulatorPanel } from '@/components/simulator/SimulatorPanel'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { WorkspaceToolsModal } from '@/components/tools-modal/WorkspaceToolsModal'
+import type { ToolsTab } from '@/components/tools-modal/WorkspaceToolsModal'
 import type { PersistedDocument, PersistedSnapshot } from '@/types'
 import { generateId } from '@/lib/uuid'
 
@@ -70,7 +71,7 @@ export function WorkspaceShell() {
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toolsModalOpen, setToolsModalOpen] = useState(false)
-  const [toolsModalTab, setToolsModalTab] = useState<'analysis' | 'simulator'>('analysis')
+  const [toolsModalTab, setToolsModalTab] = useState<ToolsTab>('analysis')
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('entry')
   const [toasts, setToasts] = useState<UndoToast[]>([])
 
