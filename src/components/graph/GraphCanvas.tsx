@@ -203,10 +203,11 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
         severity: entryWorstSeverity.get(entry.id) ?? null,
         activationStatus: activationStatusMap.get(entry.id) ?? null,
         isDimmed: matchedIds !== null && !matchedIds.has(entry.id),
+        onSetCategory: handleSetCategory,
       },
     }))
     })
-  }, [entries, graphPositions, selectedEntryId, cycleInfo, graphSettings, entryWorstSeverity, activationStatusMap, matchedIds, setNodes])
+  }, [entries, graphPositions, selectedEntryId, cycleInfo, graphSettings, entryWorstSeverity, activationStatusMap, matchedIds, setNodes, handleSetCategory])
 
   // Sync graph → React Flow edges
   useEffect(() => {
@@ -441,6 +442,10 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
     store.getState().selectEntry(id)
     onAddEntry?.()
   }, [store, onAddEntry])
+
+  const handleSetCategory = useCallback((entryId: string, category: string | undefined) => {
+    store.getState().setEntryCategory(entryId, category)
+  }, [store])
 
   if (entries.length === 0) {
     return (

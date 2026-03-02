@@ -2,7 +2,8 @@ import { Handle, Position } from '@xyflow/react'
 import type { Node, NodeProps } from '@xyflow/react'
 import type { WorkingEntry, FindingSeverity } from '@/types'
 import { severityColor } from '@/lib/severity-color'
-import { inferEntryCategory, CATEGORY_ICON } from '@/lib/entry-type'
+import { inferEntryCategory, getEntryIcon } from '@/lib/entry-type'
+import { useCategoryMenu } from '@/components/entry-list/CategoryMenu'
 
 export type EntryNodeType = Node<EntryNodeData>
 
@@ -13,6 +14,7 @@ export interface EntryNodeData {
   severity: FindingSeverity | null
   activationStatus?: 'activated-constant' | 'activated-keyword' | 'activated-recursion' | 'skipped' | null
   isDimmed?: boolean
+  onSetCategory?: (entryId: string, category: string | undefined) => void
   [key: string]: unknown
 }
 
@@ -40,12 +42,16 @@ const ACTIVATION_BADGE: Record<ActivationType, string> = {
 }
 
 export function EntryNode({ data, selected }: NodeProps<EntryNodeType>) {
-  const { entry, isCyclic, edgeDirection, severity, activationStatus, isDimmed } = data
+  const { entry, isCyclic, edgeDirection, severity, activationStatus, isDimmed, onSetCategory } = data
   const activationType = getActivationType(entry)
   const accentColor = ACTIVATION_COLORS[activationType]
   const isLR = edgeDirection !== 'TB'
-  const category = inferEntryCategory(entry)
-  const categoryIcon = CATEGORY_ICON[category]
+  const effectiveCategory = entry.userCategory ?? inferEntryCategory(entry)
+  const categoryIcon = getEntryIcon(effectiveCategory)
+
+  const { openMenu, menuElement } = useCategoryMenu((category) => {
+    onSetCategory?.(entry.id, category)
+  })
 
   // Determine outline based on activation status or selection/cycle
   let outlineColor = 'transparent'
@@ -68,7 +74,9 @@ export function EntryNode({ data, selected }: NodeProps<EntryNodeType>) {
   }
 
   return (
+    <>
     <div
+      onContextMenu={(e) => onSetCategory ? openMenu(e, entry.userCategory) : undefined}
       style={{
         borderLeft: `3px solid ${accentColor}`,
         outline: `2px ${outlineStyle ?? 'solid'} ${outlineColor}`,
@@ -85,7 +93,7 @@ export function EntryNode({ data, selected }: NodeProps<EntryNodeType>) {
         </span>
         <div className="flex items-center gap-0.5 shrink-0">
           {categoryIcon && (
-            <span className="text-[10px]" title={category}>
+            <span className="text-[10px]" title={effectiveCategory}>
               {categoryIcon}
             </span>
           )}
@@ -109,5 +117,7 @@ export function EntryNode({ data, selected }: NodeProps<EntryNodeType>) {
 
       <Handle type="source" position={isLR ? Position.Right : Position.Bottom} className="!bg-ctp-overlay0 !border-ctp-overlay0" />
     </div>
+    {menuElement}
+    </>
   )
 }

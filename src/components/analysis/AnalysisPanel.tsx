@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { useWorkspaceStore } from '@/stores/workspace-store'
+import { llmService } from '@/services/llm/llm-service'
+import { categorizeAll } from '@/services/categorize-service'
 import { FindingItem } from './FindingItem'
 import { DeepAnalysisDialog } from './DeepAnalysisDialog'
 import type { Finding, FindingSeverity, RecursionGraph } from '@/types'
@@ -47,8 +49,12 @@ const LLM_RULE_IDS = new Set([
 export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
   const [filter, setFilter] = useState<Filter>('all')
   const [deepAnalysisOpen, setDeepAnalysisOpen] = useState(false)
+  const [categorizing, setCategorizing] = useState(false)
+  const [categorizeProgress, setCategorizeProgress] = useState<{ done: number; total: number } | null>(null)
+  const [categorizeError, setCategorizeError] = useState<string | null>(null)
 
   const activeLlmProviderId = useWorkspaceStore((s) => s.activeLlmProviderId)
+  const llmCategorization = useWorkspaceStore((s) => s.llmCategorization)
 
   const realStore = tabId ? documentStoreRegistry.get(tabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
@@ -74,6 +80,31 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
 
   function handleDeepAnalysisComplete(newLlmFindings: Finding[]) {
     realStore?.getState().setLlmFindings(newLlmFindings)
+  }
+
+  const categorizationProviderId = llmCategorization.providerId ?? activeLlmProviderId ?? ''
+  const canCategorize = llmCategorization.enabled && !!categorizationProviderId
+
+  async function handleCategorize() {
+    if (!realStore || !canCategorize) return
+    setCategorizing(true)
+    setCategorizeProgress(null)
+    setCategorizeError(null)
+    try {
+      const updates = await categorizeAll(
+        entries,
+        llmService,
+        categorizationProviderId,
+        (done, total) => setCategorizeProgress({ done, total }),
+        llmCategorization.skipManualOverrides
+      )
+      realStore.getState().setCategoryBatch(updates)
+    } catch (err) {
+      setCategorizeError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setCategorizing(false)
+      setCategorizeProgress(null)
+    }
   }
 
   if (!tabId) {
@@ -127,6 +158,37 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
           {llmFindings.length > 0 && (
             <span className="text-[10px] text-ctp-overlay1 flex items-center gap-1">
               <AiBadge /> {llmFindings.length} AI finding{llmFindings.length !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+
+        {/* Categorize Entries button */}
+        <div className="flex items-center justify-between gap-2">
+          <button
+            onClick={handleCategorize}
+            disabled={!canCategorize || categorizing}
+            title={
+              !llmCategorization.enabled
+                ? 'Enable LLM categorization in Settings → LLM Tools'
+                : !categorizationProviderId
+                ? 'Add a provider in Settings → Providers to enable'
+                : 'Categorize entries using LLM'
+            }
+            className="px-2 py-1 rounded text-[10px] bg-ctp-surface1 text-ctp-subtext1 font-medium disabled:opacity-40 hover:bg-ctp-surface2 transition-colors"
+          >
+            Categorize Entries
+          </button>
+          {categorizing && categorizeProgress && (
+            <span className="text-[10px] text-ctp-overlay1">
+              Categorizing {categorizeProgress.done}/{categorizeProgress.total}…
+            </span>
+          )}
+          {categorizing && !categorizeProgress && (
+            <span className="text-[10px] text-ctp-overlay1">Starting…</span>
+          )}
+          {categorizeError && (
+            <span className="text-[10px] text-ctp-red truncate" title={categorizeError}>
+              Error: {categorizeError.slice(0, 40)}
             </span>
           )}
         </div>

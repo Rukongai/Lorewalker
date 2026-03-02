@@ -82,6 +82,10 @@ export function EntryList({ onOpenModal }: EntryListProps = {}) {
     if (entry) realStore?.getState().updateEntry(id, { enabled: !entry.enabled })
   }
 
+  function handleSetCategory(entryId: string, category: string | undefined) {
+    realStore?.getState().setEntryCategory(entryId, category)
+  }
+
   function handleBulkEnable() {
     realStore?.getState().bulkEnable(multiSelect)
     realStore?.getState().clearMultiSelect()
@@ -312,6 +316,7 @@ export function EntryList({ onOpenModal }: EntryListProps = {}) {
               onMultiToggle={handleMultiToggle}
               onShiftSelect={handleShiftSelect}
               onToggleEnabled={handleToggleEnabled}
+              onSetCategory={handleSetCategory}
               onOpenModal={onOpenModal ? () => onOpenModal(entry.id) : undefined}
               displayMetric={displayMetric}
               severity={entryWorstSeverity.get(entry.id) ?? null}
