@@ -14,6 +14,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
         manualChunks(id) {
           if (id.includes('node_modules/@xyflow') || id.includes('node_modules/dagre') || id.includes('node_modules/@dagrejs')) {
             return 'vendor-graph'
