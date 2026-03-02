@@ -1,5 +1,6 @@
 import { useReactFlow } from '@xyflow/react'
-import { LayoutGrid, Maximize2, Eye, EyeOff, Network, Crosshair, Minus, Spline, CornerDownRight, Search, X } from 'lucide-react'
+import { LayoutGrid, Maximize2, Eye, EyeOff, Network, Crosshair, Minus, Spline, CornerDownRight, Search, X, HelpCircle } from 'lucide-react'
+import { GraphLegend } from './GraphLegend'
 
 export type ConnectionVisibility = 'all' | 'selected' | 'none'
 
@@ -13,6 +14,9 @@ interface GraphControlsProps {
   onToggleEdgeStyle: () => void
   searchQuery: string
   onSearchChange: (q: string) => void
+  legendOpen: boolean
+  onToggleLegend: () => void
+  connectionsMode: boolean
 }
 
 const visibilityIcon = {
@@ -37,6 +41,9 @@ export function GraphControls({
   onToggleEdgeStyle,
   searchQuery,
   onSearchChange,
+  legendOpen,
+  onToggleLegend,
+  connectionsMode,
 }: GraphControlsProps) {
   const { fitView } = useReactFlow()
   const VisibilityIcon = visibilityIcon[connectionVisibility]
@@ -102,6 +109,21 @@ export function GraphControls({
       >
         {edgeStyle === 'bezier' ? <Spline size={13} /> : edgeStyle === 'straight' ? <Minus size={13} /> : <CornerDownRight size={13} />}
       </button>
+
+      <div className="relative">
+        <button
+          onClick={onToggleLegend}
+          title={legendOpen ? 'Close legend' : 'Show graph legend'}
+          className="p-1.5 bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext1 hover:bg-ctp-surface1 hover:text-ctp-text transition-colors"
+        >
+          <HelpCircle size={13} />
+        </button>
+        {legendOpen && (
+          <div className="absolute top-full right-0 mt-1 z-50">
+            <GraphLegend isOpen={legendOpen} onToggle={onToggleLegend} connectionsMode={connectionsMode} />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

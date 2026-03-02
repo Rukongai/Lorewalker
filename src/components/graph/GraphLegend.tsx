@@ -1,5 +1,4 @@
-import { HelpCircle, X } from 'lucide-react'
-import { Panel } from '@xyflow/react'
+import { X } from 'lucide-react'
 
 interface GraphLegendProps {
   isOpen: boolean
@@ -167,34 +166,22 @@ function SimulatorLegend() {
 }
 
 export function GraphLegend({ isOpen, onToggle, connectionsMode }: GraphLegendProps) {
+  if (!isOpen) return null
   return (
-    <Panel position="bottom-left" style={{ marginLeft: '2.5rem', marginBottom: '0.5rem' }}>
-      <div className="relative flex flex-col items-start gap-1">
-        {isOpen && (
-          <div className="mb-1 w-64 bg-ctp-surface0 border border-ctp-surface1 rounded shadow-lg p-3 text-ctp-text">
-            <div className="flex items-center justify-between mb-2.5">
-              <span className="text-[11px] font-semibold text-ctp-subtext0 uppercase tracking-wide">
-                {connectionsMode ? 'Simulator Mode' : 'Graph Legend'}
-              </span>
-              <button
-                onClick={onToggle}
-                className="text-ctp-overlay1 hover:text-ctp-subtext1 transition-colors"
-                title="Close legend"
-              >
-                <X size={12} />
-              </button>
-            </div>
-            {connectionsMode ? <SimulatorLegend /> : <GraphModeLegend />}
-          </div>
-        )}
+    <div className="w-64 bg-ctp-surface0 border border-ctp-surface1 rounded shadow-lg p-3 text-ctp-text">
+      <div className="flex items-center justify-between mb-2.5">
+        <span className="text-[11px] font-semibold text-ctp-subtext0 uppercase tracking-wide">
+          {connectionsMode ? 'Simulator Mode' : 'Graph Legend'}
+        </span>
         <button
           onClick={onToggle}
-          title={isOpen ? 'Close legend' : 'Show graph legend'}
-          className="p-1.5 bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext1 hover:bg-ctp-surface1 hover:text-ctp-text transition-colors"
+          className="text-ctp-overlay1 hover:text-ctp-subtext1 transition-colors"
+          title="Close legend"
         >
-          <HelpCircle size={13} />
+          <X size={12} />
         </button>
       </div>
-    </Panel>
+      {connectionsMode ? <SimulatorLegend /> : <GraphModeLegend />}
+    </div>
   )
 }
