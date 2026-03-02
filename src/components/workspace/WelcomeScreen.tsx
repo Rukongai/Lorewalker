@@ -38,7 +38,7 @@ export function WelcomeScreen({ onOpenFile }: WelcomeScreenProps) {
         </button>
 
         {/* Feature bullets */}
-        <div className="space-y-2 text-left">
+        <div className="space-y-2 text-left w-fit mx-auto">
           <div className="flex items-center gap-2 text-xs text-ctp-subtext0">
             <GitBranch size={13} className="text-ctp-mauve shrink-0" />
             <span>Graph visualization of entry connections</span>

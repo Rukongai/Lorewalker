@@ -11,6 +11,23 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/@xyflow') || id.includes('node_modules/dagre') || id.includes('node_modules/@dagrejs')) {
+            return 'vendor-graph'
+          }
+          if (id.includes('node_modules/@codemirror')) {
+            return 'vendor-editor'
+          }
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) {
+            return 'vendor-react'
+          }
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

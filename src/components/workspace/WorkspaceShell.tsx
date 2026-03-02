@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { modKey } from '@/lib/platform'
 import { useStore } from 'zustand'
 import { Upload, Download, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2, BarChart2, Scale, Zap } from 'lucide-react'
@@ -10,7 +10,7 @@ import { StatusBar } from './StatusBar'
 import { LorebookPickerDialog } from './LorebookPickerDialog'
 import type { LorebookMeta } from './LorebookPickerDialog'
 import { EntryList } from '@/components/entry-list/EntryList'
-import { EntryEditor } from '@/components/editor/EntryEditor'
+const EntryEditor = lazy(() => import('@/components/editor/EntryEditor').then(m => ({ default: m.EntryEditor })))
 import { importFile, exportFile } from '@/services/file-service'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
@@ -22,10 +22,10 @@ import { loadWorkspace, loadPreferences, cleanupStaleDocuments, loadProviders, s
 import { llmService } from '@/services/llm/llm-service'
 import { OpenAICompatibleProvider } from '@/services/llm/providers/openai-compatible'
 import { AnthropicProvider } from '@/services/llm/providers/anthropic'
-import { GraphCanvas } from '@/components/graph/GraphCanvas'
+const GraphCanvas = lazy(() => import('@/components/graph/GraphCanvas').then(m => ({ default: m.GraphCanvas })))
+const SettingsDialog = lazy(() => import('@/components/settings/SettingsDialog').then(m => ({ default: m.SettingsDialog })))
+const EntryEditorModal = lazy(() => import('@/components/editor/EntryEditorModal').then(m => ({ default: m.EntryEditorModal })))
 import { BookMetaEditor } from '@/components/editor/BookMetaEditor'
-import { SettingsDialog } from '@/components/settings/SettingsDialog'
-import { EntryEditorModal } from '@/components/editor/EntryEditorModal'
 import { Toggle } from '@/components/shared/Toggle'
 import { ToastStack } from '@/components/shared/ToastStack'
 import type { UndoToast } from '@/components/shared/ToastStack'
@@ -34,7 +34,7 @@ import { AnalysisPanel } from '@/components/analysis/AnalysisPanel'
 import { InspectorPanel } from '@/components/analysis/InspectorPanel'
 import { SimulatorPanel } from '@/components/simulator/SimulatorPanel'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
-import { WorkspaceToolsModal } from '@/components/tools-modal/WorkspaceToolsModal'
+const WorkspaceToolsModal = lazy(() => import('@/components/tools-modal/WorkspaceToolsModal').then(m => ({ default: m.WorkspaceToolsModal })))
 import type { ToolsTab } from '@/components/tools-modal/WorkspaceToolsModal'
 import type { PersistedDocument, PersistedSnapshot } from '@/types'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -519,18 +519,20 @@ export function WorkspaceShell() {
           {!activeTabId ? (
             <WelcomeScreen onOpenFile={() => fileInputRef.current?.click()} />
           ) : (
-            <ErrorBoundary label="Graph">
-              <GraphCanvas
-                key={activeTabId}
-                tabId={activeTabId}
-                onNodeDoubleClick={() => { if (selectedEntryId) setModalEntryId(selectedEntryId) }}
-                onAddEntry={() => {
-                  const id = realStore?.getState().selection.selectedEntryId
-                  if (id) setModalEntryId(id)
-                }}
-                isModalOpen={modalEntryId !== null}
-              />
-            </ErrorBoundary>
+            <Suspense fallback={null}>
+              <ErrorBoundary label="Graph">
+                <GraphCanvas
+                  key={activeTabId}
+                  tabId={activeTabId}
+                  onNodeDoubleClick={() => { if (selectedEntryId) setModalEntryId(selectedEntryId) }}
+                  onAddEntry={() => {
+                    const id = realStore?.getState().selection.selectedEntryId
+                    if (id) setModalEntryId(id)
+                  }}
+                  isModalOpen={modalEntryId !== null}
+                />
+              </ErrorBoundary>
+            </Suspense>
           )}
         </main>
 
@@ -629,9 +631,11 @@ export function WorkspaceShell() {
                     </div>
                   )}
                   {selectedEntryId ? (
-                    <ErrorBoundary label="Editor">
-                      <EntryEditor entryId={selectedEntryId} />
-                    </ErrorBoundary>
+                    <Suspense fallback={null}>
+                      <ErrorBoundary label="Editor">
+                        <EntryEditor entryId={selectedEntryId} />
+                      </ErrorBoundary>
+                    </Suspense>
                   ) : activeTabId ? (
                     <div className="flex-1 flex items-center justify-center">
                       <p className="text-xs text-ctp-overlay1">Select an entry to edit</p>
@@ -671,24 +675,32 @@ export function WorkspaceShell() {
       <StatusBar activeTabId={activeTabId} fileName={activeTab?.fileMeta.fileName} />
 
       {modalEntryId && (
-        <EntryEditorModal
-          entryId={modalEntryId}
-          onClose={() => setModalEntryId(null)}
-        />
+        <Suspense fallback={null}>
+          <EntryEditorModal
+            entryId={modalEntryId}
+            onClose={() => setModalEntryId(null)}
+          />
+        </Suspense>
       )}
       {toolsModalOpen && (
-        <WorkspaceToolsModal
-          tab={toolsModalTab}
-          onTabChange={setToolsModalTab}
-          onClose={() => setToolsModalOpen(false)}
-          onOpenEntry={(entryId) => setModalEntryId(entryId)}
-          onSelectEntry={(entryId) => {
-            setToolsModalOpen(false)
-            realStore?.getState().selectEntry(entryId)
-          }}
-        />
+        <Suspense fallback={null}>
+          <WorkspaceToolsModal
+            tab={toolsModalTab}
+            onTabChange={setToolsModalTab}
+            onClose={() => setToolsModalOpen(false)}
+            onOpenEntry={(entryId) => setModalEntryId(entryId)}
+            onSelectEntry={(entryId) => {
+              setToolsModalOpen(false)
+              realStore?.getState().selectEntry(entryId)
+            }}
+          />
+        </Suspense>
       )}
-      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      {settingsOpen && (
+        <Suspense fallback={null}>
+          <SettingsDialog open onClose={() => setSettingsOpen(false)} />
+        </Suspense>
+      )}
       <SaveSnapshotDialog
         open={showSnapshotDialog}
         defaultName={`${activeTab?.fileMeta.fileName ?? 'snapshot'} — ${new Date().toLocaleString()}`}

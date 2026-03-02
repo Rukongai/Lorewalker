@@ -117,6 +117,7 @@ function makeDoc(overrides: Partial<PersistedDocument> = {}): PersistedDocument 
       conversationHistory: [],
       connectionsMode: false,
     },
+    ruleOverrides: { disabledRuleIds: [], customRules: [] },
     savedAt: new Date().toISOString(),
     ...overrides,
   }
@@ -182,7 +183,7 @@ describe('PersistenceService', () => {
     })
 
     it('does not include non-document keys', async () => {
-      await saveWorkspace({ tabs: [], activeTabId: null, theme: 'dark', panelLayout: { leftPanelWidth: 256, rightPanelWidth: 320, leftCollapsed: false, rightCollapsed: false, rightPanelTab: 'entry' } })
+      await saveWorkspace({ tabs: [], activeTabId: null, theme: 'dark', panelLayout: { leftPanelWidth: 256, rightPanelWidth: 320, leftCollapsed: false, rightCollapsed: false, rightPanelTab: 'entry', leftPanelTab: 'entries' } })
       await saveDocument(makeDoc({ tabId: 'tab-1' }))
       const docs = await listDocuments()
       expect(docs).toHaveLength(1)
@@ -253,6 +254,7 @@ describe('PersistenceService', () => {
           leftCollapsed: false,
           rightCollapsed: false,
           rightPanelTab: 'entry',
+          leftPanelTab: 'entries',
         },
       }
       await saveWorkspace(ws)
