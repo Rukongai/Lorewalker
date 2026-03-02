@@ -15,6 +15,7 @@ export function ExportButton({ tabId, fileMeta, cardPayload, onExport }: ExportB
   const [open, setOpen] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const isCard = fileMeta?.sourceType === 'embedded-in-card' && cardPayload !== null
   const disabled = !tabId
@@ -23,7 +24,10 @@ export function ExportButton({ tabId, fileMeta, cardPayload, onExport }: ExportB
   useEffect(() => {
     if (!open) return
     function handleClick(e: MouseEvent) {
-      if (triggerRef.current && !triggerRef.current.contains(e.target as Node)) {
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target as Node) &&
+        (!menuRef.current || !menuRef.current.contains(e.target as Node))
+      ) {
         setOpen(false)
       }
     }
@@ -75,6 +79,7 @@ export function ExportButton({ tabId, fileMeta, cardPayload, onExport }: ExportB
 
       {open && createPortal(
         <div
+          ref={menuRef}
           style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, zIndex: 9999 }}
           className="min-w-52 bg-ctp-surface0 border border-ctp-surface1 rounded shadow-lg py-1 text-xs"
         >

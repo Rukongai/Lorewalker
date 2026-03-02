@@ -221,7 +221,11 @@ export function WorkspaceShell() {
 
   const handleExport = useCallback(async (format: 'json' | 'png' | 'charx') => {
     if (!activeTabId || !activeTab) return
-    await exportFileAs(activeTabId, format, activeTab.fileMeta.fileName)
+    try {
+      await exportFileAs(activeTabId, format, activeTab.fileMeta.fileName)
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Export failed')
+    }
   }, [activeTabId, activeTab])
 
   function handleToggleEnabled() {
