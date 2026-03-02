@@ -512,5 +512,31 @@ describe('inflateFromRawST', () => {
         (deflated.entries[0].extensions?.['customPlatform'] as Record<string, unknown>)?.specialField
       ).toBe('value')
     })
+
+    it('round-trips userCategory via extensions.lorewalker.userCategory', () => {
+      const book = makeBook()
+      // Simulate a previously saved lorewalker extension with userCategory
+      book.entries[0].extensions = {
+        ...book.entries[0].extensions,
+        lorewalker: { userCategory: 'faction' },
+      }
+
+      const { entries, bookMeta } = inflate(book)
+      expect(entries[0].userCategory).toBe('faction')
+
+      // Deflate preserves it
+      const deflated = deflate(entries, bookMeta)
+      const lwExt = deflated.entries[0].extensions?.['lorewalker'] as Record<string, unknown> | undefined
+      expect(lwExt?.userCategory).toBe('faction')
+    })
+
+    it('omits lorewalker extension when userCategory is not set', () => {
+      const book = makeBook()
+      const { entries, bookMeta } = inflate(book)
+      expect(entries[0].userCategory).toBeUndefined()
+
+      const deflated = deflate(entries, bookMeta)
+      expect(deflated.entries[0].extensions?.['lorewalker']).toBeUndefined()
+    })
   })
 })

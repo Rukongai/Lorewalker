@@ -5,11 +5,13 @@ import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
 import type { WorkingEntry, SelectiveLogic, EntryPosition } from '@/types'
 import { estimateTokenCount } from '@/lib/token-estimate'
+import { inferEntryCategory, getEntryIcon } from '@/lib/entry-type'
 import { ContentEditor } from './ContentEditor'
 import { KeywordInput } from './KeywordInput'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
 import { ActivationLinks } from './ActivationLinks'
+import { useCategoryMenu } from '@/components/entry-list/CategoryMenu'
 
 function FieldGroup({ label, stOnly, defaultCollapsed = false, labelSuffix, headerRight, children }: {
   label: string
@@ -290,6 +292,18 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
     if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
   }, [realStore, entry, entryId, activeTabId])
 
+  const handleSetCategory = useCallback((category: string | undefined) => {
+    if (!realStore) return
+    realStore.getState().setEntryCategory(entryId, category)
+    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
+  }, [realStore, entryId, activeTabId])
+
+  const effectiveCategory = entry ? (entry.userCategory ?? inferEntryCategory(entry)) : 'generic'
+  const categoryIcon = getEntryIcon(effectiveCategory)
+  const categorySource = entry?.userCategory ? '[Set]' : '[Inferred]'
+
+  const { openMenu: openCategoryMenu, menuElement: categoryMenuElement } = useCategoryMenu(handleSetCategory)
+
   if (!entry) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -308,15 +322,39 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
   const strategyInactiveClass = 'bg-ctp-surface0 text-ctp-subtext0 hover:text-ctp-text hover:bg-ctp-surface1'
 
   const nameField = (
-    <Field label="Name" help="Display label for this entry in the lorebook editor. Not injected into the AI's context.">
-      <input
-        type="text"
-        value={entry.name}
-        onChange={(e) => handleChange('name', e.target.value)}
-        className={inputClass}
-        placeholder="Entry name"
-      />
-    </Field>
+    <>
+      <Field label="Name" help="Display label for this entry in the lorebook editor. Not injected into the AI's context.">
+        <input
+          type="text"
+          value={entry.name}
+          onChange={(e) => handleChange('name', e.target.value)}
+          className={inputClass}
+          placeholder="Entry name"
+        />
+      </Field>
+      <div className="flex items-center gap-2 px-0.5">
+        <span className="text-[11px] text-ctp-subtext0">Category</span>
+        <button
+          onClick={(e) => openCategoryMenu(e, entry.userCategory)}
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs bg-ctp-surface0 hover:bg-ctp-surface1 border border-ctp-surface2 transition-colors"
+          title="Click to change category"
+        >
+          {categoryIcon && <span className="text-[11px]">{categoryIcon}</span>}
+          <span className="text-ctp-subtext1 capitalize">{effectiveCategory}</span>
+        </button>
+        <span className="text-[9px] text-ctp-overlay1 font-mono">{categorySource}</span>
+        {entry.userCategory && (
+          <button
+            onClick={() => handleSetCategory(undefined)}
+            className="text-[9px] text-ctp-overlay1 hover:text-ctp-red transition-colors"
+            title="Clear category override"
+          >
+            ✕
+          </button>
+        )}
+        {categoryMenuElement}
+      </div>
+    </>
   )
 
   const contentField = (
