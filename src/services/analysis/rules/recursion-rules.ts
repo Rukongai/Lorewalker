@@ -58,21 +58,32 @@ const longChains: Rule = {
   severity: 'suggestion',
   requiresLLM: false,
   async evaluate(context: AnalysisContext): Promise<Finding[]> {
-    const findings: Finding[] = []
+    const candidates: Array<{ entryId: string; depth: number; chain: string[] }> = []
 
     for (const entry of context.entries) {
       const chain = findLongestChain(context.graph, entry.id)
       const depth = chain.length - 1
       if (depth > 3) {
-        findings.push({
-          id: generateId(),
-          ruleId: 'recursion/long-chains',
-          severity: 'suggestion',
-          category: 'recursion',
-          message: `Entry triggers a chain of ${depth} hops (consider flattening)`,
-          entryIds: chain,
-        })
+        candidates.push({ entryId: entry.id, depth, chain })
       }
+    }
+
+    candidates.sort((a, b) => b.depth - a.depth)
+
+    const claimed = new Set<string>()
+    const findings: Finding[] = []
+
+    for (const { entryId, depth, chain } of candidates) {
+      if (claimed.has(entryId)) continue
+      findings.push({
+        id: generateId(),
+        ruleId: 'recursion/long-chains',
+        severity: 'suggestion',
+        category: 'recursion',
+        message: `Entry triggers a chain of ${depth} hops (consider flattening)`,
+        entryIds: chain,
+      })
+      for (const id of chain) claimed.add(id)
     }
 
     return findings
