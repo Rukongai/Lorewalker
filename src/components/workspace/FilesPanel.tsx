@@ -32,12 +32,11 @@ export function FilesPanel({ onRestoreDoc }: FilesPanelProps) {
   const refreshHistory = useCallback(async () => {
     try {
       const allDocs = await listDocuments()
-      const openTabIds = new Set(tabs.map((t) => t.id))
-      setHistoryDocs(allDocs.filter((d) => !openTabIds.has(d.tabId)))
+      setHistoryDocs(allDocs)
     } catch {
       // Non-fatal
     }
-  }, [tabs])
+  }, [])
 
   useEffect(() => {
     refreshHistory()
@@ -158,22 +157,32 @@ export function FilesPanel({ onRestoreDoc }: FilesPanelProps) {
           {historySection ? <ChevronDown size={12} className="mr-1.5 shrink-0" /> : <ChevronRight size={12} className="mr-1.5 shrink-0" />}
           History ({historyDocs.length})
         </button>
-        {historySection && (
+        {historySection && (() => {
+          const openTabIds = new Set(tabs.map((t) => t.id))
+          return (
           <ul>
             {historyDocs.length === 0 && (
               <li className="px-4 py-2 text-ctp-overlay0">No saved sessions</li>
             )}
-            {historyDocs.map((doc) => (
+            {historyDocs.map((doc) => {
+              const isOpen = openTabIds.has(doc.tabId)
+              return (
               <li key={doc.tabId}>
                 {/* Doc row */}
                 <div className="flex items-center gap-1 px-3 py-1.5 hover:bg-ctp-surface0 group">
                   <button
                     className="flex items-center gap-1.5 flex-1 text-left text-ctp-text hover:text-ctp-text min-w-0"
                     onClick={() => onRestoreDoc(doc)}
-                    title="Restore this session"
+                    title={isOpen ? 'Switch to open tab' : 'Restore this session'}
                   >
-                    <RotateCcw size={11} className="shrink-0 text-ctp-overlay1" />
+                    {isOpen
+                      ? <span className="w-[11px] h-[11px] shrink-0" />
+                      : <RotateCcw size={11} className="shrink-0 text-ctp-overlay1" />
+                    }
                     <span className="truncate flex-1">{doc.fileMeta.fileName}</span>
+                    {isOpen && (
+                      <span className="text-[10px] text-ctp-accent shrink-0 ml-1">open</span>
+                    )}
                     <span className="text-ctp-overlay1 shrink-0 ml-1">{relativeTime(doc.savedAt)}</span>
                   </button>
                   <button
@@ -226,9 +235,10 @@ export function FilesPanel({ onRestoreDoc }: FilesPanelProps) {
                   </ul>
                 )}
               </li>
-            ))}
+            )})}
           </ul>
-        )}
+          )
+        })()}
       </div>
     </div>
   )
