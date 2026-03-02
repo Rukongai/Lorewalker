@@ -256,23 +256,55 @@ export function computeChainDepths(graph: RecursionGraph, entries: WorkingEntry[
 }
 
 export function findLongestChain(graph: RecursionGraph, startId: string): string[] {
-  function longestFrom(id: string, visited: Set<string>): string[] {
-    if (visited.has(id)) return []
-    const newVisited = new Set(visited).add(id)
+  // Phase 1: memoized DFS to compute depth of each reachable node (O(V+E))
+  const depths = new Map<string, number>()
+  const onStack = new Set<string>()
+
+  function dfsDepth(id: string): number {
+    if (onStack.has(id)) return 0 // cycle — stop
+    if (depths.has(id)) return depths.get(id)!
+    onStack.add(id)
     const children = graph.edges.get(id) ?? new Set()
-    let best: string[] = [id]
+    let max = 0
     for (const child of children) {
       const edgeKey = `${id}\u2192${child}`
       const meta = graph.edgeMeta.get(edgeKey)
       if (meta?.blockedByPreventRecursion || meta?.blockedByExcludeRecursion) continue
-      const childChain = longestFrom(child, newVisited)
-      if (childChain.length > 0 && 1 + childChain.length > best.length) {
-        best = [id, ...childChain]
+      max = Math.max(max, 1 + dfsDepth(child))
+    }
+    onStack.delete(id)
+    depths.set(id, max)
+    return max
+  }
+
+  dfsDepth(startId)
+
+  // Phase 2: greedy path reconstruction following highest-depth child
+  const path: string[] = []
+  const visited = new Set<string>()
+  let current: string | undefined = startId
+
+  while (current !== undefined && !visited.has(current)) {
+    path.push(current)
+    visited.add(current)
+    const children = graph.edges.get(current) ?? new Set()
+    let bestChild: string | undefined
+    let bestDepth = -1
+    for (const child of children) {
+      const edgeKey = `${current}\u2192${child}`
+      const meta = graph.edgeMeta.get(edgeKey)
+      if (meta?.blockedByPreventRecursion || meta?.blockedByExcludeRecursion) continue
+      if (visited.has(child)) continue
+      const d = depths.get(child) ?? 0
+      if (d > bestDepth) {
+        bestDepth = d
+        bestChild = child
       }
     }
-    return best
+    current = bestChild
   }
-  return longestFrom(startId, new Set())
+
+  return path
 }
 
 const NODE_WIDTH = 180

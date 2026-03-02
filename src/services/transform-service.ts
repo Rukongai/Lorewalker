@@ -188,8 +188,8 @@ export function inflate(book: CCv3CharacterBook, defaults?: LorebookDefaults): I
 
       name: raw.name ?? raw.comment ?? '',
       content,
-      keys: raw.keys ?? [],
-      secondaryKeys: raw.secondary_keys ?? [],
+      keys: (raw.keys ?? []).filter((k) => k.trim() !== ''),
+      secondaryKeys: (raw.secondary_keys ?? []).filter((k) => k.trim() !== ''),
 
       constant: raw.constant ?? false,
       selective: (raw.selective ?? false) && (raw.secondary_keys?.length ?? 0) > 0,
@@ -297,8 +297,8 @@ export function inflateFromRawST(raw: RawSTBook, defaults?: LorebookDefaults): I
 
       name: e.comment ?? '',
       content,
-      keys: e.key ?? [],
-      secondaryKeys: e.keysecondary ?? [],
+      keys: (e.key ?? []).filter((k) => k.trim() !== ''),
+      secondaryKeys: (e.keysecondary ?? []).filter((k) => k.trim() !== ''),
 
       constant: e.constant ?? false,
       selective: (e.selective ?? false) && (e.keysecondary?.length ?? 0) > 0,
