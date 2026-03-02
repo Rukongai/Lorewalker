@@ -34,20 +34,54 @@ interface WorkingEntry {
   depth: number;                  // Context depth for injection
 
   // === Timed Effects ===
-  delay: number;                  // Messages before entry can activate (0 = immediate)
-  cooldown: number;               // Messages entry can't activate after deactivation
-  sticky: number;                 // Messages entry stays active after trigger (0 = keyword-only)
-  probability: number;            // Percent chance to activate when triggered (1-100)
+  delay: number | null;           // Messages before entry can activate (null = use global default, 0 = immediate)
+  cooldown: number | null;        // Messages entry can't activate after deactivation (null = use global default)
+  sticky: number | null;          // Messages entry stays active after trigger (null = use global default, 0 = keyword-only)
+  probability: number;            // Percent chance to activate when triggered (1–100)
 
   // === Recursion Control ===
-  preventRecursion: boolean;      // If true, this entry's keys can't be triggered by other entries' content
-  excludeRecursion: boolean;      // If true, this entry's content is invisible to recursive scanning
+  preventRecursion: boolean;      // If true, this entry's content won't be scanned during recursive passes
+  excludeRecursion: boolean;      // If true, this entry's keys can't be triggered by recursion
 
   // === Budget ===
   ignoreBudget: boolean;          // If true, ignores token budget limits
 
+  // === Group System ===
+  group: string;                  // Group name for inclusion groups
+  groupOverride: boolean;         // If true, always includes this entry when the group activates
+  groupWeight: number;            // Weight for probabilistic group selection (default 100)
+  useGroupScoring: boolean | null; // null = use global setting
+
+  // === Per-entry Scan Overrides ===
+  scanDepth: number | null;       // null = use book default
+  caseSensitive: boolean | null;  // null = use book default
+  matchWholeWords: boolean | null; // null = use book default
+
+  // === Match Sources ===
+  matchPersonaDescription: boolean;
+  matchCharacterDescription: boolean;
+  matchCharacterPersonality: boolean;
+  matchCharacterDepthPrompt: boolean;
+  matchScenario: boolean;
+  matchCreatorNotes: boolean;
+
+  // === Advanced ST Fields ===
+  role: number;                   // 0 = system, 1 = user, 2 = assistant (used at position 4 @ Depth)
+  automationId: string;           // ST automation ID for scripting
+  outletName: string;             // Used when position = 7 (Outlet)
+  vectorized: boolean;            // Whether entry is in the vector DB
+  useProbability: boolean;        // Whether probability roll is applied (default true)
+  addMemo: boolean;               // Whether entry is shown in the World Info Memory panel
+  displayIndex: number | null;    // Visual sort index in ST's WI panel (null = unset)
+  delayUntilRecursion: number;    // Messages before entry activates during recursion
+  triggers: string[];             // ST trigger list (alternative activation mechanism)
+  characterFilter: CharacterFilter; // Restrict entry to specific characters
+
   // === Computed (read-only, set by TransformService) ===
   tokenCount: number;             // Estimated token count of content field
+
+  // === Lorewalker-specific ===
+  userCategory?: string;          // Manual or LLM-assigned category override (stored in extensions.lorewalker.userCategory)
 
   // === Passthrough ===
   extensions: Record<string, unknown>;  // Preserves unknown platform-specific extensions for round-trip fidelity
@@ -82,6 +116,16 @@ type LorebookFormat =
   | 'unknown';
 ```
 
+### CharacterFilter
+
+```typescript
+interface CharacterFilter {
+  isExclude: boolean;   // If true, entry is excluded for these characters; if false, only included for them
+  names: string[];      // Character names this filter applies to
+  tags: string[];       // Character tags this filter applies to
+}
+```
+
 ### BookMeta
 
 Book-level metadata that applies to the lorebook as a whole, not individual entries.
@@ -92,10 +136,21 @@ interface BookMeta {
   description: string;
   scanDepth: number;
   tokenBudget: number;
+  contextSize: number;         // Lorewalker-only display field (default 200000), not exported
   recursiveScan: boolean;
   caseSensitive: boolean;
   matchWholeWords: boolean;
   extensions: Record<string, unknown>;  // Book-level extension passthrough
+
+  // ST-specific global settings
+  minActivations: number;      // Minimum entries to activate per message (0 = disabled)
+  maxDepth: number;            // Max message depth for minActivations (0 = unlimited)
+  maxRecursionSteps: number;   // Max recursion passes per message (0 = unlimited)
+  insertionStrategy: 'evenly' | 'character_lore_first' | 'global_lore_first';
+  includeNames: boolean;       // Include participant names in keyword scan
+  useGroupScoring: boolean;    // Global default for group scoring
+  alertOnOverflow: boolean;    // Show alert when WI exceeds token budget
+  budgetCap: number;           // Hard token cap (0 = no cap)
 }
 ```
 
@@ -171,6 +226,7 @@ type FindingSeverity = 'error' | 'warning' | 'suggestion';
 
 interface AnalysisContext {
   entries: WorkingEntry[];
+  bookMeta: BookMeta;
   graph: RecursionGraph;
   llmService?: LLMService;           // Only provided during LLM analysis runs
 }
@@ -221,7 +277,7 @@ interface Rubric {
   name: string;
   description: string;
   rules: Rule[];
-  scoringWeights: Record<RuleCategory, number>;  // Category weights for overall score
+  scoringWeights: Record<RuleCategory, number>;  // Category weights for overall score; must sum to 1.0
 }
 
 interface RubricRegistry {
@@ -229,6 +285,66 @@ interface RubricRegistry {
   activeRubricId: string;
   getActiveRubric(): Rubric;
   register(rubric: Rubric): void;
+}
+```
+
+### Custom Rule Types
+
+Custom rules let users define their own per-entry checks using a visual condition builder.
+
+```typescript
+type ComparisonOp =
+  | '=='
+  | '!='
+  | '>'
+  | '<'
+  | '>='
+  | '<='
+  | 'includes'
+  | 'not-includes'
+  | 'matches';   // regex
+
+type LogicOp = 'AND' | 'OR';
+
+interface ConditionLeaf {
+  type: 'leaf';
+  left: string;          // Variable path, e.g., "entry.keys.length", "entry.tokenCount"
+  operator: ComparisonOp;
+  right: string;         // Literal value as string (parsed at evaluation time)
+}
+
+interface ConditionGroup {
+  type: 'group';
+  negate: boolean;
+  logic: LogicOp;
+  conditions: ConditionLeaf[];
+}
+
+interface SerializedEvaluation {
+  logic: LogicOp;
+  items: Array<ConditionLeaf | ConditionGroup>;
+}
+
+interface CustomRule {
+  id: string;
+  name: string;
+  description: string;
+  category: RuleCategory;
+  severity: FindingSeverity;
+  enabled: boolean;
+  requiresLLM: boolean;
+  evaluation?: SerializedEvaluation;  // Deterministic rules only
+  message: string;                     // Supports {{entry.name}}, {{entry.keys.length}}, etc.
+  systemPrompt?: string;               // LLM rules only
+  userPrompt?: string;                 // LLM rules only
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Per-document rule overrides (stored in DocumentStore, excluded from undo)
+interface DocumentRuleOverrides {
+  disabledRuleIds: string[];    // Disable specific built-in or workspace rules for this document
+  customRules: CustomRule[];    // Document-scoped custom rules (not shared across workspace)
 }
 ```
 
@@ -326,6 +442,7 @@ interface SkippedEntry {
 interface RecursionStep {
   step: number;
   scannedEntryId: string;
+  triggeredByEntryId: string | null;
   activatedEntryIds: string[];
   matchDetails: { entryId: string; keyword: string }[];
 }
@@ -334,6 +451,21 @@ interface TimedEffectState {
   stickyEntries: Map<string, number>;
   cooldownEntries: Map<string, number>;
   messageCount: number;
+}
+
+// Stored in DocumentStore for multi-message replay
+interface SimulatorState {
+  messages: SimMessage[];
+  settings: SimulationSettings;
+  lastResult: ActivationResult | null;
+  conversationHistory: ConversationStep[];
+  connectionsMode: boolean;  // When true, graph shows simulator activation state
+}
+
+interface ConversationStep {
+  messageIndex: number;
+  message: SimMessage;
+  result: ActivationResult;
 }
 ```
 
@@ -446,14 +578,20 @@ interface GraphDisplayDefaults {
 ```typescript
 interface EditorDefaults {
   showKeywordHighlights: boolean;
+  categoryBehavior: 'remember' | 'reset';  // Whether editor tab selection persists between entries
+  lastEditorCategory: string;              // The last category the user was viewing in the editor
 }
+```
+
+### SortKey
+
+```typescript
+type SortKey = 'uid' | 'name' | 'tokenCount' | 'order' | 'displayIndex';
 ```
 
 ### EntriesListDefaults
 
 ```typescript
-type SortKey = 'uid' | 'name' | 'tokenCount' | 'order' | 'displayIndex';
-
 interface EntriesListDefaults {
   sortBy: SortKey;
   sortDirection: 'asc' | 'desc';
@@ -485,6 +623,16 @@ interface LorebookDefaults {
 }
 ```
 
+### LlmCategorizationSettings
+
+```typescript
+interface LlmCategorizationSettings {
+  enabled: boolean;
+  providerId?: string;
+  skipManualOverrides: boolean;
+}
+```
+
 ### WorkspaceState
 
 The actual shape of WorkspaceStore (Zustand).
@@ -495,11 +643,15 @@ interface WorkspaceState {
   activeTabId: string | null;
   theme: ThemeId;
   graphSettings: GraphLayoutSettings;
-  checkRecursionLoops: boolean;    // whether to compute cycle detection
+  checkRecursionLoops: boolean;         // whether to compute cycle detection
   graphDisplayDefaults: GraphDisplayDefaults;
   editorDefaults: EditorDefaults;
   entriesListDefaults: EntriesListDefaults;
   lorebookDefaults: LorebookDefaults;
+  activeLlmProviderId: string | null;   // Currently selected provider for deep analysis
+  llmCategorization: LlmCategorizationSettings;
+  customRules: CustomRule[];            // Workspace-scoped custom rules (shared across all docs)
+  disabledBuiltinRuleIds: string[];     // Built-in rule IDs disabled globally
 
   // Actions
   openTab(tabId: string, name: string, fileMeta: FileMeta): void;
@@ -513,6 +665,110 @@ interface WorkspaceState {
   setEditorDefaults(settings: EditorDefaults): void;
   setEntriesListDefaults(settings: EntriesListDefaults): void;
   setLorebookDefaults(patch: Partial<LorebookDefaults>): void;
+  setActiveLlmProviderId(id: string | null): void;
+  setLlmCategorizationSettings(patch: Partial<LlmCategorizationSettings>): void;
+  addCustomRule(rule: CustomRule): void;
+  updateCustomRule(id: string, updates: Partial<CustomRule>): void;
+  deleteCustomRule(id: string): void;
+  toggleBuiltinRule(ruleId: string, enabled: boolean): void;
+  setCustomRules(rules: CustomRule[]): void;
+  setDisabledBuiltinRuleIds(ids: string[]): void;
+}
+
+interface TabMeta {
+  id: string;
+  name: string;
+  fileMeta: FileMeta;
+  dirty: boolean;
+}
+
+interface FileMeta {
+  fileName: string;
+  originalFormat: LorebookFormat;
+  lastSavedAt: string | null;
+  sourceType: 'standalone' | 'embedded-in-card';
+}
+```
+
+### DocumentState
+
+Created by the DocumentStore factory. One instance per open tab.
+
+```typescript
+interface SelectionState {
+  selectedEntryId: string | null;
+  multiSelect: string[];
+}
+
+interface DocumentState {
+  // Persisted state (included in undo history via zundo partialize)
+  entries: WorkingEntry[];
+  graphPositions: Map<string, { x: number; y: number }>;
+  bookMeta: BookMeta;
+
+  // Analysis state (derived — NOT in undo history, NOT cleared by entry edits)
+  findings: Finding[];
+  healthScore: HealthScore;
+
+  // LLM findings (user-triggered — NOT in undo history, NOT cleared on entry edits)
+  llmFindings: Finding[];
+
+  // Rule overrides (excluded from undo)
+  ruleOverrides: DocumentRuleOverrides;
+
+  // UI state (excluded from undo)
+  selection: SelectionState;
+  simulatorState: SimulatorState;
+
+  // Actions — Entry
+  updateEntry(id: string, changes: Partial<WorkingEntry>): void;
+  addEntry(partial?: Partial<WorkingEntry>): string;
+  removeEntry(id: string): void;
+  reorderEntries(ids: string[]): void;
+  batchUpdate(updates: Map<string, Partial<WorkingEntry>>): void;
+  setEntryCategory(entryId: string, category: string | undefined): void;
+  setCategoryBatch(updates: Record<string, string>): void;
+
+  // Actions — BookMeta
+  updateBookMeta(changes: Partial<BookMeta>): void;
+
+  // Actions — Graph positions (bypass zundo)
+  setGraphPosition(id: string, pos: { x: number; y: number }): void;
+
+  // Actions — Bulk operations
+  bulkEnable(ids: string[]): void;
+  bulkDisable(ids: string[]): void;
+  bulkRemove(ids: string[]): void;
+  clearMultiSelect(): void;
+
+  // Actions — Selection (bypass zundo)
+  selectEntry(id: string | null): void;
+  toggleMultiSelect(id: string): void;
+  clearSelection(): void;
+
+  // Actions — Simulator (bypass zundo)
+  setSimulatorMessages(messages: SimMessage[]): void;
+  updateSimulatorSettings(patch: Partial<SimulationSettings>): void;
+  setSimulatorResult(result: ActivationResult | null): void;
+  appendConversationStep(step: ConversationStep): void;
+  clearConversationHistory(): void;
+  clearSimulation(): void;
+  setConnectionsMode(enabled: boolean): void;
+
+  // Actions — Rule overrides (bypass zundo)
+  setDocumentRuleOverride(ruleId: string, disabled: boolean): void;
+  addDocumentRule(rule: CustomRule): void;
+  updateDocumentRule(id: string, updates: Partial<CustomRule>): void;
+  removeDocumentRule(id: string): void;
+
+  // Actions — LLM findings (bypass zundo)
+  setLlmFindings(findings: Finding[]): void;
+
+  // Temporal (provided by zundo)
+  undo(): void;
+  redo(): void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 ```
 
@@ -528,6 +784,8 @@ Data shape for the `EntryNode` React Flow custom node.
 interface EntryNodeData {
   entry: WorkingEntry;
   isCyclic: boolean;
+  isDimmed: boolean;           // True when graph search is active and this node doesn't match
+  activationStatus?: 'activated-constant' | 'activated-keyword' | 'activated-recursion' | 'skipped';
   edgeDirection: 'LR' | 'TB';
   [key: string]: unknown;  // React Flow requires open indexer on node data
 }
@@ -552,7 +810,17 @@ interface PersistedDocument {
   bookMeta: BookMeta;
   fileMeta: FileMeta;
   simulatorState: SimulatorState;
+  ruleOverrides: DocumentRuleOverrides;
   savedAt: string;  // ISO timestamp
+}
+
+interface PersistedSnapshot {
+  id: string;
+  tabId: string;
+  name: string;
+  savedAt: string;  // ISO timestamp
+  entries: WorkingEntry[];
+  bookMeta: BookMeta;
 }
 
 interface PersistedPreferences {
@@ -614,7 +882,10 @@ interface GraphFilter {
 interface PanelLayout {
   leftPanelWidth: number;
   rightPanelWidth: number;
-  rightPanelTab: 'editor' | 'analysis' | 'simulator' | 'inspector';
+  leftCollapsed: boolean;
+  rightCollapsed: boolean;
+  rightPanelTab: 'lorebook' | 'entry' | 'analysis' | 'inspector' | 'simulator';
+  leftPanelTab: 'files' | 'entries';
 }
 ```
 

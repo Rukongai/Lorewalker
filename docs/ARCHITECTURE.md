@@ -7,30 +7,34 @@ This document is the source of truth for Lorewalker's design. Implementation age
 ## Component Map
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        Lorewalker Application                       │
-├──────────┬──────────┬──────────┬──────────┬──────────┬──────────────┤
-│   File   │Transform │  Graph   │ Analysis │Simulator │    LLM       │
-│  Service │ Service  │ Service  │ Service  │ Service  │  Service     │
-├──────────┴──────────┴──────────┴──────────┴──────────┴──────────────┤
-│                         State Layer                                  │
-│  ┌─────────────────┐  ┌──────────────────────────────────────────┐  │
-│  │ WorkspaceStore   │  │ DocumentStore (one per tab)              │  │
-│  │ - tabs           │  │ - entries: WorkingEntry[]                │  │
-│  │ - activeTabId    │  │ - graphPositions: Map<id, {x,y}>        │  │
-│  │ - preferences    │  │ - selection: SelectionState              │  │
-│  │ - llmConfig      │  │ - simulatorState: SimulatorState         │  │
-│  │                  │  │ - derived: { graph, findings, health }   │  │
-│  │                  │  │ - temporal: undo/redo via zundo          │  │
-│  └─────────────────┘  └──────────────────────────────────────────┘  │
-├─────────────────────────────────────────────────────────────────────┤
-│                      Persistence Layer                               │
-│  IndexedDB: autosave, session recovery, preferences, API keys       │
-├─────────────────────────────────────────────────────────────────────┤
-│                        UI Layer                                      │
-│  WorkspaceShell > TabBar, EntryList, GraphCanvas, EntryEditor,      │
-│  AnalysisPanel, SimulatorPanel, Inspector, SettingsDialog            │
-└─────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                         Lorewalker Application                        │
+├──────────┬──────────┬──────────┬──────────┬──────────┬───────────────┤
+│   File   │Transform │  Graph   │ Analysis │Simulator │    LLM        │
+│  Service │ Service  │ Service  │ Service  │ Service  │  Service      │
+├──────────┴──────────┴──────────┴──────────┴──────────┴───────────────┤
+│                          State Layer                                   │
+│  ┌──────────────────┐  ┌────────────────────────────────────────────┐ │
+│  │ WorkspaceStore    │  │ DocumentStore (one per tab)                │ │
+│  │ - tabs            │  │ - entries: WorkingEntry[]                  │ │
+│  │ - activeTabId     │  │ - graphPositions: Map<id, {x,y}>          │ │
+│  │ - theme           │  │ - bookMeta: BookMeta                      │ │
+│  │ - graphSettings   │  │ - findings: Finding[]                     │ │
+│  │ - customRules     │  │ - llmFindings: Finding[]                  │ │
+│  │ - llmConfig       │  │ - ruleOverrides: DocumentRuleOverrides    │ │
+│  │                   │  │ - selection: SelectionState               │ │
+│  │                   │  │ - simulatorState: SimulatorState          │ │
+│  │                   │  │ - temporal: undo/redo via zundo           │ │
+│  └──────────────────┘  └────────────────────────────────────────────┘ │
+├──────────────────────────────────────────────────────────────────────┤
+│                       Persistence Layer                                │
+│  IndexedDB: autosave, session recovery, preferences, API keys        │
+├──────────────────────────────────────────────────────────────────────┤
+│                         UI Layer                                       │
+│  WorkspaceShell > TabBar, FilesPanel, EntryList, GraphCanvas,        │
+│  EntryEditor, AnalysisPanel, SimulatorPanel, InspectorPanel,         │
+│  StatusBar, WorkspaceToolsModal, EntryEditorModal, SettingsDialog    │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -46,7 +50,7 @@ This document is the source of truth for Lorewalker's design. Implementation age
 **Responsibilities:**
 - Accept files from drag-drop, file picker, or clipboard
 - Detect whether input is a standalone lorebook or a character card containing lorebooks
-- For character cards: extract lorebook collection, present available lorebooks to user for selection
+- For character cards: extract lorebook collection, present available lorebooks to user for selection (LorebookPickerDialog)
 - Call TransformService.inflate() to produce WorkingEntry[] from parsed data
 - Call TransformService.deflate() to produce CCv3 from WorkingEntry[]
 - Call character-foundry serializeLorebook() for final format conversion
@@ -105,11 +109,11 @@ This document is the source of truth for Lorewalker's design. Implementation age
   - findDeadLinks(): names mentioned in content that don't match any entry's keys
   - getAncestors(entryId): all entries that can reach this entry
   - getDescendants(entryId): all entries reachable from this entry
-- Auto-layout: compute node positions using dagre or elkjs for directed graph layout
+- Auto-layout: compute node positions using dagre for directed graph layout
 
 **Dependencies:** None (pure computation, receives data as arguments)
 
-**Shared logic:** The keyword matching functions (matchKeyword, matchKeywordInContent) are defined in `services/simulator/keyword-matching.ts` and imported by both GraphService and SimulatorService. This prevents duplicate matching implementations and ensures "what the graph shows" and "what the simulator does" are always in sync.
+**Shared logic:** The keyword matching functions are defined in `services/simulator/keyword-matching.ts` and imported by both GraphService and SimulatorService. This prevents duplicate matching implementations and ensures "what the graph shows" and "what the simulator does" are always in sync.
 
 ---
 
@@ -119,32 +123,78 @@ This document is the source of truth for Lorewalker's design. Implementation age
 
 **Does not own:** Graph computation (delegates to GraphService), entry editing, LLM calls (delegates to LLMService).
 
-**Responsibilities:**
-- Maintain a RubricRegistry containing rule collections
-- Ship a DefaultRubric implementing the review checklist (see Rules Catalog below)
-- Execute rubrics: run all rules against (entries, graph) → Finding[]
-- Compute HealthScore from aggregate findings
-- Support two execution modes:
-  - Deterministic: runs automatically when entries change (debounced)
-  - LLM-powered: runs on explicit user request only
-- Provide filtered/grouped finding views (by severity, category, entry)
+**File:** `src/services/analysis/analysis-service.ts`
 
-**Rule interface:**
-```typescript
-interface Rule {
-  id: string;
-  name: string;
-  description: string;
-  category: RuleCategory;
-  severity: 'error' | 'warning' | 'suggestion';
-  requiresLLM: boolean;
-  evaluate(context: AnalysisContext): Promise<Finding[]>;
-}
+**Public API:**
+- `runDeterministic(context: AnalysisContext, rubric: Rubric): Promise<Finding[]>` — runs all non-LLM rules in parallel, returns flattened findings
+- `runLLMRules(context: AnalysisContext, rubric: Rubric): Promise<Finding[]>` — runs LLM rules sequentially, returns findings
+- `computeHealthScore(findings: Finding[], rubric: Rubric): HealthScore` — computes weighted score from findings
+
+**Scoring logic (per category):**
+- Error: -25 points
+- Warning: -10 points
+- Suggestion: -3 points
+- Floor: 0 (category score never goes negative)
+- Overall = weighted average using `rubric.scoringWeights`
+
+**Scoring weights (defaultRubric):**
+
+| Category | Weight | Notes |
+|----------|--------|-------|
+| structure | 0.25 | |
+| config | 0.20 | |
+| keywords | 0.25 | |
+| content | 0.0 | LLM findings don't affect the numeric score |
+| recursion | 0.15 | |
+| budget | 0.15 | |
+
+**Directory structure:**
+```
+src/services/analysis/
+  analysis-service.ts         — runDeterministic, runLLMRules, computeHealthScore
+  default-rubric.ts           — scoringWeights, rule array assembly
+  evaluation-engine.ts        — resolveVariable, evaluateLeaf, evaluateGroup, evaluateCondition
+  custom-rule-adapter.ts      — customRuleToRule() adapter
+  copy-compatibility.ts
+  copy-seeds.ts
+  rules/
+    structure-rules.ts
+    config-rules.ts
+    keyword-rules.ts
+    recursion-rules.ts
+    budget-rules.ts
+    llm-rules.ts
 ```
 
-Rules that require LLM set `requiresLLM: true`. The AnalysisService skips these during automatic runs and only executes them when the user triggers a "Deep Analysis."
+---
 
-**Dependencies:** GraphService (for graph queries), LLMService (for LLM-powered rules)
+### Custom Rules System
+
+**Owns:** Visual condition builder, serialized evaluation tree, custom rule adapter, workspace and per-document rule scoping.
+
+**Three-layer active rubric assembly** (performed in `useDerivedState`):
+1. **Base:** `defaultRubric` with built-in rules, filtered by `WorkspaceStore.disabledBuiltinRuleIds`
+2. **Workspace:** `WorkspaceStore.customRules` (enabled rules only), appended via `customRuleToRule()`
+3. **Per-document:** `DocumentStore.ruleOverrides.customRules` (enabled rules only) + `ruleOverrides.disabledRuleIds` applied on top
+
+The `customRuleToRule()` adapter in `custom-rule-adapter.ts` converts a `CustomRule` (serialized evaluation tree) into a `Rule` (live `evaluate()` function) by wiring it through the evaluation engine.
+
+**Evaluation engine** (`evaluation-engine.ts`):
+- `resolveVariable(entry, path)` — resolves variable paths like `"entry.keys.length"` against a WorkingEntry
+- `evaluateLeaf(leaf, entry)` — applies ComparisonOp
+- `evaluateGroup(group, entry)` — applies LogicOp over an array of ConditionLeafs
+- `evaluateCondition(item, entry)` — dispatches to leaf or group
+
+**Available condition variables** (paths resolvable against WorkingEntry):
+- `entry.keys.length`, `entry.secondaryKeys.length`
+- `entry.tokenCount`, `entry.order`, `entry.depth`, `entry.probability`
+- `entry.constant`, `entry.selective`, `entry.enabled`, `entry.preventRecursion`, `entry.excludeRecursion`
+- `entry.position`, `entry.role`, `entry.sticky`, `entry.delay`, `entry.cooldown`
+- `entry.group`, `entry.name`, `entry.content`
+
+**Persistence scope:**
+- Workspace custom rules persist via `useWorkspacePersistence` to IndexedDB
+- Per-document rule overrides persist via `useAutosave` as part of PersistedDocument
 
 ---
 
@@ -163,7 +213,7 @@ Rules that require LLM set `requiresLLM: true`. The AnalysisService skips these 
 - Handle timed effects (delay, sticky, cooldown) across multi-message simulations
 
 **SillyTavernEngine activation loop:**
-1. Scan messages within scanDepth for primary keyword matches (using shared keyword matching from GraphService)
+1. Scan messages within scanDepth for primary keyword matches (using shared keyword matching)
 2. Apply selective/secondary key logic (AND ANY, AND ALL, NOT ANY, NOT ALL)
 3. Filter by timed effects (delay, cooldown state)
 4. Apply probability rolls
@@ -173,18 +223,6 @@ Rules that require LLM set `requiresLLM: true`. The AnalysisService skips these 
 8. Repeat recursion up to maxRecursionSteps
 9. Apply token budget: insert entries in priority order until budget exhausted
 10. Apply sticky durations for multi-message mode
-
-**Engine interface:**
-```typescript
-interface ActivationEngine {
-  id: string;
-  name: string;
-  simulate(
-    entries: WorkingEntry[],
-    context: SimulationContext
-  ): ActivationResult;
-}
-```
 
 **Dependencies:** GraphService (shared keyword matching functions)
 
@@ -198,54 +236,26 @@ interface ActivationEngine {
 
 **Does not own:** Prompt content for specific analysis rules (that's defined in the rules themselves), when to call an LLM (that's AnalysisService's decision).
 
-**Responsibilities:**
-- Maintain a ProviderRegistry with configured providers
-- Ship three provider types:
-  1. OpenAICompatibleProvider: works with any OpenAI-compatible API (OpenAI, Ollama, LM Studio, Together, Groq, custom)
-  2. AnthropicProvider: Anthropic's message API
-  3. OllamaProvider (convenience): pre-configured OpenAICompatible pointing at localhost
-- Execute completion requests: send messages, receive text responses
-- Handle streaming responses (for UI feedback during long analysis)
-- Estimate token costs before execution (for user confirmation on bulk operations)
-- Store API keys securely (PersistenceService handles the actual storage)
+**File:** `src/services/llm/llm-service.ts` — exports singleton `llmService`
 
-**Provider interface:**
-```typescript
-interface LLMProvider {
-  id: string;
-  name: string;
-  type: 'openai-compatible' | 'anthropic';
-  config: ProviderConfig;
-  complete(request: CompletionRequest): Promise<CompletionResponse>;
-  estimateTokens(text: string): number;
-}
+**Public API:**
 
-interface ProviderConfig {
-  apiBase: string;
-  apiKey: string;       // empty string for keyless (Ollama)
-  model: string;
-  maxTokens: number;
-  temperature: number;
-}
+| Method | Signature | Purpose |
+|--------|-----------|---------|
+| `registerProvider` | `(provider: LLMProvider): void` | Register a provider |
+| `removeProvider` | `(id: string): void` | Unregister a provider |
+| `listProviders` | `(): LLMProvider[]` | Get all registered providers |
+| `getProvider` | `(id: string): LLMProvider \| undefined` | Get a provider by ID |
+| `complete` | `(providerId: string, request: CompletionRequest): Promise<CompletionResponse>` | Generate completion |
+| `estimateTokens` | `(providerId: string, text: string): number` | Estimate token count |
+| `testConnection` | `(providerId: string): Promise<{success: boolean, error?: string}>` | Test provider connectivity |
+| `estimateBulkCost` | `(providerId: string, texts: string[]): number` | Sum token estimates |
 
-interface CompletionRequest {
-  systemPrompt: string;
-  messages: { role: 'user' | 'assistant'; content: string }[];
-  maxTokens?: number;
-  temperature?: number;
-  responseFormat?: 'text' | 'json';
-}
-
-interface CompletionResponse {
-  content: string;
-  usage: { promptTokens: number; completionTokens: number };
-  model: string;
-}
-```
+**Provider types:** `OpenAICompatibleProvider` (works with OpenAI, Ollama, LM Studio, Together, Groq, etc.) and `AnthropicProvider`. No separate OllamaProvider — Ollama is handled by configuring an OpenAI-compatible endpoint pointing at localhost.
 
 **Dependencies:** PersistenceService (for key storage)
 
-**Security:** API keys are stored in IndexedDB. On Tauri, they use the platform keychain when available. Keys are never sent to any server except the configured API endpoint. The UI warns users that keys are stored locally.
+**Security:** API keys stored in IndexedDB. On Tauri, platform keychain integration is planned. Keys are never sent anywhere except the configured API endpoint.
 
 ---
 
@@ -256,23 +266,25 @@ interface CompletionResponse {
 **Does not own:** File export (that's FileService), working model logic (that's the store).
 
 **Responsibilities:**
-- Autosave each tab's document store to IndexedDB on a debounced interval (2-3 seconds after last edit)
+- Autosave each tab's document store to IndexedDB on a debounced interval (2s)
 - Persist workspace state (open tabs, active tab, panel sizes, theme preference)
-- Detect recovery sessions on app launch and offer restoration
+- Detect recovery sessions on app launch and offer restoration (RecoveryDialog)
 - Store LLM provider configurations and API keys
 - Store user preferences (default simulator settings, rubric selections, UI state)
-- Clean up stale recovery data (older than N days, configurable)
+- Clean up stale recovery data
+- Save and restore named snapshots (SaveSnapshotDialog, FilesPanel)
 
 **Storage schema (IndexedDB):**
 ```
 lorewalker-db/
   workspace/          → single record: tab list, active tab, panel layout
-  documents/{tabId}/  → per-tab: entries, graphPositions, simulatorState, fileMeta
-  preferences/        → user preferences, theme, defaults
-  providers/          → LLM provider configurations (keys encrypted on Tauri)
+  documents/{tabId}/  → per-tab: entries, graphPositions, simulatorState, fileMeta, ruleOverrides
+  preferences/        → user preferences, theme, defaults, custom rules
+  providers/          → LLM provider configurations
+  snapshots/          → named snapshot records (PersistedSnapshot)
 ```
 
-**Dependencies:** idb-keyval or Dexie (IndexedDB wrapper)
+**Dependencies:** idb-keyval (IndexedDB wrapper)
 
 ---
 
@@ -287,39 +299,18 @@ interface WorkspaceState {
   tabs: TabMeta[];
   activeTabId: string | null;
   theme: ThemeId;
-  graphSettings: GraphLayoutSettings;       // dagre layout config
-  checkRecursionLoops: boolean;             // whether to compute cycle detection
+  graphSettings: GraphLayoutSettings;
+  checkRecursionLoops: boolean;
   graphDisplayDefaults: GraphDisplayDefaults;
   editorDefaults: EditorDefaults;
   entriesListDefaults: EntriesListDefaults;
-  lorebookDefaults: LorebookDefaults;       // default book-level settings
+  lorebookDefaults: LorebookDefaults;
+  activeLlmProviderId: string | null;
+  llmCategorization: LlmCategorizationSettings;
+  customRules: CustomRule[];
+  disabledBuiltinRuleIds: string[];
 
-  // Actions
-  openTab(tabId: string, name: string, fileMeta: FileMeta): void;
-  closeTab(tabId: string): void;
-  switchTab(tabId: string): void;
-  markDirty(tabId: string, isDirty: boolean): void;
-  setTheme(theme: ThemeId): void;
-  setGraphSettings(settings: GraphLayoutSettings): void;
-  setCheckRecursionLoops(value: boolean): void;
-  setGraphDisplayDefaults(settings: GraphDisplayDefaults): void;
-  setEditorDefaults(settings: EditorDefaults): void;
-  setEntriesListDefaults(settings: EntriesListDefaults): void;
-  setLorebookDefaults(patch: Partial<LorebookDefaults>): void;
-}
-
-interface TabMeta {
-  id: string;
-  name: string;
-  fileMeta: FileMeta;
-  dirty: boolean;
-}
-
-interface FileMeta {
-  fileName: string;
-  originalFormat: LorebookFormat;
-  lastSavedAt: string | null;
-  sourceType: 'standalone' | 'embedded-in-card';
+  // Actions — see TYPES.md WorkspaceState for full list
 }
 ```
 
@@ -329,63 +320,24 @@ Created when a tab opens, destroyed when it closes.
 
 ```typescript
 interface DocumentState {
-  // Persisted state (included in undo history)
+  // In undo history (partialize)
   entries: WorkingEntry[];
+  graphPositions: Map<string, { x: number; y: number }>;
   bookMeta: BookMeta;
 
-  // Layout state (persisted but NOT in undo history — cosmetic)
-  // graphPositions is excluded from zundo's partialize option. All writes use store.setState(...) directly.
-  graphPositions: Map<string, { x: number; y: number }>;
-
-  // UI state (not in undo history)
-  selection: SelectionState;
-  simulatorState: SimulatorState;
-  entryListFilter: EntryListFilter;
-  graphFilter: GraphFilter;
-
-  // Derived state (recomputed, not stored, not in undo)
-  graph: RecursionGraph;
+  // NOT in undo history
   findings: Finding[];
   healthScore: HealthScore;
+  llmFindings: Finding[];
+  ruleOverrides: DocumentRuleOverrides;
+  selection: SelectionState;
+  simulatorState: SimulatorState;
 
-  // Actions
-  updateEntry(id: string, changes: Partial<WorkingEntry>): void;
-  addEntry(entry: Partial<WorkingEntry>): string;
-  removeEntry(id: string): void;
-  reorderEntries(ids: string[]): void;
-  batchUpdate(updates: Map<string, Partial<WorkingEntry>>): void;
-  setGraphPosition(id: string, pos: { x: number; y: number }): void;
-  selectEntry(id: string | null): void;
-
-  // Temporal
-  undo(): void;
-  redo(): void;
-  canUndo: boolean;
-  canRedo: boolean;
-}
-
-interface BookMeta {
-  name: string;
-  description: string;
-  scanDepth: number;
-  tokenBudget: number;
-  recursiveScan: boolean;
-  extensions: Record<string, unknown>;
-}
-
-interface SelectionState {
-  selectedEntryId: string | null;
-  selectedEdge: { source: string; target: string } | null;
-  multiSelect: string[];
-}
-
-interface SimulatorState {
-  messages: SimMessage[];
-  settings: SimulationSettings;
-  lastResult: ActivationResult | null;
-  conversationHistory: ConversationStep[];  // for multi-message replay
+  // Actions — see TYPES.md DocumentState for full list
 }
 ```
+
+**zundo partialize:** Only `entries`, `graphPositions`, `bookMeta` are tracked. All other fields are excluded. `graphPositions` is in the partialize list but position writes always use `store.setState(...)` to bypass temporal — positions are cosmetic layout state, not content.
 
 ### EMPTY_STORE Pattern
 
@@ -401,11 +353,7 @@ const entries = activeStore((s) => s.entries)  // always safe — never conditio
 
 ### Undo/Redo Scoping
 
-Zundo (temporal middleware) wraps only the persisted state fields: `entries`, `bookMeta`. UI state (selection, filters, simulator state) and derived state (graph, findings) are excluded. Graph positions (`graphPositions`) are also excluded from undo history — they are cosmetic/layout state, not content. Position writes always use `store.setState(...)` to bypass temporal.
-
-The undo history stores state diffs, not full snapshots. For lorebooks in the typical size range (20-500 entries), this is memory-efficient.
-
-Actions that modify entries should be batched when they represent a single logical operation. For example, "auto-fix all keyword warnings" is one undo step, not 50.
+Zundo wraps only `entries`, `bookMeta`. UI state (selection, simulator state), derived state (findings, health score), rule overrides, and graph positions are all excluded. Position writes always use `store.setState(...)` to bypass temporal.
 
 ---
 
@@ -417,15 +365,14 @@ Actions that modify entries should be batched when they represent a single logic
 User drops file
   → FileService.import(file)
     → character-foundry parseLorebook(buffer) or parseCard(buffer)
-    → If card: getLorebookCollection() → user selects which book
+    → If card: getLorebookCollection() → LorebookPickerDialog → user selects which book
     → TransformService.inflate(ccv3Book)
       → Flatten each entry to WorkingEntry
       → Assign stable UUIDs
       → Compute token counts
     → WorkspaceStore.openTab(importedData)
     → DocumentStore created with entries + default positions
-    → GraphService.buildGraph(entries) → stored as derived state
-    → AnalysisService.runDeterministic(entries, graph) → findings + health
+    → useDerivedState runs: GraphService.buildGraph → AnalysisService.runDeterministic
 ```
 
 ### Edit Flow
@@ -435,36 +382,48 @@ User edits entry (via form editor or graph interaction)
   → DocumentStore.updateEntry(id, changes)
     → Immer produces new state
     → Zundo records undo checkpoint
-    → Derived state recomputes:
+    → useDerivedState (debounced 150ms):
       → GraphService.incrementalUpdate(changedEntry, entries)
-      → AnalysisService.runDeterministic(entries, graph)
-    → PersistenceService.scheduleAutosave(tabId)
-    → WorkspaceStore marks tab dirty
+      → Assemble active rubric (defaultRubric + workspace rules + doc rules)
+      → AnalysisService.runDeterministic(entries, graph, activeRubric)
+      → Store findings + healthScore back to DocumentStore (bypassing zundo)
+    → useAutosave (debounced 2s) → PersistenceService.saveDocument(tabId)
+    → WorkspaceStore.markDirty(tabId, true)
 ```
 
 ### Export Flow
 
 ```
-User clicks Save/Export
+User clicks Export
   → FileService.export(entries, format, fileMeta)
     → TransformService.deflate(entries)
     → character-foundry serializeLorebook(ccv3Book, targetFormat)
-    → Browser download dialog or Tauri save dialog
-    → On success: clear dirty flag, update lastSavedAt
+    → Browser download dialog
+    → On success: WorkspaceStore.markDirty(tabId, false), update lastSavedAt
 ```
 
 ### LLM Analysis Flow
 
 ```
 User clicks "Deep Analysis"
-  → UI shows cost estimate (LLMService.estimateTokens)
+  → DeepAnalysisDialog shows cost estimate (LLMService.estimateTokens)
   → User confirms
-  → AnalysisService.runLLMRules(entries, graph, llmService)
+  → AnalysisService.runLLMRules(context, activeRubric)
     → Each LLM rule constructs its prompt
-    → LLMService.complete(request)
+    → LLMService.complete(providerId, request)
     → Rule parses response into Finding[]
-  → Findings merged with deterministic findings
-  → Health score recomputed
+  → DocumentStore.setLlmFindings(findings) — stored separately, not cleared on next edit
+  → AnalysisPanel displays combined deterministic + LLM findings
+```
+
+### Snapshot Flow
+
+```
+User presses Cmd/Ctrl+S (or toolbar button)
+  → SaveSnapshotDialog prompts for name
+  → PersistenceService.saveSnapshot(tabId, name, { entries, bookMeta })
+  → FilesPanel.snapshots list updates
+  → User can restore any snapshot from FilesPanel
 ```
 
 ---
@@ -481,10 +440,10 @@ User clicks "Deep Analysis"
 **Configuration category:**
 - `config/selective-logic`: Flag selective:true with empty keysecondary (error)
 - `config/unused-secondary`: Flag non-empty keysecondary with selective:false (suggestion)
-- `config/position-alignment`: Constant entries should use positions 0–3 (character/lore blocks); sticky entries are expected at position 4 (@ Depth). Mismatches flagged as warning.
+- `config/position-alignment`: Constant entries should use positions 0–3; sticky entries expected at position 4. Mismatches flagged as warning.
 - `config/rule-content-mismatch`: Content starts with RULE: but constant is false (warning)
 - `config/fixed-value-deviations`: Check vectorized, useProbability, excludeRecursion, addMemo against expected defaults (warning)
-- `config/disabled-entries`: Flag disable:true entries (suggestion — might be intentional)
+- `config/disabled-entries`: Flag enable:false entries (suggestion — might be intentional)
 - `config/sticky-on-non-events`: Sticky > 0 on character/location entries (warning)
 
 **Keyword category:**
@@ -497,7 +456,7 @@ User clicks "Deep Analysis"
 - `keywords/redundant-constant-keys`: Constant entries where keywords serve no recursion purpose (suggestion)
 
 **Recursion category:**
-- `recursion/circular-references`: Detect cycles in the recursion graph where neither participant has preventRecursion:true (error)
+- `recursion/circular-references`: Detect cycles where neither participant has preventRecursion:true (error)
 - `recursion/long-chains`: Chains longer than 3 hops (suggestion)
 - `recursion/orphaned-entries`: Non-constant entries never referenced by any other entry's content (suggestion)
 - `recursion/dead-links`: Content mentions names that don't match any entry's keywords (warning)
@@ -541,177 +500,234 @@ interface RecursionGraph {
   reverseEdges: Map<string, Set<string>>;  // entryId → Set of triggering entryIds
   edgeMeta: Map<string, EdgeMeta>;         // "sourceId→targetId" → metadata
 }
-
-interface EdgeMeta {
-  sourceId: string;
-  targetId: string;
-  matchedKeywords: string[];                // which keywords in content triggered this
-  blockedByPreventRecursion: boolean;       // True if source has preventRecursion: true (source's content won't be scanned)
-  blockedByExcludeRecursion: boolean;       // True if target has excludeRecursion: true (target's keys can't be triggered by recursion)
-}
 ```
 
 ### Computation
 
-The graph is built by scanning each entry's `content` field for substrings matching other entries' `keys`. The matching uses the same logic as the activation simulator (case sensitivity, whole word, regex). Per-entry `caseSensitive` and `matchWholeWords` overrides are resolved at edge-build time: the target entry's setting takes precedence over the book-level default (null = use book default).
-
-Edges where the target entry has `preventRecursion: true` are still recorded but marked as `blockedByPreventRecursion`. Edges where the source entry has `excludeRecursion: true` are still recorded but marked as `blockedByExcludeRecursion`. Both flags render the edge as dashed in the graph. This is important for visualization — the user should see that the link *exists* but is *blocked*, which is different from the link not existing at all.
+The graph is built by scanning each entry's `content` field for substrings matching other entries' `keys`. Edges where the source has `preventRecursion: true` are recorded as `blockedByPreventRecursion`. Edges where the target has `excludeRecursion: true` are recorded as `blockedByExcludeRecursion`. Both show as dashed in the graph — the link exists but won't fire.
 
 ### Incremental Update
 
-When an entry's `content` changes: rescan only that entry's outgoing edges.
-
-When an entry's `keys` change: rescan ALL entries' content for matches against the new keys (incoming edges to the changed entry).
-
-When an entry is added or removed: full graph rebuild. (This is infrequent enough that optimization isn't needed.)
-
----
-
-## Activation Simulator Detail
-
-### SimulationContext
-
-```typescript
-interface SimulationContext {
-  messages: SimMessage[];
-  scanDepth: number;
-  tokenBudget: number;
-  caseSensitive: boolean;
-  matchWholeWords: boolean;
-  maxRecursionSteps: number;      // 0 = unlimited (budget-limited only)
-  includeNames: boolean;          // prefix messages with character names
-  characterName?: string;         // for name prefixing
-  userName?: string;
-}
-
-interface SimMessage {
-  role: 'user' | 'assistant' | 'system';
-  name?: string;
-  content: string;
-}
-
-interface SimulationSettings {
-  // Persisted user defaults
-  defaultScanDepth: number;
-  defaultTokenBudget: number;
-  defaultCaseSensitive: boolean;
-  defaultMatchWholeWords: boolean;
-  defaultMaxRecursionSteps: number;
-  defaultIncludeNames: boolean;
-}
-```
-
-### ActivationResult
-
-```typescript
-interface ActivationResult {
-  activatedEntries: ActivatedEntry[];
-  skippedEntries: SkippedEntry[];      // entries that matched but were budget-cut or probability-failed
-  totalTokens: number;
-  budgetRemaining: number;
-  budgetExhausted: boolean;
-  recursionTrace: RecursionStep[];
-  timedEffectState: TimedEffectState;  // for multi-message continuity
-}
-
-interface ActivatedEntry {
-  entryId: string;
-  activatedBy: 'constant' | 'keyword' | 'recursion';
-  triggerChain: string[];              // [sourceEntryId, ..., thisEntryId]
-  matchedKeywords: string[];
-  matchedInMessage: number;            // index of message that triggered
-  tokenCost: number;
-  insertionPosition: number;
-  insertionOrder: number;
-}
-
-interface SkippedEntry {
-  entryId: string;
-  reason: 'budget-exhausted' | 'probability-failed' | 'cooldown' | 'delay' | 'disabled';
-  matchedKeywords: string[];
-}
-
-interface RecursionStep {
-  step: number;
-  scannedEntryId: string;
-  activatedEntryIds: string[];
-  matchDetails: { entryId: string; keyword: string }[];
-}
-
-interface TimedEffectState {
-  stickyEntries: Map<string, number>;    // entryId → messages remaining
-  cooldownEntries: Map<string, number>;  // entryId → messages remaining
-  messageCount: number;
-}
-```
+- Content changes: rescan only the changed entry's outgoing edges
+- Keys change: rescan ALL entries' content for matches against the new keys (incoming edges)
+- Add/remove entry: full rebuild
 
 ---
 
 ## UI Component Map
 
-### WorkspaceShell
-The root layout component. Manages the panel arrangement, tab bar, and global actions (new, open, save, export, settings).
+### WorkspaceShell (`src/components/workspace/WorkspaceShell.tsx`)
+Root layout component. Manages panel arrangement, modal state, tab bar, and global actions. Lazy-loads heavy components (GraphCanvas, EntryEditorModal, WorkspaceToolsModal, SettingsDialog).
 
-### TabBar
-Displays open document tabs. Shows dirty indicator (dot), close button, tab name. Supports drag-to-reorder.
+**Modal state managed here:**
+- `modalEntryId: string | null` — entry open in EntryEditorModal
+- `settingsOpen: boolean` — SettingsDialog visibility
+- `toolsModalOpen: boolean` — WorkspaceToolsModal visibility
+- `toolsModalTab: 'analysis' | 'simulator' | 'rules'` — active tools modal tab
 
-### EntryList
-Left panel. Filterable, sortable list of all entries in the active document. Each row shows: name, type badge, mini health indicator (colored dot for worst finding severity), token count, enabled/disabled state. Clicking selects the entry (syncs with graph selection). Supports multi-select for bulk operations.
+**Toolbar buttons:** Undo, Redo, Export, Open File, Save Snapshot, Settings, Analysis (BarChart2), Simulator (Zap), Rules (Scale)
 
-### GraphCanvas
+### TabBar (`src/components/workspace/TabBar.tsx`)
+Displays open document tabs with dirty indicator, close button.
+
+### FilesPanel (`src/components/workspace/FilesPanel.tsx`)
+Left panel "Files" tab. Shows open file metadata and snapshot history with restore/delete actions.
+
+### WelcomeScreen (`src/components/workspace/WelcomeScreen.tsx`)
+Empty state shown when no file is open. Guides user to drag-drop or open a file.
+
+### StatusBar (`src/components/workspace/StatusBar.tsx`)
+Bottom bar. Shows entry count, total token count, health score summary for the active document.
+
+### EntryList (`src/components/entry-list/EntryList.tsx`)
+Left panel "Entries" tab. Filterable, sortable list of all entries. Each row shows: name, type badge, mini health indicator, token count, enabled state. Supports multi-select for bulk operations.
+
+### GraphCanvas (`src/components/graph/GraphCanvas.tsx`)
 Center panel. The @xyflow/react node editor surface.
 
-**Custom node:** EntryNode — displays entry name, type badge (color-coded by activation type), health indicator, constant/keyword badge, token count. Compact enough to show many at once but informative enough to be useful without selecting.
+**Features:**
+- Drag-to-create edges (EdgeConnectDialog selects which keyword to add)
+- Delete edges (removes keyword mention from source content)
+- Right-click context menu for adding entries
+- Graph search: `searchQuery` dims non-matching nodes in real time
+- Simulator highlighting: `activationStatusMap` colors nodes by activation type; recursion depth coloring for edges
+- Light theme detection: sets React Flow `colorMode` based on `LIGHT_THEMES` constant
 
-**Edges:** Directed arrows from triggering entry to triggered entry. Styling:
-- Solid lines: active recursion links
-- Dashed lines: blocked by preventRecursion (the link exists but won't fire)
-- Red highlight: part of a circular reference
-- Colored by source entry type (locations trigger NPCs → specific color scheme)
+**EMPTY_STORE fallback:** Uses `EMPTY_STORE` from `useDerivedState.ts` when no active tab.
 
-**Controls:** Minimap (pannable + zoomable), zoom, fit-to-view, auto-layout button, filter by entry type, search/highlight.
+**Node/edge types defined at module level** (outside component) — required by React Flow.
 
-**EMPTY_STORE fallback:** GraphCanvas uses `EMPTY_STORE` from `useDerivedState.ts` when the active tab has no document store yet. This keeps Zustand hook calls unconditional. See the EMPTY_STORE Pattern section below.
+### GraphControls (`src/components/graph/GraphControls.tsx`)
+Graph toolbar: search input, auto-layout, fit-to-view, connection visibility, show/hide blocked edges, edge style toggle, legend toggle.
 
-### GraphAddButton
-Floating button on the graph canvas for creating new entries directly from the graph view.
+### GraphLegend (`src/components/graph/GraphLegend.tsx`)
+Toggleable legend explaining node types, edge styles, and simulator activation states.
 
-### EntryEditor
-Right panel. Form-based editor for the selected entry. All WorkingEntry fields organized in logical groups:
-- Identity: name, content (with token counter)
-- Activation: keys, secondaryKeys, selective, selectiveLogic, constant
-- Priority: position, order, depth
-- Timed: delay, cooldown, sticky, probability
-- Recursion: preventRecursion, excludeRecursion
-- Budget: ignoreBudget
-- Meta: enabled, token count (read-only, computed)
+### EntryNode (`src/components/graph/EntryNode.tsx`)
+Custom React Flow node. Shows entry name, type badge, health indicator, activation status in simulator mode.
 
-Validation feedback inline (from AnalysisService findings for this entry).
+### RecursionEdge (`src/components/graph/RecursionEdge.tsx`)
+Custom React Flow edge. Solid (active), dashed (blocked), red (cycle).
 
-### AnalysisPanel
-Right panel tab. Health score display (overall grade), finding count by severity, expandable finding list. Each finding is clickable → selects the affected entry. Filter by severity, category. "Deep Analysis" button for LLM-powered rules (shows cost estimate before running).
+### GraphAddButton (`src/components/graph/GraphAddButton.tsx`)
+Floating "add entry" button on the graph canvas.
 
-### SimulatorPanel
-Right panel tab. Message input area (add user/assistant messages), settings controls (scan depth, budget, etc., populated from defaults), engine selector dropdown, "Run" button. Results area shows activated entries with recursion trace visualization. Step-through mode (advance one recursion step at a time) for debugging.
+### EdgeConnectDialog (`src/components/graph/EdgeConnectDialog.tsx`)
+Dialog shown when user drags an edge between nodes. Lets user choose which keyword mention to add to the source entry's content.
 
-### Inspector
-Right panel tab. Shows computed metadata for the selected entry: incoming edges (what triggers this entry), outgoing edges (what this entry triggers), full activation chain analysis, token count breakdown, all findings for this entry.
+### EntryEditor (`src/components/editor/EntryEditor.tsx`)
+Right panel entry form. All WorkingEntry fields organized in logical groups. Inline findings from AnalysisPanel for the selected entry.
 
-### EntryEditorModal
-Modal variant of the entry editor. Opened by double-clicking an EntryNode on the graph canvas. Contains the same fields as EntryEditor.
+### EntryEditorModal (`src/components/editor/EntryEditorModal.tsx`)
+Full-screen modal variant of the entry editor. **z-50.** Opened by double-clicking a node or from WorkspaceToolsModal's `onOpenEntry` callback.
 
-### BookMetaEditor
-Form for book-level metadata (scanDepth, budget, caseSensitive, matchWholeWords, recursiveScan, etc.). Displayed in a settings panel tab.
+**Escape handling:** capture phase + `stopImmediatePropagation()` — fires before WorkspaceToolsModal's bubble handler, preventing Escape from closing both.
 
-### ActivationLinks
-Inline component shown within EntryEditor displaying the entry's incoming edges (what triggers this entry) and outgoing edges (what this entry triggers) based on the computed RecursionGraph.
+**Navigation:** back/forward stack — supports navigating entry history within the modal session.
 
-### SettingsDialog
-Modal. Tabs for:
-- Lorebook defaults (LorebookSettingsPanel)
-- LLM Providers (add/edit/remove, test connection)
-- Preferences (theme, autosave interval, default simulator settings)
-- About / version info
+**Sub-components:** ActivationLinks (lower-left), ModalFindingsPane (lower-right).
+
+**Dimensions:** `90vw` × `90vh`, min-width `640px`.
+
+### BookMetaEditor (`src/components/editor/BookMetaEditor.tsx`)
+Form for book-level metadata (scanDepth, budget, caseSensitive, matchWholeWords, recursiveScan, ST-specific global settings).
+
+### ContentEditor (`src/components/editor/ContentEditor.tsx`)
+Textarea with keyword highlighting for the entry content field.
+
+### KeywordInput (`src/components/editor/KeywordInput.tsx`)
+Tag-style input for primary and secondary keyword arrays.
+
+### ActivationLinks (`src/components/editor/ActivationLinks.tsx`)
+Inline display of incoming edges (what triggers this entry) and outgoing edges (what this entry triggers) from the RecursionGraph.
+
+### AnalysisPanel (`src/components/analysis/AnalysisPanel.tsx`)
+Right panel "Analysis" tab. Health score (overall grade), finding count by severity, expandable finding list. Filter by severity, category. "Deep Analysis" button triggers LLM rules.
+
+### FindingItem (`src/components/analysis/FindingItem.tsx`)
+Clickable finding row — selects affected entry in list + graph.
+
+### InspectorPanel (`src/components/analysis/InspectorPanel.tsx`)
+Right panel "Inspector" tab. Per-entry findings, incoming/outgoing edges, token count for the selected entry.
+
+### DeepAnalysisDialog (`src/components/analysis/DeepAnalysisDialog.tsx`)
+Modal for confirming LLM deep analysis. Shows token estimate, provider selection, and runs the analysis.
+
+### ModalFindingsPane (`src/components/analysis/ModalFindingsPane.tsx`)
+Compact findings list shown in the lower-right quadrant of EntryEditorModal.
+
+### SimulatorPanel (`src/components/simulator/SimulatorPanel.tsx`)
+Right panel "Simulator" tab. Message input, settings, engine selector, run button. Delegates heavy UI to WorkspaceToolsModal's simulator tab.
+
+### ActivationResults (`src/components/simulator/ActivationResults.tsx`)
+Displays list of activated entries with trigger details, matched keywords, token cost.
+
+### RecursionTrace (`src/components/simulator/RecursionTrace.tsx`)
+Step-by-step display of recursion unfolding.
+
+### WorkspaceToolsModal (`src/components/tools-modal/WorkspaceToolsModal.tsx`)
+Large overlay modal for complex analysis, simulation, and custom rules workflows. **z-40.**
+
+**Dimensions:** `95vw` × `90vh`
+
+**Three tabs:**
+1. **analysis** — `AnalysisTabContent` (full finding list, detail pane, chain diagram)
+2. **simulator** — `SimulatorTabContent` (conversation pane, results pane)
+3. **rules** — `RulesTabContent` (built-in rule list with enable/disable toggles, custom rules with CRUD, rule editor modal)
+
+**Escape handling:** bubble phase (standard `window.addEventListener('keydown', handler)` without capture flag). Escape closes WorkspaceToolsModal only when EntryEditorModal is not open (because EntryEditorModal at z-50 captures Escape first and calls `stopImmediatePropagation()`).
+
+**Navigation callbacks:**
+- `onOpenEntry(entryId)` — open the entry in EntryEditorModal (which overlays at z-50 on top of WorkspaceToolsModal)
+- `onSelectEntry(entryId)` — select the entry in the sidebar and close WorkspaceToolsModal
+
+**EMPTY_STORE pattern:** Sub-components in this modal also use `EMPTY_STORE` for unconditional hook calls.
+
+### RulesTabContent (`src/components/tools-modal/RulesTabContent.tsx`)
+Rules management UI: built-in rule list with per-rule enable/disable, custom rule list with add/edit/delete. Launches `RuleEditorModal`.
+
+### RuleEditorModal (`src/components/tools-modal/RuleEditorModal.tsx`)
+Modal within WorkspaceToolsModal for creating/editing custom rules. Uses `ConditionBuilder` and `TemplateField`.
+
+### ConditionBuilder (`src/components/tools-modal/ConditionBuilder.tsx`)
+Visual UI for building `SerializedEvaluation` trees (groups, leaves, operators, variables).
+
+### RuleTestingPane (`src/components/tools-modal/RuleTestingPane.tsx`)
+Live rule tester — shows which entries in the active document would match the current custom rule definition.
+
+### VariablePicker (`src/components/tools-modal/VariablePicker.tsx`)
+Dropdown for selecting condition variables (entry field paths) in ConditionBuilder.
+
+### TemplateField (`src/components/tools-modal/TemplateField.tsx`)
+Message template input with variable interpolation preview (`{{entry.name}}` etc.).
+
+### AnalysisTabContent, AnalysisFindingList, AnalysisDetailPane (`src/components/tools-modal/`)
+Full-size analysis view inside WorkspaceToolsModal. Shows all findings with full detail pane and chain diagram.
+
+### ChainDiagram (`src/components/tools-modal/ChainDiagram.tsx`)
+Compact recursion chain visualization for the analysis detail pane.
+
+### SimulatorTabContent, SimulatorConversationPane, SimulatorResultsPane (`src/components/tools-modal/`)
+Full-size simulator UI inside WorkspaceToolsModal with conversation builder and multi-message result display.
+
+### SettingsDialog (`src/components/settings/SettingsDialog.tsx`)
+Settings modal. **z-50.** Two-column layout: category sidebar (draggable width, 100px–300px) + content panel.
+
+**Seven settings categories:**
+1. **General** — color theme (14 options), recursion loop detection toggle
+2. **Workspace Settings** — auto-layout (acyclicer, ranker, align, rankdir, edges), connection visibility, blocked edges, edge style
+3. **Editor** — keyword highlights toggle, category behavior (remember/reset)
+4. **Entries** — sort-by, sort direction, secondary sort, pin constants to top
+5. **Lorebook** — `LorebookSettingsPanel` sub-component (scan depth, budget, recursion, insertion strategy, etc.)
+6. **Providers** — `ProviderSettingsPanel` sub-component (add/edit/remove LLM providers, test connection)
+7. **LLM Tools** — `LlmToolsPanel` sub-component (auto-categorization enable/provider/skip-manual-overrides)
+
+### LorebookPickerDialog (`src/components/workspace/LorebookPickerDialog.tsx`)
+Multi-lorebook selection dialog shown when importing a character card containing multiple lorebooks.
+
+### SaveSnapshotDialog (`src/components/workspace/SaveSnapshotDialog.tsx`)
+Dialog for naming and saving a snapshot of the current document state.
+
+### ErrorBoundary (`src/components/shared/ErrorBoundary.tsx`)
+React error boundary wrapping major UI regions. Shows a user-facing error message with reload option.
+
+### ToastStack (`src/components/shared/ToastStack.tsx`)
+Undo/redo feedback toasts shown after Cmd+Z / Cmd+Shift+Z. Uses `describeStateChange()` from `undo-describe.ts`.
+
+### Tooltip (`src/components/ui/Tooltip.tsx`)
+Portal-based tooltip rendered into the document root (avoids z-index clipping). Used in toolbars and graph controls. **z-9999.**
+
+### HelpTooltip (`src/components/ui/HelpTooltip.tsx`)
+Inline `?` icon that wraps `Tooltip`. Used in form fields for contextual help. Never use native `title` attribute.
+
+---
+
+## Modal Layering Pattern
+
+```
+z-9999  Tooltip portal               — never clipped, always on top
+z-50    EntryEditorModal             — capture Escape + stopImmediatePropagation
+z-50    SettingsDialog               — standard close
+z-40    WorkspaceToolsModal          — bubble Escape (blocked by z-50 if both open)
+```
+
+**Rules for adding new modals:**
+- Modals that should close *before* EntryEditorModal → use z-40, bubble Escape
+- Modals that should close *instead of* WorkspaceToolsModal → use z-50, capture Escape + `stopImmediatePropagation()`
+- Portals that must never be clipped → use z-9999
+
+**Never hardcode z-index values in components.** Define them in Tailwind config or use the class system (`z-40`, `z-50`, `z-[9999]`).
+
+---
+
+## Navigation Delegation Pattern
+
+WorkspaceToolsModal cannot directly control WorkspaceShell's modal state. It delegates through callbacks:
+
+- `onOpenEntry(entryId)` — called when user clicks an entry in the tools modal that should be opened for editing. WorkspaceShell sets `modalEntryId = entryId`, opening EntryEditorModal on top of WorkspaceToolsModal.
+- `onSelectEntry(entryId)` — called when user wants to navigate to the entry in the sidebar. WorkspaceShell closes WorkspaceToolsModal and sets the selection.
+
+This pattern prevents tools-modal components from importing WorkspaceShell internals.
 
 ---
 
@@ -734,7 +750,13 @@ Modal. Tabs for:
 | 13 | Tauri for desktop, deferred | Web-first. Tauri wraps it later. Architecture is wrapper-agnostic. | Design phase |
 | 14 | Autosave to IndexedDB, explicit save to file | Recovery protection without changing the file-based mental model | Design phase |
 | 15 | Edges for blocked recursion links shown as dashed | Users need to see links that exist but are prevented, not just active links | Design phase |
-| 16 | ThemeId as a union of named theme strings (not just dark/light) | Supports user-selectable themes via CSS variable swap. Catppuccin Macchiato is the base dark palette. Light themes identified by a `LIGHT_THEMES` constant. | Phase 2 |
+| 16 | ThemeId as a union of named theme strings (not just dark/light) | Supports user-selectable themes via CSS variable swap. Light themes identified by a `LIGHT_THEMES` constant. | Phase 2 |
 | 17 | Graph display preferences (connectionVisibility, showBlockedEdges, edgeStyle) in WorkspaceStore | These are presentation choices, not content. Belongs in workspace-level prefs, not per-document state. | Phase 2 |
-| 18 | Panel layout (widths, collapse state) persisted to IndexedDB via PersistenceService | Cosmetic UI state — not in Zustand. Stored as PersistedWorkspace.panelLayout (leftPanelWidth, rightPanelWidth, leftCollapsed, rightCollapsed, rightPanelTab). Restored on mount in WorkspaceShell. | Phase 5 |
+| 18 | Panel layout (widths, collapse state) persisted to IndexedDB via PersistenceService | Cosmetic UI state — not in Zustand. Stored as PersistedWorkspace.panelLayout. Restored on mount in WorkspaceShell. | Phase 5 |
 | 19 | EMPTY_STORE for unconditional hook calls | React's Rules of Hooks prohibit conditional hook calls. A stable fallback store lets components subscribe unconditionally even when no tab is active. | Phase 2 |
+| 20 | WorkspaceToolsModal as a z-40 overlay (not a sidebar panel) | Analysis and simulator tools need enough screen space to be genuinely useful. The right panel is too narrow for multi-pane tool UX. Modal overlay allows 95vw × 90vh surface. | Phase 7b |
+| 21 | Custom rules stored workspace-wide + per-document overrides | Workspace rules are reusable across lorebooks. Per-document overrides allow disabling rules that don't apply to a specific file. | Phase 7b |
+| 22 | SerializedEvaluation as a JSON tree (not a string expression) | Enables round-trip persistence, visual editing in ConditionBuilder, and structured evaluation without dynamic code execution. | Phase 7b |
+| 23 | getTypeBadge in entry-badge.ts as shared utility | Badge label and color are rendered in EntryListItem, EntryNode, and EntryEditorModal. A single source prevents divergence. | Phase 7b |
+| 24 | Portal-based Tooltip at z-9999 | Toolbar buttons inside fixed panels were clipping standard Tooltip z-indexes. Portal renders into document root, always visible. | Phase 7b |
+| 25 | Escape capture + stopImmediatePropagation for EntryEditorModal (z-50) | When both WorkspaceToolsModal and EntryEditorModal are open, Escape should close only EntryEditorModal. Capture phase fires before WorkspaceToolsModal's bubble handler and stopImmediatePropagation prevents it from also closing the tools modal. | Phase 7b |

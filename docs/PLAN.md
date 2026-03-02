@@ -77,7 +77,7 @@
 
 ---
 
-## Phase 3: Deterministic Analysis
+## Phase 3: Deterministic Analysis ✓ Complete
 **Goal:** Health scoring and issue detection for everything that doesn't need an LLM.
 
 **Tasks:**
@@ -105,7 +105,7 @@
 
 ---
 
-## Phase 4: Activation Simulator
+## Phase 4: Activation Simulator ✓ Complete
 **Goal:** Test how entries activate against mock messages.
 
 **Tasks:**
@@ -156,65 +156,72 @@
 
 ---
 
-## Phase 6: LLM Integration
+## Phase 6: LLM Integration ✓ Complete
 **Goal:** BYOK LLM support for qualitative analysis.
 
-**Tasks:**
-1. Implement LLMService: provider registry, request/response handling
-2. Implement OpenAICompatibleProvider: request construction, streaming, error handling
-3. Implement AnthropicProvider: Anthropic message API adaptation
-4. Build ProviderSettings UI: add/edit/remove providers, test connection, model selection
-5. Implement secure API key storage in PersistenceService
-6. Implement cost estimation (token counting for prompt + expected response)
-7. Implement LLM-powered analysis rules:
-   - content/quality-assessment
-   - content/structure-check
-   - content/scope-check
-   - keywords/missing-variations
-8. Build "Deep Analysis" flow: cost estimate → user confirmation → run → merge findings
-9. Add prompt templates for each LLM rule
-10. Wire LLM findings into AnalysisPanel alongside deterministic findings
+**Tasks completed:**
+1. ✓ Implement LLMService: provider registry, request/response handling
+2. ✓ Implement OpenAICompatibleProvider: request construction, error handling
+3. ✓ Implement AnthropicProvider: Anthropic message API adaptation
+4. ✓ Build ProviderSettingsPanel UI: add/edit/remove providers, test connection, model selection
+5. ✓ Implement API key storage in PersistenceService (IndexedDB)
+6. ✓ Implement LLM-powered analysis rules (llm-rules.ts)
+7. ✓ Build DeepAnalysisDialog: cost estimate → user confirmation → run → merge findings
+8. ✓ Wire LLM findings into AnalysisPanel alongside deterministic findings
 
-**Delivers:** Qualitative analysis powered by the user's own LLM. Content quality assessment, keyword suggestions, entry splitting recommendations.
+**Also built in Phase 6 (beyond original spec):**
+- LlmToolsPanel — LLM-powered auto-categorization (setEntryCategory / setCategoryBatch)
+- ProviderConfig stored via PersistedProvider in IndexedDB
 
 **Dependencies:** Phase 3 (analysis pipeline), Phase 5 (key storage).
 
-**Milestone check:** Configure an OpenAI-compatible provider (e.g., Ollama running locally). Run Deep Analysis on a lorebook. Verify content quality findings appear with actionable suggestions.
-
 ---
 
-## Phase 7: Polish and Graph Editing
+## Phase 7: Polish and Graph Editing ✓ Complete (core items)
 **Goal:** Make the graph interactive for editing, not just viewing. Polish the overall UX.
 
-**Tasks:**
-1. Graph editing: drag to create edges (adds keyword to source content mentioning target)
-2. Graph editing: delete edge (remove the keyword mention from source content)
-3. Graph editing: create new entry from graph (right-click canvas → new entry node)
-4. Entry type inference: auto-detect entry type (character, location, rule, etc.) from content/configuration patterns for visual styling
-5. Keyboard shortcuts: Cmd/Ctrl+Z undo, Cmd/Ctrl+Shift+Z redo, Cmd/Ctrl+S save, etc.
-6. Search and filter in graph: highlight matching entries, dim others
-7. Node + Connector highlighting for the simulator, showing activation orders/chains
-8. Multi-select operations: bulk enable/disable, bulk delete, bulk position change
-9. Import from character card: when a card is dropped, show picker for which lorebook to extract, or to extract all
-10. Status bar: health score, entry count, total token count, constant token overhead
-11. Welcome/empty state: guidance when no file is open
-12. Error boundaries and user-facing error messages
-13. Responsive panel resizing
-14. Panel state persistence (widths, collapse) was completed in Phase 5. Phase 7 focus: keyboard shortcuts, multi-select operations, welcome/empty state UX
-
-**Delivers:** A polished, productive editor. The graph becomes a real editing surface, not just a viewer.
+**Tasks — status:**
+1. ✓ Graph editing: drag to create edges (EdgeConnectDialog, addKeywordMention)
+2. ✓ Graph editing: delete edge (removes keyword mention via removeKeywordMention)
+3. ✓ Graph editing: create new entry from graph (right-click canvas context menu)
+4. ✓ Keyboard shortcuts: Cmd/Ctrl+Z undo, Cmd/Ctrl+Shift+Z redo, Cmd/Ctrl+S save, Cmd/Ctrl+N new entry, Escape clear selection
+5. ✓ Search and filter in graph: highlight matching entries, dim others (searchQuery + matchedIds)
+6. ✓ Node + Connector highlighting for the simulator (activationStatusMap, recursion depth coloring)
+7. ✓ Multi-select operations: bulk enable/disable/delete (bulkEnable, bulkDisable, bulkRemove)
+8. ✓ Import from character card: LorebookPickerDialog for multi-lorebook extraction
+9. ✓ Status bar: entry count, total token count, health score (StatusBar component)
+10. ✓ Welcome/empty state: WelcomeScreen shown when no file is open
+11. ✓ Error boundaries: ErrorBoundary component wraps major UI regions
+12. ✓ Panel state persistence (widths, collapse) — completed in Phase 5; Files panel + leftPanelTab also persisted
 
 **Dependencies:** All prior phases.
 
 ---
 
-## Phase 8: Desktop (Tauri)
+## Phase 7b: Beyond-Plan Additions (built alongside Phase 7)
+
+These features were not in the original plan but were implemented during the Phase 6–7 window:
+
+- **WorkspaceToolsModal** — 95vw × 90vh overlay (z-40) housing Analysis, Simulator, and Rules tabs in a unified workspace tools panel; replaces the side-panel UI for complex analysis and simulation workflows
+- **FilesPanel** — left panel tab showing open files, snapshot history with restore/delete
+- **Custom Rules System** — visual condition builder (ConditionBuilder, RuleEditorModal), evaluation engine (evaluation-engine.ts), custom-rule-adapter.ts; rules stored workspace-wide (WorkspaceStore) with per-document overrides (DocumentRuleOverrides)
+- **LLM auto-categorization** — LlmToolsPanel + CategorizeService; assigns userCategory to entries using configured LLM provider
+- **Three-layer rubric assembly** — active rubric = defaultRubric + workspace custom rules (with disabled built-in rule filtering) + per-doc custom rules; assembled in useDerivedState
+- **getTypeBadge shared utility** — entry-badge.ts; single source of truth for entry type badge labels and colors used across EntryListItem, EntryNode, and EntryEditorModal
+- **ToastStack** — undo/redo feedback toast notifications
+- **Scale icon button** — toolbar button for Rules tab in WorkspaceToolsModal
+- **Portal-based Tooltip** — Tooltip.tsx renders into a portal at the root, avoiding z-index clipping; HelpTooltip wraps it for inline help icons
+- **Named snapshot system** — SaveSnapshotDialog + PersistenceService.saveSnapshot() + FilesPanel snapshot list
+
+---
+
+## Phase 8: Desktop (Tauri) — Future
 **Goal:** Wrap the web app as a desktop application.
 
 **Tasks:**
 1. Add Tauri to the project (tauri init)
 2. Implement native file dialogs (open/save) via Tauri file API
-3. Implement native keychain integration for API key storage
+3. Implement native keychain integration for API key storage (currently stored in IndexedDB)
 4. Window management: remember size/position
 5. Native menu bar
 6. Build and test on macOS, Windows, Linux
@@ -222,7 +229,7 @@
 
 **Delivers:** A native desktop application with proper file system integration.
 
-**Dependencies:** Phase 7 (web app is polished and complete).
+**Dependencies:** Phase 7 (web app is complete and polished).
 
 ---
 

@@ -12,51 +12,52 @@ lorewalker/
 │   └── favicon.svg
 ├── src/
 │   ├── main.tsx                          # App entry point
-│   ├── App.tsx                           # Root component, workspace shell
-│   ├── App.css                           # App-level styles
-│   ├── index.css                         # Root styles
-│   ├── test-setup.ts                     # Vitest global setup
+│   ├── App.tsx                           # Root component
 │   │
 │   ├── types/                            # Canonical type definitions
 │   │   ├── index.ts                      # Re-exports everything
-│   │   ├── entry.ts                      # WorkingEntry, BookMeta, enums
+│   │   ├── entry.ts                      # WorkingEntry, BookMeta, enums, CharacterFilter
 │   │   ├── graph.ts                      # RecursionGraph, EdgeMeta, query results
-│   │   ├── analysis.ts                   # Rule, Finding, HealthScore, Rubric
-│   │   ├── simulator.ts                  # SimulationContext, ActivationResult, engine types
-│   │   ├── llm.ts                        # LLMProvider, CompletionRequest/Response
-│   │   ├── persistence.ts                # Persisted* types
-│   │   └── ui.ts                         # FileMeta, TabMeta, filters, layout, graph settings
+│   │   ├── analysis.ts                   # Rule, Finding, HealthScore, Rubric, CustomRule, DocumentRuleOverrides
+│   │   ├── simulator.ts                  # SimulationContext, ActivationResult, engine types, SimulatorState
+│   │   ├── llm.ts                        # LLMProvider, CompletionRequest/Response, ProviderConfig
+│   │   ├── persistence.ts                # Persisted* types, PersistedSnapshot
+│   │   └── ui.ts                         # FileMeta, TabMeta, filters, layout, PanelLayout, ThemeId
 │   │
 │   ├── services/                         # Business logic, no React dependencies
 │   │   ├── file-service.ts
 │   │   ├── transform-service.ts
 │   │   ├── graph-service.ts
-│   │   ├── analysis-service.ts
-│   │   ├── simulator-service.ts
-│   │   ├── llm-service.ts
-│   │   └── persistence-service.ts
-│   │
-│   ├── services/analysis/                # Analysis rules organized by category
-│   │   ├── rules/
-│   │   │   ├── structure-rules.ts
-│   │   │   ├── config-rules.ts
-│   │   │   ├── keyword-rules.ts
-│   │   │   ├── recursion-rules.ts
-│   │   │   ├── budget-rules.ts
-│   │   │   └── content-rules.ts          # LLM-powered rules
-│   │   ├── default-rubric.ts
-│   │   └── scoring.ts                    # Health score computation
-│   │
-│   ├── services/simulator/               # Activation engines
-│   │   ├── engines/
-│   │   │   └── sillytavern-engine.ts
-│   │   └── keyword-matching.ts           # Shared matching logic (used by GraphService + SimulatorService)
-│   │
-│   ├── services/llm/                     # LLM provider implementations
-│   │   ├── providers/
-│   │   │   ├── openai-compatible.ts
-│   │   │   └── anthropic.ts
-│   │   └── prompt-templates.ts           # Reusable prompt fragments
+│   │   ├── persistence-service.ts
+│   │   ├── categorize-service.ts
+│   │   ├── simulator-service.ts          # (legacy location, may be in simulator/)
+│   │   │
+│   │   ├── analysis/                     # Analysis pipeline
+│   │   │   ├── analysis-service.ts       # runDeterministic, runLLMRules, computeHealthScore
+│   │   │   ├── default-rubric.ts         # scoringWeights, rule array assembly
+│   │   │   ├── evaluation-engine.ts      # resolveVariable, evaluateLeaf, evaluateGroup
+│   │   │   ├── custom-rule-adapter.ts    # customRuleToRule() adapter
+│   │   │   ├── copy-compatibility.ts
+│   │   │   ├── copy-seeds.ts
+│   │   │   └── rules/
+│   │   │       ├── structure-rules.ts
+│   │   │       ├── config-rules.ts
+│   │   │       ├── keyword-rules.ts
+│   │   │       ├── recursion-rules.ts
+│   │   │       ├── budget-rules.ts
+│   │   │       └── llm-rules.ts
+│   │   │
+│   │   ├── simulator/                    # Activation engines
+│   │   │   ├── keyword-matching.ts       # Shared matching logic (used by GraphService + SimulatorService)
+│   │   │   ├── activation-engine.ts      # ActivationEngine interface
+│   │   │   ├── sillytavern-engine.ts
+│   │   │   └── simulator-service.ts
+│   │   │
+│   │   └── llm/                          # LLM provider implementations
+│   │       ├── llm-service.ts            # LLMService class + singleton export
+│   │       └── providers/
+│   │           ├── openai-compatible.ts
+│   │           └── anthropic.ts
 │   │
 │   ├── stores/                           # Zustand stores
 │   │   ├── workspace-store.ts
@@ -65,82 +66,114 @@ lorewalker/
 │   │   └── hooks.ts                      # Custom hooks for store access
 │   │
 │   ├── components/                       # React components
-│   │   ├── workspace/                    # Shell and tab bar
+│   │   ├── workspace/                    # Shell, tab bar, panels
 │   │   │   ├── WorkspaceShell.tsx
-│   │   │   └── TabBar.tsx
+│   │   │   ├── TabBar.tsx
+│   │   │   ├── FilesPanel.tsx
+│   │   │   ├── WelcomeScreen.tsx
+│   │   │   ├── StatusBar.tsx
+│   │   │   ├── SaveSnapshotDialog.tsx
+│   │   │   └── LorebookPickerDialog.tsx
 │   │   │
-│   │   ├── entry-list/                   # Left panel
+│   │   ├── entry-list/                   # Left panel entries tab
 │   │   │   ├── EntryList.tsx
-│   │   │   └── EntryListItem.tsx
+│   │   │   ├── EntryListItem.tsx
+│   │   │   └── CategoryMenu.tsx
 │   │   │
 │   │   ├── graph/                        # Center panel
 │   │   │   ├── GraphCanvas.tsx
 │   │   │   ├── EntryNode.tsx             # Custom xyflow node
 │   │   │   ├── RecursionEdge.tsx         # Custom xyflow edge
 │   │   │   ├── GraphControls.tsx
-│   │   │   └── GraphAddButton.tsx        # Add-entry button on graph canvas
+│   │   │   ├── GraphLegend.tsx
+│   │   │   ├── GraphAddButton.tsx
+│   │   │   └── EdgeConnectDialog.tsx
 │   │   │
 │   │   ├── editor/                       # Entry form editor
 │   │   │   ├── EntryEditor.tsx
-│   │   │   ├── EntryEditorModal.tsx      # Modal variant (opened by double-clicking a node)
+│   │   │   ├── EntryEditorModal.tsx      # Modal variant (z-50)
 │   │   │   ├── BookMetaEditor.tsx        # Book-level metadata form
 │   │   │   ├── ActivationLinks.tsx       # Inline incoming/outgoing edge display
-│   │   │   ├── KeywordInput.tsx
-│   │   │   └── ContentEditor.tsx
+│   │   │   ├── ContentEditor.tsx
+│   │   │   └── KeywordInput.tsx
 │   │   │
-│   │   ├── analysis/                     # Analysis panel (Phase 3)
+│   │   ├── analysis/                     # Analysis panel and findings
 │   │   │   ├── AnalysisPanel.tsx
-│   │   │   ├── HealthBadge.tsx
-│   │   │   ├── FindingList.tsx
-│   │   │   └── FindingItem.tsx
+│   │   │   ├── FindingItem.tsx
+│   │   │   ├── InspectorPanel.tsx
+│   │   │   ├── DeepAnalysisDialog.tsx
+│   │   │   └── ModalFindingsPane.tsx
 │   │   │
-│   │   ├── simulator/                    # Simulator panel (Phase 4)
+│   │   ├── simulator/                    # Simulator panel
 │   │   │   ├── SimulatorPanel.tsx
 │   │   │   ├── MessageInput.tsx
-│   │   │   ├── SimulatorSettings.tsx
 │   │   │   ├── ActivationResults.tsx
 │   │   │   └── RecursionTrace.tsx
 │   │   │
-│   │   ├── inspector/                    # Inspector panel (Phase 3)
-│   │   │   └── InspectorPanel.tsx
+│   │   ├── tools-modal/                  # WorkspaceToolsModal (z-40) and sub-components
+│   │   │   ├── WorkspaceToolsModal.tsx
+│   │   │   ├── AnalysisTabContent.tsx
+│   │   │   ├── AnalysisFindingList.tsx
+│   │   │   ├── AnalysisDetailPane.tsx
+│   │   │   ├── ChainDiagram.tsx
+│   │   │   ├── SimulatorTabContent.tsx
+│   │   │   ├── SimulatorConversationPane.tsx
+│   │   │   ├── SimulatorResultsPane.tsx
+│   │   │   ├── RulesTabContent.tsx
+│   │   │   ├── RuleEditorModal.tsx
+│   │   │   ├── RuleTestingPane.tsx
+│   │   │   ├── ConditionBuilder.tsx
+│   │   │   ├── VariablePicker.tsx
+│   │   │   └── TemplateField.tsx
 │   │   │
-│   │   ├── settings/                     # Settings dialog
-│   │   │   ├── SettingsDialog.tsx
-│   │   │   └── LorebookSettingsPanel.tsx
+│   │   ├── settings/                     # Settings dialog and sub-panels
+│   │   │   ├── SettingsDialog.tsx        # z-50
+│   │   │   ├── LorebookSettingsPanel.tsx
+│   │   │   ├── ProviderSettingsPanel.tsx
+│   │   │   └── LlmToolsPanel.tsx
 │   │   │
 │   │   ├── shared/                       # Reusable UI primitives
+│   │   │   ├── ErrorBoundary.tsx
+│   │   │   ├── ToastStack.tsx
 │   │   │   └── Toggle.tsx
 │   │   │
 │   │   └── ui/                           # Low-level UI components
+│   │       ├── Tooltip.tsx               # Portal-based, z-9999
 │   │       └── HelpTooltip.tsx
 │   │
 │   ├── hooks/                            # Custom React hooks
-│   │   ├── useAutosave.ts
-│   │   ├── useFileImport.ts
-│   │   ├── useFileExport.ts
 │   │   ├── useDerivedState.ts            # Graph recomputation + EMPTY_STORE export
-│   │   └── useKeyboardShortcuts.ts
+│   │   ├── useAutosave.ts
+│   │   ├── useKeyboardShortcuts.ts
+│   │   └── useWorkspacePersistence.ts
 │   │
 │   ├── lib/                              # Pure utility functions
-│   │   ├── uuid.ts
-│   │   ├── debounce.ts
-│   │   ├── token-estimate.ts
-│   │   └── cn.ts                         # Tailwind class merging utility
+│   │   ├── cn.ts                         # Tailwind class merging (clsx + tailwind-merge)
+│   │   ├── debounce.ts                   # Generic debounce utility
+│   │   ├── edge-edit.ts                  # addKeywordMention, removeKeywordMention
+│   │   ├── entry-badge.ts                # getTypeBadge() — shared badge label/color utility
+│   │   ├── entry-type.ts                 # EntryCategory, FIXED_CATEGORIES, CATEGORY_ICON, getEntryIcon
+│   │   ├── platform.ts                   # isMac, modKey ('Cmd' | 'Ctrl')
+│   │   ├── severity-color.ts             # severityColor() — maps FindingSeverity → CSS var
+│   │   ├── token-estimate.ts             # estimateTokenCount() (~4 chars/token)
+│   │   └── undo-describe.ts             # describeStateChange() — human-readable undo labels
 │   │
 │   └── styles/                           # Global styles and theme tokens
 │       └── globals.css
+│
+├── docs/                                 # Project documentation
+│   ├── ARCHITECTURE.md
+│   ├── TYPES.md
+│   ├── CONVENTIONS.md
+│   ├── PLAN.md
+│   ├── AGENTS.md
+│   └── plans/                            # Design documents for approved features
 │
 ├── index.html
 ├── vite.config.ts
 ├── tailwind.config.ts
 ├── tsconfig.json
-├── package.json
-├── ARCHITECTURE.md
-├── AGENTS.md
-├── PLAN.md
-├── CONVENTIONS.md
-├── TYPES.md
-└── PROJECT-BRIEF.md
+└── package.json
 ```
 
 ---
@@ -171,7 +204,7 @@ lorewalker/
 - **Entry UIDs (format-specific):** Numeric, reconstructed by TransformService on export. Not used internally except for round-trip.
 - **Tab IDs:** UUID v4, generated by WorkspaceStore on tab creation.
 - **Finding IDs:** UUID v4, generated by AnalysisService per finding instance.
-- **Edge keys in RecursionGraph.edgeMeta:** String format `"${sourceId}→${targetId}"`. Use the arrow character, not `->`.
+- **Edge keys in RecursionGraph.edgeMeta:** String format `"${sourceId}→${targetId}"`. Use the Unicode arrow character `→`, not `->`.
 
 ---
 
@@ -251,7 +284,6 @@ Exception: LLMService manages provider instances and their configurations. This 
 Services throw typed errors. UI components catch and display them.
 
 ```typescript
-// Define specific error types per service
 export class FileImportError extends Error {
   constructor(
     message: string,
@@ -260,21 +292,6 @@ export class FileImportError extends Error {
   ) {
     super(message);
     this.name = 'FileImportError';
-  }
-}
-
-// Services throw these
-export function importFile(file: File): WorkingEntry[] {
-  try {
-    const buffer = /* read file */;
-    const { book } = parseLorebook(buffer);
-    return inflate(book);
-  } catch (err) {
-    throw new FileImportError(
-      `Failed to parse ${file.name}: unsupported format or invalid JSON`,
-      err,
-      file.name
-    );
   }
 }
 ```
@@ -293,13 +310,13 @@ Never swallow errors silently. If a function can fail, it either throws or retur
 
 ### What Goes in Stores
 
-- **WorkspaceStore:** Tab list, active tab, theme. Global, singleton.
-- **DocumentStore (per tab):** Entries, graph positions, book metadata, selection, simulator state. Created/destroyed with tabs.
+- **WorkspaceStore:** Tab list, active tab, theme, graph settings, custom rules, LLM provider config. Global, singleton.
+- **DocumentStore (per tab):** Entries, graph positions, book metadata, findings, rule overrides, selection, simulator state. Created/destroyed with tabs.
 - **Derived state:** Graph, findings, health score. Computed by hooks, not stored. Recomputed when dependencies change.
 
 ### What Does NOT Go in Stores
 
-- LLM provider configurations → PersistenceService (IndexedDB)
+- LLM provider API keys → PersistenceService (IndexedDB)
 - File system state → FileService (ephemeral)
 - Transient UI state (dropdown open, tooltip visible) → Component-local useState
 
@@ -318,26 +335,113 @@ const entries = activeStore((s) => s.entries)  // always safe to call
 Only these fields are tracked by zundo (undo/redo):
 - `entries`
 - `bookMeta`
+- `graphPositions` (in partialize list, but writes bypass zundo via `store.setState(...)`)
 
-Everything else (selection, filters, simulator state, graph positions) is excluded. Selection is excluded because undo-ing a selection is confusing. Simulator state is excluded because it's exploratory. Graph positions (`graphPositions`) are excluded because they are cosmetic/layout state — position writes always use `store.setState(...)` to bypass temporal.
+Everything else (selection, rule overrides, simulator state, LLM findings, health score) is excluded.
 
 ### Batching
 
 Multiple entry changes that represent one logical operation must be batched into a single store update (one undo step).
 
 ```typescript
-// Good: single undo step for "fix all keyword warnings"
+// Good: single undo step
 store.batchUpdate(new Map([
   [id1, { keys: [...] }],
   [id2, { keys: [...] }],
-  [id3, { keys: [...] }],
 ]));
 
 // Bad: three undo steps
 store.updateEntry(id1, { keys: [...] });
 store.updateEntry(id2, { keys: [...] });
-store.updateEntry(id3, { keys: [...] });
 ```
+
+---
+
+## Modal Layering
+
+z-index hierarchy for modals and overlays:
+
+```
+z-9999  Tooltip portal               — portal-rendered, never clipped
+z-50    EntryEditorModal             — entry editor modal, capture Escape
+z-50    SettingsDialog               — settings modal, standard close
+z-40    WorkspaceToolsModal          — tools overlay, bubble Escape
+```
+
+**Rules:**
+- New modals that should close before EntryEditorModal → z-40, bubble Escape
+- New modals that should take priority over WorkspaceToolsModal → z-50, capture Escape + `stopImmediatePropagation()`
+- Elements that must never be z-clipped (tooltips) → portal at z-9999
+
+**Never use inline `style={{ zIndex: ... }}`** for modal layering. Use Tailwind z-classes (`z-40`, `z-50`, `z-[9999]`).
+
+---
+
+## Navigation Delegation
+
+Components inside WorkspaceToolsModal that want to navigate to an entry must use the callbacks provided by WorkspaceShell — never import or reach into WorkspaceShell internals.
+
+| Callback | When to use |
+|----------|-------------|
+| `onOpenEntry(entryId)` | User wants to open the full entry editor (opens EntryEditorModal on top of WorkspaceToolsModal) |
+| `onSelectEntry(entryId)` | User wants to jump to the entry in the sidebar (closes WorkspaceToolsModal, sets selection) |
+
+---
+
+## Tooltip Usage
+
+Two tooltip components exist for different contexts:
+
+| Component | When to use | How it works |
+|-----------|-------------|--------------|
+| `Tooltip` (`src/components/ui/Tooltip.tsx`) | Toolbar buttons, graph controls, icon buttons | Portal-rendered at root, z-9999. Avoids clipping inside fixed/overflow containers. |
+| `HelpTooltip` (`src/components/ui/HelpTooltip.tsx`) | Form fields, inline help icons, `?` next to labels | Wraps `Tooltip`, renders a `?` icon trigger |
+
+**Never use the native `title` attribute for tooltips.** It bypasses the theme system and looks inconsistent.
+
+---
+
+## Theme System
+
+Themes are defined as CSS variable blocks in `src/styles/globals.css`. Each theme overrides the `--ctp-*` palette tokens and the semantic graph tokens.
+
+**ThemeId values** (14 total):
+- Dark: `dark`
+- Catppuccin: `catppuccin-macchiato`, `catppuccin-latte`, `catppuccin-frappe`, `catppuccin-mocha`
+- Nord: `nord`, `nord-aurora`
+- Other dark: `one-dark`, `dracula`, `dracula-soft`, `rose-pine`, `tokyo-night`
+- Light: `catppuccin-latte`, `nord-aurora`, `rose-pine-dawn`, `tokyo-night-day`
+
+**Light themes** (those requiring React Flow `colorMode: 'light'`):
+```typescript
+const LIGHT_THEMES: ThemeId[] = ['catppuccin-latte', 'nord-aurora', 'rose-pine-dawn', 'tokyo-night-day']
+```
+
+**Theme class application:** The active `ThemeId` is set as a class on `<html>` by WorkspaceShell when `WorkspaceStore.theme` changes.
+
+**CSS variable namespaces:**
+- `--ctp-*` — Catppuccin palette tokens (base, mantle, text, subtext0, overlay0, surface0, lavender, red, etc.)
+- `--edge-*` — Semantic graph edge colors (`--edge-active`, `--edge-blocked`, `--edge-cycle`, `--edge-incoming`, `--edge-selected`)
+- `--node-*` — Semantic node colors (`--node-constant`, `--node-keyword`, `--node-selective`, `--node-disabled`)
+
+In Tailwind classNames, use `bg-ctp-base`, `text-ctp-text`, `border-ctp-surface1`, etc. — Catppuccin tokens are registered as Tailwind theme extensions.
+
+---
+
+## Shared Utility Patterns
+
+Prefer these shared utilities over reimplementing inline:
+
+| Utility | Location | Use for |
+|---------|----------|---------|
+| `getTypeBadge(entry)` | `src/lib/entry-badge.ts` | Entry type badge label + color. Used in EntryListItem, EntryNode, EntryEditorModal. Never reimplement badge logic inline. |
+| `modKey` | `src/lib/platform.ts` | Platform-aware modifier key label ('Cmd' on Mac, 'Ctrl' elsewhere). Use for tooltip labels on keyboard shortcuts. |
+| `describeStateChange(prev, next)` | `src/lib/undo-describe.ts` | Human-readable undo/redo action labels for ToastStack. |
+| `severityColor(severity)` | `src/lib/severity-color.ts` | Maps `FindingSeverity` → CSS color variable. |
+| `cn(...classes)` | `src/lib/cn.ts` | Tailwind class merging. All dynamic className composition uses this. |
+| `debounce(fn, ms)` | `src/lib/debounce.ts` | Debounce. Used by useAutosave, useWorkspacePersistence. |
+| `estimateTokenCount(text)` | `src/lib/token-estimate.ts` | Quick ~4 chars/token approximation for display purposes. |
+| `addKeywordMention / removeKeywordMention` | `src/lib/edge-edit.ts` | Modify entry content to add/remove keyword references (used for graph edge drag-create/delete). |
 
 ---
 
@@ -346,43 +450,32 @@ store.updateEntry(id3, { keys: [...] });
 ### Tailwind + shadcn/ui
 
 - Use Tailwind utility classes for layout, spacing, sizing, colors.
-- Use shadcn/ui components for interactive elements (buttons, inputs, selects, dialogs, tabs, tooltips).
+- Use shadcn/ui components for interactive elements (buttons, inputs, selects, dialogs, tabs).
 - Do not write custom CSS unless Tailwind cannot express the style (rare).
-- Do not use inline `style` props unless absolutely necessary (dynamic values from state, like panel widths from drag-resize).
+- Do not use inline `style` props unless absolutely necessary (e.g., dynamic panel widths from drag-resize state).
 
 ### Dark Mode
 
-Dark mode is the default. Use Tailwind's `dark:` variant for any light-mode overrides. The theme class is set on `<html>` and toggled by WorkspaceStore.
+Dark mode is the default. The theme class is set on `<html>` and toggled by WorkspaceStore. Do not rely on Tailwind's `dark:` variant — all color values come from `--ctp-*` CSS variables.
 
 ### Color Semantics
 
 Define semantic color tokens in the Tailwind config, not raw color values in components.
 
 ```
-// In tailwind config, extend theme:
-health-error:    red
-health-warning:  amber/yellow
-health-ok:       green
-health-info:     blue
+health-error:    red       (error severity)
+health-warning:  amber     (warning severity)
+health-ok:       green     (no issues)
 
-edge-active:     color for active recursion edges
-edge-blocked:    color for preventRecursion-blocked edges
-edge-cycle:      color for circular reference edges
+edge-active:     active recursion edge color
+edge-blocked:    preventRecursion/excludeRecursion edge color
+edge-cycle:      circular reference edge color
 
-entry-constant:  badge color for constant entries
-entry-keyword:   badge color for keyword entries
-entry-selective: badge color for selective entries
-entry-disabled:  badge color for disabled entries
+node-constant:   constant entry badge color
+node-keyword:    keyword entry badge color
+node-selective:  selective entry badge color
+node-disabled:   disabled entry badge color
 ```
-
-### Theme Token Naming
-
-CSS variables follow two naming schemes:
-
-- **Catppuccin palette tokens:** `--ctp-<name>` (e.g., `--ctp-base`, `--ctp-mantle`, `--ctp-text`, `--ctp-subtext0`, `--ctp-overlay0`, `--ctp-surface0`, `--ctp-lavender`, `--ctp-red`, etc.). Catppuccin Macchiato is the base "dark" palette. These are defined per theme in `globals.css`.
-- **Semantic graph tokens:** `--edge-active`, `--edge-blocked`, `--edge-cycle`, `--edge-incoming`, `--edge-selected`, `--node-constant`, `--node-keyword`, `--node-selective`, `--node-disabled`. These are overridden per theme.
-
-In Tailwind classNames, use `bg-ctp-base`, `text-ctp-text`, `border-ctp-surface1`, etc. — Catppuccin tokens are registered as Tailwind theme extensions.
 
 ### Spacing
 
@@ -461,14 +554,14 @@ import { buildGraph } from '@/services/graph-service';
 
 Format: `<scope>: <description>`
 
-Scopes: `file`, `transform`, `graph`, `analysis`, `simulator`, `llm`, `persist`, `ui`, `types`, `config`, `docs`, `test`, `theme`
+Scopes: `file`, `transform`, `graph`, `analysis`, `simulator`, `llm`, `persist`, `ui`, `types`, `config`, `docs`, `test`, `theme`, `rules`
 
 Examples:
 - `graph: implement cycle detection`
 - `analysis: add keyword overlap rule`
 - `ui: entry editor form validation`
-- `types: add SimulatorState interface`
-- `config: vite + tailwind setup`
+- `rules: add custom rule condition builder`
+- `docs: sync TYPES.md to Phase 7 implementation`
 
 ### Branching
 
@@ -477,4 +570,4 @@ Examples:
 
 ### Commit Frequency
 
-Commit after each meaningful unit of work. A commit should represent a coherent change that could be understood in isolation. Don't accumulate a day's work in one commit, and don't commit every single line change.
+Commit after each meaningful unit of work. A commit should represent a coherent change that could be understood in isolation.

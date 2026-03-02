@@ -14,29 +14,63 @@ Lorewalker is a local-first lorebook editor, visualizer, and analysis tool for A
 
 ![Entry Editor](docs/editor-modal-ss.png)
 
-## What's Working Now (Phases 0–5)
+## Features
 
-- **Import / Export** — drag-and-drop or file picker; full SillyTavern lorebook JSON round-trip
-- **Entry editor** — all CCv3 lorebook entry fields with live token counting
-- **Multi-tab workspace** — open multiple lorebooks at once, each with independent undo/redo
-- **Recursion graph** — interactive node graph visualizing keyword-triggered entry chains
-  - Solid edges = active links; dashed = blocked (`preventRecursion` / `excludeRecursion`); red = cycle
-  - Auto-layout (dagre), minimap, zoom, fit-to-view
-  - Bidirectional selection: click a node to highlight the entry in the list, and vice versa
-  - Double-click a node to jump straight to editing that entry
-- **Theme system** — 14+ themes including Catppuccin variants, Nord, One Dark, Dracula, Rosé Pine, Tokyo Night, and light variants
-- **Deterministic health analysis** *(rough draft, not yet reliable)* — 28 rules across structure, config, keywords, recursion, and budget categories; real-time scoring 0–100 with error/warning/suggestion severities; AnalysisPanel, FindingItem, InspectorPanel
-- **Activation simulator** *(rough draft, not yet reliable)* — SillyTavern engine, multi-message conversation replay, step-by-step recursion trace, sticky/cooldown/probability effects; SimulatorPanel, ActivationResults, RecursionTrace
-- **Autosave & crash recovery** — IndexedDB-backed autosave (2s debounce), workspace persistence, RecoveryDialog on relaunch, tab-close dirty confirmation, stale doc cleanup
+### Lorebook Editing
+
+- **Import / Export** — drag-and-drop or file picker; full SillyTavern lorebook JSON round-trip, including `.png` character cards and `.charx` files
+- **Full CCv3 entry editor** — all lorebook entry fields with live token counting; double-click any graph node to edit in a full-screen modal
+- **Multi-tab workspace** — open multiple lorebooks simultaneously, each with independent undo/redo (`Cmd/Ctrl+Z`, `Cmd/Ctrl+Shift+Z`)
+- **Lorebook metadata editor** — global scan depth, token budget, recursion settings, insertion strategy
+- **Keyboard shortcuts** — `Cmd/Ctrl+Z` undo, `Cmd/Ctrl+Shift+Z` redo, `Cmd/Ctrl+S` snapshot, `Cmd/Ctrl+N` new entry, `Escape` clear selection
+
+### Recursion Graph
+
+- **Interactive node graph** — directed edges show which entries keyword-trigger which others
+- **Edge styles** — solid (active link), dashed (blocked by `preventRecursion`/`excludeRecursion`), red (cycle)
+- **Auto-layout** (dagre), minimap, zoom, fit-to-view
+- **Bidirectional selection** — click a node to select the entry in the list; click the list to highlight the node
+- **Graph search** — filter by name, content, or keywords; non-matching nodes dim in place
+- **Drag to create edges** — drag between nodes to add a keyword mention; delete edges to remove it
+- **Simulator highlighting** — after running the simulator, nodes and edges show activation state and recursion depth
+- **Context menu** — right-click the canvas to add an entry at that position
+
+### Health Analysis
+
+- **Real-time 0–100 health score** — recomputes as you edit, no manual trigger needed
+- **28+ deterministic rules** across structure, configuration, keywords, recursion, and budget categories
+- **Error / warning / suggestion severities** — findings are clickable and navigate to the affected entry
+- **Custom rules** — visual condition builder for creating your own per-entry checks; per-document rule overrides
+- **LLM-powered deep analysis** *(rough draft)* — BYOK qualitative review via any OpenAI-compatible endpoint or Anthropic; content quality, keyword suggestions, scope checks
+
+### Activation Simulator
+
+- **SillyTavern activation engine** — full keyword scan, selective logic, probability, sticky/cooldown/delay, priority sort, recursion, token budget
+- **Multi-message replay** — build a conversation and see how activation changes message-to-message
+- **Recursion trace** — step-by-step display of recursion unfolding
+
+### Persistence
+
+- **Autosave to IndexedDB** (2s debounce) — no manual save required for recovery
+- **Named snapshots** (`Cmd/Ctrl+S`) — save a named snapshot at any point; browse and restore from the Files panel
+- **Crash recovery** — on relaunch, offers to restore any unsaved sessions
+- **Tab-close dirty confirmation** — warns before losing unsaved changes
+- **Panel layout persistence** — sidebar widths and collapse state survive reloads
+
+### Settings
+
+- **14 themes**: Dark, Catppuccin Macchiato, Catppuccin Latte, Catppuccin Frappé, Catppuccin Mocha, Nord, Nord Aurora, One Dark, Rosé Pine, Rosé Pine Dawn, Tokyo Night, Tokyo Night Day, Dracula, Dracula Soft
+- **Graph layout settings** — dagre ranker, acyclicer, direction, alignment, edge style, connection visibility
+- **LLM provider configuration** — BYOK for any OpenAI-compatible endpoint or Anthropic (API key stored locally in IndexedDB)
+- **LLM-powered auto-categorization** — automatically tag entries by type using your configured provider
+- **Lorebook defaults** — per-workspace fallback values for scan depth, budget, recursion settings
 
 ---
 
-## What's Coming (Phases 6–8)
+## What's Still Coming
 
 | Phase | Feature |
 |-------|---------|
-| 6 | **LLM-powered deep analysis** — BYOK qualitative review via any OpenAI-compatible endpoint or Anthropic; content quality, keyword suggestions, splitting recommendations |
-| 7 | **Graph editing + UX polish** — drag-drop edge creation, keyboard shortcuts, multi-select operations |
 | 8 | **Desktop app** — Tauri-based native wrapper with native file dialogs and system keychain for API keys |
 
 ---
