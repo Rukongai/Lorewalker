@@ -5,7 +5,7 @@ import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
 import type { WorkingEntry, SelectiveLogic, EntryPosition } from '@/types'
 import { estimateTokenCount } from '@/lib/token-estimate'
-import { inferEntryCategory, getEntryIcon } from '@/lib/entry-type'
+import { getEntryIcon } from '@/lib/entry-type'
 import { ContentEditor } from './ContentEditor'
 import { KeywordInput } from './KeywordInput'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
@@ -298,9 +298,8 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
     if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
   }, [realStore, entryId, activeTabId])
 
-  const effectiveCategory = entry ? (entry.userCategory ?? inferEntryCategory(entry)) : 'generic'
+  const effectiveCategory = entry?.userCategory ?? 'generic'
   const categoryIcon = getEntryIcon(effectiveCategory)
-  const categorySource = entry?.userCategory ? '[Set]' : '[Inferred]'
 
   const { openMenu: openCategoryMenu, menuElement: categoryMenuElement } = useCategoryMenu(handleSetCategory)
 
@@ -342,7 +341,6 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
           {categoryIcon && <span className="text-[11px]">{categoryIcon}</span>}
           <span className="text-ctp-subtext1 capitalize">{effectiveCategory}</span>
         </button>
-        <span className="text-[9px] text-ctp-overlay1 font-mono">{categorySource}</span>
         {entry.userCategory && (
           <button
             onClick={() => handleSetCategory(undefined)}

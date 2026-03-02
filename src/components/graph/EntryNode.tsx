@@ -2,7 +2,7 @@ import { Handle, Position } from '@xyflow/react'
 import type { Node, NodeProps } from '@xyflow/react'
 import type { WorkingEntry, FindingSeverity } from '@/types'
 import { severityColor } from '@/lib/severity-color'
-import { inferEntryCategory, getEntryIcon } from '@/lib/entry-type'
+import { getEntryIcon } from '@/lib/entry-type'
 import { useCategoryMenu } from '@/components/entry-list/CategoryMenu'
 
 export type EntryNodeType = Node<EntryNodeData>
@@ -46,7 +46,7 @@ export function EntryNode({ data, selected }: NodeProps<EntryNodeType>) {
   const activationType = getActivationType(entry)
   const accentColor = ACTIVATION_COLORS[activationType]
   const isLR = edgeDirection !== 'TB'
-  const effectiveCategory = entry.userCategory ?? inferEntryCategory(entry)
+  const effectiveCategory = entry.userCategory ?? 'generic'
   const categoryIcon = getEntryIcon(effectiveCategory)
 
   const { openMenu, menuElement } = useCategoryMenu((category) => {
