@@ -112,7 +112,7 @@ const ruleContentMismatchRule: Rule = {
 const fixedValueDeviationsRule: Rule = {
   id: 'config/fixed-value-deviations',
   name: 'Non-Default Fixed Values',
-  description: 'Flags entries where vectorized is enabled or useProbability is enabled — deviations from standard defaults.',
+  description: 'Flags entries where vectorized is enabled — deviations from standard defaults.',
   category: 'config',
   severity: 'suggestion',
   requiresLLM: false,
@@ -122,9 +122,6 @@ const fixedValueDeviationsRule: Rule = {
       const deviations: string[] = []
       if (entry.vectorized === true) {
         deviations.push('vectorized is enabled')
-      }
-      if (entry.useProbability === true) {
-        deviations.push('useProbability is enabled')
       }
       if (deviations.length > 0) {
         findings.push({
