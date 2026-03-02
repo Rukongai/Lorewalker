@@ -141,26 +141,29 @@ function QuadrantLayout({
   renderBottomRight?: () => React.ReactNode
 }) {
   return (
-    <div className="grid h-full" style={{
-      gridTemplateColumns: '60fr 40fr',
-      gridTemplateRows: '40fr 60fr',
-    }}>
-      {/* Top-left: name + content */}
-      <div className="overflow-y-auto p-3 space-y-3 border-r border-b border-ctp-surface1">
-        {nameField}
-        {contentField}
+    <div className="flex h-full">
+      {/* Left column: 60% wide, top 40% / bottom 60% */}
+      <div className="flex flex-col border-r border-ctp-surface1" style={{ width: '60%' }}>
+        {/* Top-left: name + content */}
+        <div className="overflow-y-auto p-3 space-y-3 border-b border-ctp-surface1" style={{ flex: '40 1 0' }}>
+          {nameField}
+          {contentField}
+        </div>
+        {/* Bottom-left: connections pane (injected by modal) */}
+        <div className="overflow-hidden" style={{ flex: '60 1 0' }}>
+          {renderBottomLeft?.()}
+        </div>
       </div>
-      {/* Top-right: all field groups */}
-      <div className="overflow-y-auto border-b border-ctp-surface1">
-        {fieldGroups}
-      </div>
-      {/* Bottom-left: connections pane (injected by modal) */}
-      <div className="overflow-hidden border-r border-ctp-surface1">
-        {renderBottomLeft?.()}
-      </div>
-      {/* Bottom-right: findings pane (injected by modal) */}
-      <div className="overflow-hidden">
-        {renderBottomRight?.()}
+      {/* Right column: 40% wide, top 60% / bottom 40% */}
+      <div className="flex flex-col" style={{ width: '40%' }}>
+        {/* Top-right: all field groups */}
+        <div className="overflow-y-auto border-b border-ctp-surface1" style={{ flex: '60 1 0' }}>
+          {fieldGroups}
+        </div>
+        {/* Bottom-right: findings pane (injected by modal) */}
+        <div className="overflow-hidden" style={{ flex: '40 1 0' }}>
+          {renderBottomRight?.()}
+        </div>
       </div>
     </div>
   )
