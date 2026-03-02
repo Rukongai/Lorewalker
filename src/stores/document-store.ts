@@ -16,7 +16,7 @@ interface SelectionState {
 
 const DEFAULT_SIMULATION_SETTINGS: SimulationSettings = {
   defaultScanDepth: 4,
-  defaultTokenBudget: 4096,
+  defaultTokenBudget: 50000,
   defaultCaseSensitive: false,
   defaultMatchWholeWords: false,
   defaultMaxRecursionSteps: 0,

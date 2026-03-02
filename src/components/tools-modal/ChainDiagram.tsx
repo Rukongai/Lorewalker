@@ -33,7 +33,7 @@ export function ChainDiagram({ finding, entries, graph, onOpenEntry, onSelectEnt
                   {keywords.map((kw, i) => (
                     <span
                       key={i}
-                      className="text-[9px] bg-ctp-surface1 text-ctp-subtext0 rounded px-1 py-px"
+                      className="text-[9px] bg-ctp-accent/20 text-ctp-accent rounded px-1 py-px"
                     >
                       {kw}
                     </span>
