@@ -64,6 +64,7 @@ export function WorkspaceShell() {
   const [modalEntryId, setModalEntryId] = useState<string | null>(null)
   const [leftPanelTab, setLeftPanelTab] = useState<LeftPanelTab>('entries')
   const [showSnapshotDialog, setShowSnapshotDialog] = useState(false)
+  const [snapshotSaveCount, setSnapshotSaveCount] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Lorebook picker dialog state
@@ -529,7 +530,7 @@ export function WorkspaceShell() {
 
               {/* Left panel content */}
               {leftPanelTab === 'files'
-                ? <FilesPanel onRestoreDoc={handleRestoreDoc} />
+                ? <FilesPanel onRestoreDoc={handleRestoreDoc} snapshotSaveCount={snapshotSaveCount} />
                 : <EntryList onOpenModal={setModalEntryId} />
               }
             </>
@@ -746,6 +747,7 @@ export function WorkspaceShell() {
             bookMeta: state.bookMeta,
           }
           await saveSnapshot(snapshot)
+          setSnapshotSaveCount((c) => c + 1)
           setShowSnapshotDialog(false)
         }}
         onCancel={() => setShowSnapshotDialog(false)}

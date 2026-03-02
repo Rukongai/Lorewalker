@@ -19,9 +19,10 @@ function relativeTime(isoDate: string): string {
 
 interface FilesPanelProps {
   onRestoreDoc: (doc: PersistedDocument) => void
+  snapshotSaveCount: number
 }
 
-export function FilesPanel({ onRestoreDoc }: FilesPanelProps) {
+export function FilesPanel({ onRestoreDoc, snapshotSaveCount }: FilesPanelProps) {
   const tabs = useWorkspaceStore((s) => s.tabs)
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const [historyDocs, setHistoryDocs] = useState<PersistedDocument[]>([])
@@ -43,6 +44,33 @@ export function FilesPanel({ onRestoreDoc }: FilesPanelProps) {
   useEffect(() => {
     refreshHistory()
   }, [refreshHistory])
+
+  useEffect(() => {
+    if (snapshotSaveCount === 0) return
+    // Invalidate and re-fetch snapshots for all currently expanded tabs
+    const expandedIds = Array.from(expandedTabIds)
+    if (expandedIds.length === 0) {
+      // No tabs expanded — just clear the cache so next expand fetches fresh
+      setSnapshots({})
+      return
+    }
+    Promise.all(
+      expandedIds.map((tabId) =>
+        listSnapshots(tabId)
+          .then((snaps) => ({ tabId, snaps }))
+          .catch(() => ({ tabId, snaps: [] as PersistedSnapshot[] }))
+      )
+    ).then((results) => {
+      setSnapshots((prev) => {
+        const next = { ...prev }
+        for (const { tabId, snaps } of results) {
+          next[tabId] = snaps
+        }
+        return next
+      })
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snapshotSaveCount])
 
   async function handleDeleteDoc(tabId: string) {
     const doc = historyDocs.find((d) => d.tabId === tabId)

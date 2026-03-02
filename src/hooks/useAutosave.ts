@@ -53,6 +53,7 @@ export function useAutosave(tabId: string | null): { isSaving: boolean } {
       setIsSaving(true)
       try {
         await saveDocument(doc)
+        useWorkspaceStore.getState().markDirty(tabId, false)
       } catch {
         // Autosave failures are non-fatal — don't surface to user
       } finally {
