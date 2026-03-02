@@ -17,7 +17,7 @@ const blankNameRule: Rule = {
           ruleId: 'structure/blank-name',
           severity: 'warning',
           category: 'structure',
-          message: `Entry has an empty or whitespace-only name.`,
+          message: `Entry (uid: ${entry.uid}) has an empty or whitespace-only name.`,
           entryIds: [entry.id],
           details: 'Entries without names are difficult to identify and manage. Assign a descriptive name to this entry.',
         })
@@ -49,14 +49,17 @@ const uidConsistencyRule: Rule = {
       }
     }
 
+    const entryNameMap = new Map(context.entries.map((e) => [e.id, e.name]))
+
     for (const [uid, ids] of uidMap) {
       if (ids.length > 1) {
+        const names = ids.map((id) => entryNameMap.get(id) ?? id)
         findings.push({
           id: generateId(),
           ruleId: 'structure/uid-consistency',
           severity: 'warning',
           category: 'structure',
-          message: `${ids.length} entries share uid ${uid}. UIDs must be unique across the lorebook.`,
+          message: `${ids.length} entries share uid ${uid}: ${names.join(', ')}. UIDs must be unique.`,
           entryIds: ids,
           details: `uid ${uid} appears on ${ids.length} entries. Duplicate UIDs can cause unexpected behavior when the lorebook is loaded by an AI platform.`,
         })

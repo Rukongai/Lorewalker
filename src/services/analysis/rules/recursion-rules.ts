@@ -58,6 +58,7 @@ const longChains: Rule = {
   severity: 'suggestion',
   requiresLLM: false,
   async evaluate(context: AnalysisContext): Promise<Finding[]> {
+    const entryNameMap = new Map(context.entries.map((e) => [e.id, e.name]))
     const candidates: Array<{ entryId: string; depth: number; chain: string[] }> = []
 
     for (const entry of context.entries) {
@@ -75,12 +76,13 @@ const longChains: Rule = {
 
     for (const { entryId, depth, chain } of candidates) {
       if (claimed.has(entryId)) continue
+      const name = entryNameMap.get(entryId) ?? entryId
       findings.push({
         id: generateId(),
         ruleId: 'recursion/long-chains',
         severity: 'suggestion',
         category: 'recursion',
-        message: `Entry triggers a chain of ${depth} hops (consider flattening)`,
+        message: `Entry "${name}" triggers a chain of ${depth} hops (consider flattening)`,
         entryIds: chain,
       })
       for (const id of chain) claimed.add(id)
@@ -99,13 +101,14 @@ const orphanedEntries: Rule = {
   severity: 'suggestion',
   requiresLLM: false,
   async evaluate(context: AnalysisContext): Promise<Finding[]> {
+    const entryNameMap = new Map(context.entries.map((e) => [e.id, e.name]))
     const orphanIds = findOrphans(context.entries, context.graph)
     return orphanIds.map((id) => ({
       id: generateId(),
       ruleId: 'recursion/orphaned-entries',
       severity: 'suggestion' as const,
       category: 'recursion' as const,
-      message: 'Entry has no incoming edges and is not constant (may never activate)',
+      message: `Entry "${entryNameMap.get(id) ?? id}" has no incoming edges and is not constant (may never activate)`,
       entryIds: [id],
     }))
   },
@@ -120,13 +123,14 @@ const deadLinks: Rule = {
   severity: 'warning',
   requiresLLM: false,
   async evaluate(context: AnalysisContext): Promise<Finding[]> {
+    const entryNameMap = new Map(context.entries.map((e) => [e.id, e.name]))
     const links = findDeadLinks(context.entries, context.graph)
     return links.map((link) => ({
       id: generateId(),
       ruleId: 'recursion/dead-links',
       severity: 'warning' as const,
       category: 'recursion' as const,
-      message: `Entry mentions '${link.mentionedName}' by name but has no keyword edge to it`,
+      message: `Entry "${entryNameMap.get(link.sourceEntryId) ?? link.sourceEntryId}" mentions '${link.mentionedName}' by name but has no keyword edge to it`,
       entryIds: [link.sourceEntryId],
     }))
   },
@@ -152,7 +156,7 @@ const preventRecursionCorrectness: Rule = {
           ruleId: 'recursion/prevent-recursion-correctness',
           severity: 'suggestion',
           category: 'recursion',
-          message: 'preventRecursion has no effect: entry content does not trigger any other entries',
+          message: `Entry "${entry.name}" has preventRecursion set but its content does not trigger any other entries`,
           entryIds: [entry.id],
         })
       }
@@ -171,13 +175,14 @@ const islandEntries: Rule = {
   severity: 'suggestion',
   requiresLLM: false,
   async evaluate(context: AnalysisContext): Promise<Finding[]> {
+    const entryNameMap = new Map(context.entries.map((e) => [e.id, e.name]))
     const islandIds = findIslands(context.entries, context.graph)
     return islandIds.map((id) => ({
       id: generateId(),
       ruleId: 'recursion/island-entries',
       severity: 'suggestion' as const,
       category: 'recursion' as const,
-      message: 'Entry has no incoming or outgoing edges and is not constant',
+      message: `Entry "${entryNameMap.get(id) ?? id}" has no incoming or outgoing edges and is not constant`,
       entryIds: [id],
     }))
   },

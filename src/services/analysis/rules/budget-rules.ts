@@ -17,7 +17,7 @@ const constantTokenCostRule: Rule = {
           ruleId: 'budget/constant-token-cost',
           severity: 'warning',
           category: 'budget',
-          message: `Constant entry uses ${entry.tokenCount} tokens (always included in context)`,
+          message: `Entry "${entry.name}" uses ${entry.tokenCount} tokens (always included in context)`,
           entryIds: [entry.id],
         })
       }
@@ -42,7 +42,7 @@ const entryTokenSizeRule: Rule = {
           ruleId: 'budget/entry-token-size',
           severity: 'warning',
           category: 'budget',
-          message: `Entry is very large at ${entry.tokenCount} tokens`,
+          message: `Entry "${entry.name}" is very large at ${entry.tokenCount} tokens`,
           entryIds: [entry.id],
         })
       } else if (entry.tokenCount < 30 && entry.tokenCount > 0) {
@@ -51,7 +51,7 @@ const entryTokenSizeRule: Rule = {
           ruleId: 'budget/entry-token-size',
           severity: 'suggestion',
           category: 'budget',
-          message: `Entry is very small at ${entry.tokenCount} tokens (may lack useful context)`,
+          message: `Entry "${entry.name}" is very small at ${entry.tokenCount} tokens (may lack useful context)`,
           entryIds: [entry.id],
         })
       }
@@ -133,7 +133,7 @@ const ignoreBudgetUsageRule: Rule = {
           ruleId: 'budget/ignore-budget-usage',
           severity: 'warning',
           category: 'budget',
-          message: 'Entry ignores token budget limits',
+          message: `Entry "${entry.name}" ignores token budget limits`,
           entryIds: [entry.id],
         })
       }

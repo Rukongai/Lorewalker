@@ -23,7 +23,7 @@ const emptyKeysRule: Rule = {
           ruleId: 'keywords/empty-keys',
           severity: 'error',
           category: 'keywords',
-          message: 'Entry has no keywords and is not constant',
+          message: `Entry "${entry.name}" has no keywords and is not constant`,
           entryIds: [entry.id],
         })
       }
@@ -49,7 +49,7 @@ const genericKeywordsRule: Rule = {
           ruleId: 'keywords/generic-keywords',
           severity: 'warning',
           category: 'keywords',
-          message: `Entry uses generic keywords that may cause unintended activations: ${matched.join(', ')}`,
+          message: `Entry "${entry.name}" uses generic keywords that may cause unintended activations: ${matched.join(', ')}`,
           entryIds: [entry.id],
         })
       }
@@ -75,7 +75,7 @@ const overlySpecificRule: Rule = {
           ruleId: 'keywords/overly-specific',
           severity: 'suggestion',
           category: 'keywords',
-          message: `Entry has keywords with too many words (may be too specific to match): ${matched.join(', ')}`,
+          message: `Entry "${entry.name}" has keywords with too many words (may be too specific to match): ${matched.join(', ')}`,
           entryIds: [entry.id],
         })
       }
@@ -110,14 +110,17 @@ const duplicateKeywordsRule: Rule = {
       }
     }
 
+    const entryNameMap = new Map(context.entries.map((e) => [e.id, e.name]))
+
     for (const [kw, ids] of kwMap) {
       if (ids.length > 1) {
+        const names = ids.map((id) => entryNameMap.get(id) ?? id)
         findings.push({
           id: generateId(),
           ruleId: 'keywords/duplicate-keywords',
           severity: 'warning',
           category: 'keywords',
-          message: `Keyword '${kw}' is shared by multiple entries`,
+          message: `Keyword '${kw}' is shared by entries: ${names.join(', ')}`,
           entryIds: ids,
         })
       }
@@ -136,6 +139,8 @@ const substringOverlapRule: Rule = {
   requiresLLM: false,
   async evaluate(context: AnalysisContext): Promise<Finding[]> {
     const findings: Finding[] = []
+
+    const entryNameMap = new Map(context.entries.map((e) => [e.id, e.name]))
 
     // Collect all (entryId, normalizedKey, matchWholeWords) pairs
     const allKeys: Array<{ entryId: string; key: string; matchWholeWords: boolean }> = []
@@ -157,12 +162,14 @@ const substringOverlapRule: Rule = {
         if (a.matchWholeWords) continue
         // a.key is a strict substring of b.key
         if (a.key !== b.key && b.key.includes(a.key)) {
+          const aName = entryNameMap.get(a.entryId) ?? a.entryId
+          const bName = entryNameMap.get(b.entryId) ?? b.entryId
           findings.push({
             id: generateId(),
             ruleId: 'keywords/substring-overlap',
             severity: 'warning',
             category: 'keywords',
-            message: `Keyword '${a.key}' is a substring of '${b.key}'`,
+            message: `Entry "${aName}" keyword '${a.key}' is a substring of Entry "${bName}" keyword '${b.key}'`,
             entryIds: [a.entryId, b.entryId],
           })
         }
@@ -191,7 +198,7 @@ const keywordCountRule: Rule = {
           ruleId: 'keywords/keyword-count',
           severity: 'suggestion',
           category: 'keywords',
-          message: `Entry has ${n} keyword(s); 2–5 is recommended`,
+          message: `Entry "${entry.name}" has ${n} keyword(s); 2–5 is recommended`,
           entryIds: [entry.id],
         })
       }
@@ -216,7 +223,7 @@ const redundantConstantKeysRule: Rule = {
           ruleId: 'keywords/redundant-constant-keys',
           severity: 'suggestion',
           category: 'keywords',
-          message: 'Constant entry has keywords; they serve no direct activation purpose',
+          message: `Entry "${entry.name}" is constant but has keywords; they serve no direct activation purpose`,
           entryIds: [entry.id],
         })
       }
