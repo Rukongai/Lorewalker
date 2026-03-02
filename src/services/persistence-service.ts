@@ -1,5 +1,5 @@
 import { createStore, get, set, del, keys } from 'idb-keyval'
-import type { PersistedWorkspace, PersistedDocument, PersistedPreferences, PersistedProvider } from '@/types'
+import type { PersistedWorkspace, PersistedDocument, PersistedPreferences, PersistedProvider, PersistedSnapshot } from '@/types'
 
 // Named IndexedDB store so we don't pollute the default keyval store
 const store = createStore('lorewalker-db', 'keyval')
@@ -107,6 +107,42 @@ export async function loadProviders(): Promise<PersistedProvider[]> {
     return (await get<PersistedProvider[]>('providers', store)) ?? []
   } catch (err) {
     throw new PersistenceError('Failed to load providers', err)
+  }
+}
+
+// --- Snapshots ---
+
+function snapshotKey(tabId: string, snapshotId: string): string {
+  return `snapshot:${tabId}:${snapshotId}`
+}
+
+export async function saveSnapshot(snapshot: PersistedSnapshot): Promise<void> {
+  try {
+    await set(snapshotKey(snapshot.tabId, snapshot.id), snapshot, store)
+  } catch (err) {
+    throw new PersistenceError(`Failed to save snapshot ${snapshot.id}`, err)
+  }
+}
+
+export async function listSnapshots(tabId?: string): Promise<PersistedSnapshot[]> {
+  try {
+    const allKeys = await keys(store)
+    const prefix = tabId ? `snapshot:${tabId}:` : 'snapshot:'
+    const snapKeys = allKeys.filter((k) => typeof k === 'string' && (k as string).startsWith(prefix))
+    const snaps = await Promise.all(
+      snapKeys.map((k) => get<PersistedSnapshot>(k as string, store))
+    )
+    return snaps.filter((s): s is PersistedSnapshot => s !== undefined)
+  } catch (err) {
+    throw new PersistenceError('Failed to list snapshots', err)
+  }
+}
+
+export async function deleteSnapshot(tabId: string, snapshotId: string): Promise<void> {
+  try {
+    await del(snapshotKey(tabId, snapshotId), store)
+  } catch (err) {
+    throw new PersistenceError(`Failed to delete snapshot ${snapshotId}`, err)
   }
 }
 

@@ -26,6 +26,15 @@ export interface PersistedPreferences {
   recoveryRetentionDays: number;
 }
 
+export interface PersistedSnapshot {
+  id: string;
+  tabId: string;
+  name: string;
+  savedAt: string;  // ISO timestamp
+  entries: WorkingEntry[];
+  bookMeta: BookMeta;
+}
+
 export interface PersistedProvider {
   id: string;
   name: string;

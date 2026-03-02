@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { modKey } from '@/lib/platform'
 import { useStore } from 'zustand'
-import { Upload, Save, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
+import { Upload, Download, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
 import { TabBar } from './TabBar'
-import { RecoveryDialog } from './RecoveryDialog'
+import { FilesPanel } from './FilesPanel'
+import { SaveSnapshotDialog } from './SaveSnapshotDialog'
 import { WelcomeScreen } from './WelcomeScreen'
 import { StatusBar } from './StatusBar'
 import { LorebookPickerDialog } from './LorebookPickerDialog'
@@ -17,7 +18,7 @@ import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
 import { useAutosave } from '@/hooks/useAutosave'
 import { useWorkspacePersistence } from '@/hooks/useWorkspacePersistence'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
-import { loadWorkspace, loadPreferences, listDocuments, cleanupStaleDocuments, loadProviders } from '@/services/persistence-service'
+import { loadWorkspace, loadPreferences, cleanupStaleDocuments, loadProviders, saveSnapshot } from '@/services/persistence-service'
 import { llmService } from '@/services/llm/llm-service'
 import { OpenAICompatibleProvider } from '@/services/llm/providers/openai-compatible'
 import { AnthropicProvider } from '@/services/llm/providers/anthropic'
@@ -30,9 +31,11 @@ import { AnalysisPanel } from '@/components/analysis/AnalysisPanel'
 import { InspectorPanel } from '@/components/analysis/InspectorPanel'
 import { SimulatorPanel } from '@/components/simulator/SimulatorPanel'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
-import type { PersistedDocument } from '@/types'
+import type { PersistedDocument, PersistedSnapshot } from '@/types'
+import { generateId } from '@/lib/uuid'
 
 type RightPanelTab = 'lorebook' | 'entry' | 'analysis' | 'inspector' | 'simulator'
+type LeftPanelTab = 'files' | 'entries'
 
 const DEFAULT_PREFERENCES = { autosaveIntervalMs: 2000, recoveryRetentionDays: 7, simulationDefaults: { defaultScanDepth: 4, defaultTokenBudget: 4096, defaultCaseSensitive: false, defaultMatchWholeWords: false, defaultMaxRecursionSteps: 0, defaultIncludeNames: false } }
 
@@ -50,8 +53,8 @@ export function WorkspaceShell() {
   const [rightCollapsed, setRightCollapsed] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [modalEntryId, setModalEntryId] = useState<string | null>(null)
-  const [showRecovery, setShowRecovery] = useState(false)
-  const [recoveryDocs, setRecoveryDocs] = useState<PersistedDocument[]>([])
+  const [leftPanelTab, setLeftPanelTab] = useState<LeftPanelTab>('entries')
+  const [showSnapshotDialog, setShowSnapshotDialog] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Lorebook picker dialog state
@@ -74,7 +77,8 @@ export function WorkspaceShell() {
     leftCollapsed,
     rightCollapsed,
     rightPanelTab: rightPanelTab as 'lorebook' | 'entry' | 'analysis' | 'inspector' | 'simulator',
-  }), [leftWidth, rightWidth, leftCollapsed, rightCollapsed, rightPanelTab])
+    leftPanelTab: leftPanelTab as 'files' | 'entries',
+  }), [leftWidth, rightWidth, leftCollapsed, rightCollapsed, rightPanelTab, leftPanelTab])
   useWorkspacePersistence(panelLayout)
 
   // On mount: restore persisted state and check for recovery docs
@@ -109,13 +113,9 @@ export function WorkspaceShell() {
         setLeftCollapsed(workspace.panelLayout.leftCollapsed)
         setRightCollapsed(workspace.panelLayout.rightCollapsed)
         setRightPanelTab(workspace.panelLayout.rightPanelTab as RightPanelTab)
+        setLeftPanelTab(workspace.panelLayout.leftPanelTab ?? 'entries')
       }
       await cleanupStaleDocuments(prefs.recoveryRetentionDays)
-      const docs = await listDocuments()
-      if (docs.length > 0 && useWorkspaceStore.getState().tabs.length === 0) {
-        setRecoveryDocs(docs)
-        setShowRecovery(true)
-      }
     }
     init()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -129,30 +129,15 @@ export function WorkspaceShell() {
     return () => window.removeEventListener('beforeunload', handler)
   }, [tabs])
 
-  async function handleRestore(docs: PersistedDocument[]) {
-    for (const doc of docs) {
-      const positions = new Map(Object.entries(doc.graphPositions))
-      documentStoreRegistry.create(doc.tabId, {
-        entries: doc.entries,
-        bookMeta: doc.bookMeta,
-        graphPositions: positions,
-        simulatorState: doc.simulatorState,
-      })
-      useWorkspaceStore.getState().openTab(doc.tabId, doc.fileMeta.fileName, doc.fileMeta)
-    }
-    setShowRecovery(false)
-  }
-
-  async function handleDismissRecovery() {
-    setShowRecovery(false)
-    for (const doc of recoveryDocs) {
-      try {
-        const { deleteDocument } = await import('@/services/persistence-service')
-        await deleteDocument(doc.tabId)
-      } catch {
-        // Non-fatal
-      }
-    }
+  function handleRestoreDoc(doc: PersistedDocument) {
+    const positions = new Map(Object.entries(doc.graphPositions))
+    documentStoreRegistry.create(doc.tabId, {
+      entries: doc.entries,
+      bookMeta: doc.bookMeta,
+      graphPositions: positions,
+      simulatorState: doc.simulatorState,
+    })
+    useWorkspaceStore.getState().openTab(doc.tabId, doc.fileMeta.fileName, doc.fileMeta)
   }
 
   const { graph } = useDerivedState(activeTabId)
@@ -221,7 +206,7 @@ export function WorkspaceShell() {
     [handleImportFile]
   )
 
-  const handleSave = useCallback(() => {
+  const handleExport = useCallback(() => {
     if (!activeTabId || !activeTab) return
     exportFile(activeTabId, activeTab.fileMeta.fileName)
   }, [activeTabId, activeTab])
@@ -254,7 +239,7 @@ export function WorkspaceShell() {
   // Keyboard shortcuts
   useKeyboardShortcuts({
     activeTabId,
-    onSave: handleSave,
+    onSave: handleExport,
     onUndo: handleUndo,
     onRedo: handleRedo,
     onNewEntry: handleNewEntry,
@@ -327,14 +312,24 @@ export function WorkspaceShell() {
             <Redo2 size={16} />
           </button>
 
-          {/* Save */}
+          {/* Export */}
           <button
-            onClick={handleSave}
+            onClick={handleExport}
             disabled={!activeTabId}
-            title={`Save (${modKey}+S)`}
+            title={`Export (${modKey}+S)`}
             className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
           >
-            <Save size={16} />
+            <Download size={16} />
+          </button>
+
+          {/* Save snapshot */}
+          <button
+            onClick={() => setShowSnapshotDialog(true)}
+            disabled={!activeTabId}
+            title="Save snapshot"
+            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
+          >
+            <BookmarkPlus size={16} />
           </button>
 
           {/* Open file */}
@@ -402,19 +397,37 @@ export function WorkspaceShell() {
             </button>
           ) : (
             <>
-              <div className="p-3 border-b border-ctp-surface0 shrink-0 flex items-center justify-between">
-                <span className="text-xs font-medium text-ctp-subtext0 uppercase tracking-wider">Entries</span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setLeftCollapsed(true)}
-                    title="Collapse panel"
-                    className="p-1 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
-                  >
-                    <ChevronLeft size={14} />
-                  </button>
+              {/* Left panel tab switcher */}
+              <div className="flex border-b border-ctp-surface0 shrink-0 items-center">
+                <div className="flex flex-1">
+                  {(['files', 'entries'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setLeftPanelTab(tab)}
+                      className={`flex-1 py-2 text-[10px] font-medium uppercase tracking-wider transition-colors border-b-2 ${
+                        leftPanelTab === tab
+                          ? 'text-ctp-text border-ctp-accent'
+                          : 'text-ctp-overlay1 border-transparent hover:text-ctp-subtext1'
+                      }`}
+                    >
+                      {tab === 'files' ? 'Files' : 'Entries'}
+                    </button>
+                  ))}
                 </div>
+                <button
+                  onClick={() => setLeftCollapsed(true)}
+                  title="Collapse panel"
+                  className="p-1 mx-1 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
+                >
+                  <ChevronLeft size={14} />
+                </button>
               </div>
-              <EntryList onOpenModal={setModalEntryId} />
+
+              {/* Left panel content */}
+              {leftPanelTab === 'files'
+                ? <FilesPanel onRestoreDoc={handleRestoreDoc} />
+                : <EntryList onOpenModal={setModalEntryId} />
+              }
             </>
           )}
         </aside>
@@ -587,13 +600,25 @@ export function WorkspaceShell() {
         />
       )}
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      {showRecovery && (
-        <RecoveryDialog
-          documents={recoveryDocs}
-          onRestore={handleRestore}
-          onDismiss={handleDismissRecovery}
-        />
-      )}
+      <SaveSnapshotDialog
+        open={showSnapshotDialog}
+        defaultName={`${activeTab?.fileMeta.fileName ?? 'snapshot'} — ${new Date().toLocaleString()}`}
+        onSave={async (name) => {
+          if (!activeTabId || !realStore) return
+          const state = realStore.getState()
+          const snapshot: PersistedSnapshot = {
+            id: generateId(),
+            tabId: activeTabId,
+            name,
+            savedAt: new Date().toISOString(),
+            entries: state.entries,
+            bookMeta: state.bookMeta,
+          }
+          await saveSnapshot(snapshot)
+          setShowSnapshotDialog(false)
+        }}
+        onCancel={() => setShowSnapshotDialog(false)}
+      />
 
       {/* Lorebook picker dialog */}
       {lorebookPickerState && (
