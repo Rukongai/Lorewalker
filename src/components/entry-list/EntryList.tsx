@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Search, ChevronDown, ChevronUp, CheckCheck, XCircle } from 'lucide-react'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
@@ -178,13 +179,14 @@ export function EntryList({ onOpenModal }: EntryListProps = {}) {
           >
             Delete
           </button>
-          <button
-            onClick={() => realStore?.getState().clearMultiSelect()}
-            className="ml-auto p-0.5 text-ctp-overlay1 hover:text-ctp-subtext1 transition-colors"
-            title="Clear selection"
-          >
-            <XCircle size={13} />
-          </button>
+          <Tooltip text="Clear selection">
+            <button
+              onClick={() => realStore?.getState().clearMultiSelect()}
+              className="ml-auto p-0.5 text-ctp-overlay1 hover:text-ctp-subtext1 transition-colors"
+            >
+              <XCircle size={13} />
+            </button>
+          </Tooltip>
         </div>
       )}
 
@@ -255,13 +257,14 @@ export function EntryList({ onOpenModal }: EntryListProps = {}) {
                   <option value="order">Order</option>
                   <option value="displayIndex">Display Index</option>
                 </select>
-                <button
-                  onClick={() => setSortDir((d) => d === 'asc' ? 'desc' : 'asc')}
-                  className="text-ctp-overlay1 hover:text-ctp-subtext1 transition-colors leading-none w-4 text-center"
-                  title={sortDir === 'asc' ? 'Ascending — click to reverse' : 'Descending — click to reverse'}
-                >
-                  {sortDir === 'asc' ? '↑' : '↓'}
-                </button>
+                <Tooltip text={sortDir === 'asc' ? 'Ascending — click to reverse' : 'Descending — click to reverse'}>
+                  <button
+                    onClick={() => setSortDir((d) => d === 'asc' ? 'desc' : 'asc')}
+                    className="text-ctp-overlay1 hover:text-ctp-subtext1 transition-colors leading-none w-4 text-center"
+                  >
+                    {sortDir === 'asc' ? '↑' : '↓'}
+                  </button>
+                </Tooltip>
               </div>
             </div>
 
@@ -284,14 +287,15 @@ export function EntryList({ onOpenModal }: EntryListProps = {}) {
                   <option value="order">Order</option>
                   <option value="displayIndex">Display Index</option>
                 </select>
-                <button
-                  onClick={() => setSortDir2((d) => d === 'asc' ? 'desc' : 'asc')}
-                  className={`leading-none transition-colors w-4 text-center ${sortBy2 === null ? 'text-ctp-surface1 cursor-default' : 'text-ctp-overlay1 hover:text-ctp-subtext1 cursor-pointer'}`}
-                  title={sortDir2 === 'asc' ? 'Ascending — click to reverse' : 'Descending — click to reverse'}
-                  disabled={sortBy2 === null}
-                >
-                  {sortDir2 === 'asc' ? '↑' : '↓'}
-                </button>
+                <Tooltip text={sortDir2 === 'asc' ? 'Ascending — click to reverse' : 'Descending — click to reverse'}>
+                  <button
+                    onClick={() => setSortDir2((d) => d === 'asc' ? 'desc' : 'asc')}
+                    className={`leading-none transition-colors w-4 text-center ${sortBy2 === null ? 'text-ctp-surface1 cursor-default' : 'text-ctp-overlay1 hover:text-ctp-subtext1 cursor-pointer'}`}
+                    disabled={sortBy2 === null}
+                  >
+                    {sortDir2 === 'asc' ? '↑' : '↓'}
+                  </button>
+                </Tooltip>
               </div>
             </div>
 

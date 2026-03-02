@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 
 interface GraphLegendProps {
   isOpen: boolean
@@ -173,13 +174,14 @@ export function GraphLegend({ isOpen, onToggle, connectionsMode }: GraphLegendPr
         <span className="text-[11px] font-semibold text-ctp-subtext0 uppercase tracking-wide">
           {connectionsMode ? 'Simulator Mode' : 'Graph Legend'}
         </span>
-        <button
-          onClick={onToggle}
-          className="text-ctp-overlay1 hover:text-ctp-subtext1 transition-colors"
-          title="Close legend"
-        >
-          <X size={12} />
-        </button>
+        <Tooltip text="Close legend">
+          <button
+            onClick={onToggle}
+            className="text-ctp-overlay1 hover:text-ctp-subtext1 transition-colors"
+          >
+            <X size={12} />
+          </button>
+        </Tooltip>
       </div>
       {connectionsMode ? <SimulatorLegend /> : <GraphModeLegend />}
     </div>

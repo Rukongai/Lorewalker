@@ -1,4 +1,5 @@
 import { Plus, Trash2, ChevronDown } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import type { ComparisonOp, LogicOp, ConditionLeaf, ConditionGroup, SerializedEvaluation } from '@/types'
 import { useState } from 'react'
 
@@ -207,14 +208,15 @@ function LeafRow({ leaf, onChange, onDelete }: LeafRowProps) {
       )}
 
       {/* Delete */}
-      <button
-        type="button"
-        onClick={onDelete}
-        className="p-1 rounded text-ctp-overlay0 hover:text-ctp-red hover:bg-ctp-red/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-        title="Remove condition"
-      >
-        <Trash2 size={11} />
-      </button>
+      <Tooltip text="Remove condition">
+        <button
+          type="button"
+          onClick={onDelete}
+          className="p-1 rounded text-ctp-overlay0 hover:text-ctp-red hover:bg-ctp-red/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+        >
+          <Trash2 size={11} />
+        </button>
+      </Tooltip>
     </div>
   )
 }
@@ -342,14 +344,15 @@ export function ConditionBuilder({ value, onChange }: ConditionBuilderProps) {
                     </button>
                   ))}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => removeItem(index)}
-                  className="ml-auto p-0.5 rounded text-ctp-overlay0 hover:text-ctp-red hover:bg-ctp-red/10 transition-colors"
-                  title="Remove group"
-                >
-                  <Trash2 size={11} />
-                </button>
+                <Tooltip text="Remove group">
+                  <button
+                    type="button"
+                    onClick={() => removeItem(index)}
+                    className="ml-auto p-0.5 rounded text-ctp-overlay0 hover:text-ctp-red hover:bg-ctp-red/10 transition-colors"
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </Tooltip>
               </div>
               {group.conditions.map((leaf, li) => (
                 <LeafRow

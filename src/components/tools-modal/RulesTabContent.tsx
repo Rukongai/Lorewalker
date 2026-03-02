@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Plus, Edit2, Trash2, Copy } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { INCOMPATIBLE_RULE_IDS } from '@/services/analysis/copy-compatibility'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
@@ -190,14 +191,15 @@ export function RulesTabContent({ tabId }: RulesTabContentProps) {
               </button>
             ))}
           </div>
-          <button
-            onClick={handleNewRule}
-            className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-ctp-accent/10 text-ctp-accent hover:bg-ctp-accent/20 transition-colors"
-            title="New custom rule"
-          >
-            <Plus size={11} />
-            New
-          </button>
+          <Tooltip text="New custom rule">
+            <button
+              onClick={handleNewRule}
+              className="flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-ctp-accent/10 text-ctp-accent hover:bg-ctp-accent/20 transition-colors"
+            >
+              <Plus size={11} />
+              New
+            </button>
+          </Tooltip>
         </div>
 
         {/* Rule list */}
@@ -286,42 +288,45 @@ export function RulesTabContent({ tabId }: RulesTabContentProps) {
               <div className="flex gap-1 shrink-0">
                 {selectedRow.kind === 'custom' && (
                   <>
-                    <button
-                      onClick={() => handleEditRule((selectedRow as CustomRuleRow).rule)}
-                      className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
-                      title="Edit rule"
-                    >
-                      <Edit2 size={11} />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteCustom(selectedRow as CustomRuleRow)}
-                      className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-ctp-red/70 hover:text-ctp-red hover:bg-ctp-red/10 transition-colors"
-                      title="Delete rule"
-                    >
-                      <Trash2 size={11} />
-                      Delete
-                    </button>
+                    <Tooltip text="Edit rule">
+                      <button
+                        onClick={() => handleEditRule((selectedRow as CustomRuleRow).rule)}
+                        className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
+                      >
+                        <Edit2 size={11} />
+                        Edit
+                      </button>
+                    </Tooltip>
+                    <Tooltip text="Delete rule">
+                      <button
+                        onClick={() => handleDeleteCustom(selectedRow as CustomRuleRow)}
+                        className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-ctp-red/70 hover:text-ctp-red hover:bg-ctp-red/10 transition-colors"
+                      >
+                        <Trash2 size={11} />
+                        Delete
+                      </button>
+                    </Tooltip>
                   </>
                 )}
                 {selectedRow.kind === 'default' && (() => {
                   const compatible = !INCOMPATIBLE_RULE_IDS.has(selectedRow.rule.id)
                   return (
-                    <button
-                      onClick={compatible ? () => handleCopyRule(selectedRow.rule) : undefined}
-                      disabled={!compatible}
-                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
-                        compatible
-                          ? 'text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0'
-                          : 'text-ctp-overlay0 cursor-not-allowed opacity-50'
-                      }`}
-                      title={compatible
-                        ? 'Copy and customize this rule'
-                        : 'Incompatible — this rule uses complex multi-entry or graph analysis that cannot be expressed in the Rule Editor'}
-                    >
-                      <Copy size={11} />
-                      Copy
-                    </button>
+                    <Tooltip text={compatible
+                      ? 'Copy and customize this rule'
+                      : 'Incompatible — this rule uses complex multi-entry or graph analysis that cannot be expressed in the Rule Editor'}>
+                      <button
+                        onClick={compatible ? () => handleCopyRule(selectedRow.rule) : undefined}
+                        disabled={!compatible}
+                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                          compatible
+                            ? 'text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0'
+                            : 'text-ctp-overlay0 cursor-not-allowed opacity-50'
+                        }`}
+                      >
+                        <Copy size={11} />
+                        Copy
+                      </button>
+                    </Tooltip>
                   )
                 })()}
               </div>

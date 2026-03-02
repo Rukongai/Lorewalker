@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import type { Finding, FindingSeverity, HealthScore, RuleCategory } from '@/types'
 
 interface AnalysisFindingListProps {
@@ -93,14 +94,15 @@ export function AnalysisFindingList({
           <span className="text-sm text-ctp-subtext0 flex-1 leading-snug">{healthScore.summary}</span>
         </div>
 
-        <button
-          onClick={onDeepAnalysis}
-          disabled={!hasLlmProvider}
-          title={hasLlmProvider ? 'Run AI-powered analysis' : 'Add a provider in Settings → Providers to enable'}
-          className="mt-2 px-3 py-1 rounded text-xs bg-ctp-accent text-ctp-base font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
-        >
-          Deep Analysis
-        </button>
+        <Tooltip text={hasLlmProvider ? 'Run AI-powered analysis' : 'Add a provider in Settings → Providers to enable'}>
+          <button
+            onClick={onDeepAnalysis}
+            disabled={!hasLlmProvider}
+            className="mt-2 px-3 py-1 rounded text-xs bg-ctp-accent text-ctp-base font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
+          >
+            Deep Analysis
+          </button>
+        </Tooltip>
       </div>
 
       {/* Severity filter bar */}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Play, PlusCircle, Trash2, Network, RotateCcw } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { simulate, simulateConversation } from '@/services/simulator-service'
@@ -111,26 +112,28 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
         {/* Connections + Reset buttons */}
         {lastResult && (
           <div className="flex gap-2">
-            <button
-              onClick={handleToggleConnectionsMode}
-              className={`flex flex-1 items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded border transition-colors ${
-                connectionsMode
-                  ? 'bg-ctp-accent text-ctp-base border-ctp-accent'
-                  : 'border-ctp-surface1 text-ctp-subtext0 hover:text-ctp-text hover:border-ctp-surface2'
-              }`}
-              title="Show connections between activated entries"
-            >
-              <Network size={11} />
-              Connections
-            </button>
-            <button
-              onClick={handleClearSimulation}
-              className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-ctp-surface1 text-ctp-subtext0 hover:text-ctp-red hover:border-ctp-red rounded transition-colors"
-              title="Clear simulation results"
-            >
-              <RotateCcw size={11} />
-              Reset
-            </button>
+            <Tooltip text="Show connections between activated entries">
+              <button
+                onClick={handleToggleConnectionsMode}
+                className={`flex flex-1 items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded border transition-colors ${
+                  connectionsMode
+                    ? 'bg-ctp-accent text-ctp-base border-ctp-accent'
+                    : 'border-ctp-surface1 text-ctp-subtext0 hover:text-ctp-text hover:border-ctp-surface2'
+                }`}
+              >
+                <Network size={11} />
+                Connections
+              </button>
+            </Tooltip>
+            <Tooltip text="Clear simulation results">
+              <button
+                onClick={handleClearSimulation}
+                className="flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-ctp-surface1 text-ctp-subtext0 hover:text-ctp-red hover:border-ctp-red rounded transition-colors"
+              >
+                <RotateCcw size={11} />
+                Reset
+              </button>
+            </Tooltip>
           </div>
         )}
 
@@ -164,13 +167,14 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
               <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1">
                 Conversation ({conversationHistory.length} steps)
               </p>
-              <button
-                onClick={handleClearHistory}
-                className="p-0.5 rounded text-ctp-overlay1 hover:text-ctp-red transition-colors"
-                title="Clear history"
-              >
-                <Trash2 size={10} />
-              </button>
+              <Tooltip text="Clear history">
+                <button
+                  onClick={handleClearHistory}
+                  className="p-0.5 rounded text-ctp-overlay1 hover:text-ctp-red transition-colors"
+                >
+                  <Trash2 size={10} />
+                </button>
+              </Tooltip>
             </div>
             {conversationHistory.map((step, i) => (
               <div key={i} className="bg-ctp-surface0 rounded p-2">

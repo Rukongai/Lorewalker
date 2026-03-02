@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -147,14 +148,15 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
 
         {/* Deep Analysis button */}
         <div className="pt-1 flex items-center justify-between">
-          <button
-            onClick={() => setDeepAnalysisOpen(true)}
-            disabled={!activeLlmProviderId}
-            title={activeLlmProviderId ? 'Run AI-powered analysis' : 'Add a provider in Settings → Providers to enable'}
-            className="px-2 py-1 rounded text-[10px] bg-ctp-accent text-ctp-base font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
-          >
-            Deep Analysis
-          </button>
+          <Tooltip text={activeLlmProviderId ? 'Run AI-powered analysis' : 'Add a provider in Settings → Providers to enable'}>
+            <button
+              onClick={() => setDeepAnalysisOpen(true)}
+              disabled={!activeLlmProviderId}
+              className="px-2 py-1 rounded text-[10px] bg-ctp-accent text-ctp-base font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
+            >
+              Deep Analysis
+            </button>
+          </Tooltip>
           {llmFindings.length > 0 && (
             <span className="text-[10px] text-ctp-overlay1 flex items-center gap-1">
               <AiBadge /> {llmFindings.length} AI finding{llmFindings.length !== 1 ? 's' : ''}
@@ -164,20 +166,21 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
 
         {/* Categorize Entries button */}
         <div className="flex items-center justify-between gap-2">
-          <button
-            onClick={handleCategorize}
-            disabled={!canCategorize || categorizing}
-            title={
-              !llmCategorization.enabled
-                ? 'Enable LLM categorization in Settings → LLM Tools'
-                : !categorizationProviderId
-                ? 'Add a provider in Settings → Providers to enable'
-                : 'Categorize entries using LLM'
-            }
-            className="px-2 py-1 rounded text-[10px] bg-ctp-surface1 text-ctp-subtext1 font-medium disabled:opacity-40 hover:bg-ctp-surface2 transition-colors"
-          >
-            Categorize Entries
-          </button>
+          <Tooltip text={
+            !llmCategorization.enabled
+              ? 'Enable LLM categorization in Settings → LLM Tools'
+              : !categorizationProviderId
+              ? 'Add a provider in Settings → Providers to enable'
+              : 'Categorize entries using LLM'
+          }>
+            <button
+              onClick={handleCategorize}
+              disabled={!canCategorize || categorizing}
+              className="px-2 py-1 rounded text-[10px] bg-ctp-surface1 text-ctp-subtext1 font-medium disabled:opacity-40 hover:bg-ctp-surface2 transition-colors"
+            >
+              Categorize Entries
+            </button>
+          </Tooltip>
           {categorizing && categorizeProgress && (
             <span className="text-[10px] text-ctp-overlay1">
               Categorizing {categorizeProgress.done}/{categorizeProgress.total}…

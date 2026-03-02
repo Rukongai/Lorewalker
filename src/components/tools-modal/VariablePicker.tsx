@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Copy, CornerDownLeft } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { VARIABLE_DEFS } from './ConditionBuilder'
 
 interface VariablePickerProps {
@@ -55,49 +56,54 @@ export function VariablePicker({ mode, onInsert, onCopy }: VariablePickerProps) 
                       {v.type}
                     </span>
                     <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        type="button"
-                        title="Copy to clipboard"
-                        onClick={() => onCopy(v.path)}
-                        className="p-0.5 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface1 transition-colors"
-                      >
-                        <Copy size={10} />
-                      </button>
-                      {mode === 'deterministic' ? (
+                      <Tooltip text="Copy to clipboard">
                         <button
                           type="button"
-                          title="Insert into message template"
-                          onClick={() => onInsert(v.path, 'message')}
-                          className="p-0.5 rounded text-ctp-overlay1 hover:text-ctp-accent hover:bg-ctp-surface1 transition-colors"
+                          onClick={() => onCopy(v.path)}
+                          className="p-0.5 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface1 transition-colors"
                         >
-                          <CornerDownLeft size={10} />
+                          <Copy size={10} />
                         </button>
+                      </Tooltip>
+                      {mode === 'deterministic' ? (
+                        <Tooltip text="Insert into message template">
+                          <button
+                            type="button"
+                            onClick={() => onInsert(v.path, 'message')}
+                            className="p-0.5 rounded text-ctp-overlay1 hover:text-ctp-accent hover:bg-ctp-surface1 transition-colors"
+                          >
+                            <CornerDownLeft size={10} />
+                          </button>
+                        </Tooltip>
                       ) : (
                         <>
-                          <button
-                            type="button"
-                            title="Insert into system prompt"
-                            onClick={() => onInsert(v.path, 'system')}
-                            className="px-1 py-0.5 rounded text-[9px] text-ctp-overlay1 hover:text-ctp-blue hover:bg-ctp-surface1 transition-colors font-medium"
-                          >
-                            Sys
-                          </button>
-                          <button
-                            type="button"
-                            title="Insert into user prompt"
-                            onClick={() => onInsert(v.path, 'user')}
-                            className="px-1 py-0.5 rounded text-[9px] text-ctp-overlay1 hover:text-ctp-green hover:bg-ctp-surface1 transition-colors font-medium"
-                          >
-                            User
-                          </button>
-                          <button
-                            type="button"
-                            title="Insert into message template"
-                            onClick={() => onInsert(v.path, 'message')}
-                            className="px-1 py-0.5 rounded text-[9px] text-ctp-overlay1 hover:text-ctp-accent hover:bg-ctp-surface1 transition-colors font-medium"
-                          >
-                            Msg
-                          </button>
+                          <Tooltip text="Insert into system prompt">
+                            <button
+                              type="button"
+                              onClick={() => onInsert(v.path, 'system')}
+                              className="px-1 py-0.5 rounded text-[9px] text-ctp-overlay1 hover:text-ctp-blue hover:bg-ctp-surface1 transition-colors font-medium"
+                            >
+                              Sys
+                            </button>
+                          </Tooltip>
+                          <Tooltip text="Insert into user prompt">
+                            <button
+                              type="button"
+                              onClick={() => onInsert(v.path, 'user')}
+                              className="px-1 py-0.5 rounded text-[9px] text-ctp-overlay1 hover:text-ctp-green hover:bg-ctp-surface1 transition-colors font-medium"
+                            >
+                              User
+                            </button>
+                          </Tooltip>
+                          <Tooltip text="Insert into message template">
+                            <button
+                              type="button"
+                              onClick={() => onInsert(v.path, 'message')}
+                              className="px-1 py-0.5 rounded text-[9px] text-ctp-overlay1 hover:text-ctp-accent hover:bg-ctp-surface1 transition-colors font-medium"
+                            >
+                              Msg
+                            </button>
+                          </Tooltip>
                         </>
                       )}
                     </div>

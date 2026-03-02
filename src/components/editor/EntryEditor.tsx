@@ -1,5 +1,6 @@
 import { useCallback, useState, useMemo } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
@@ -333,22 +334,24 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
       </Field>
       <div className="flex items-center gap-2 px-0.5">
         <span className="text-[11px] text-ctp-subtext0">Category</span>
-        <button
-          onClick={(e) => openCategoryMenu(e, entry.userCategory)}
-          className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs bg-ctp-surface0 hover:bg-ctp-surface1 border border-ctp-surface2 transition-colors"
-          title="Click to change category"
-        >
-          {categoryIcon && <span className="text-[11px]">{categoryIcon}</span>}
-          <span className="text-ctp-subtext1 capitalize">{effectiveCategory}</span>
-        </button>
-        {entry.userCategory && (
+        <Tooltip text="Click to change category">
           <button
-            onClick={() => handleSetCategory(undefined)}
-            className="text-[9px] text-ctp-overlay1 hover:text-ctp-red transition-colors"
-            title="Clear category override"
+            onClick={(e) => openCategoryMenu(e, entry.userCategory)}
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs bg-ctp-surface0 hover:bg-ctp-surface1 border border-ctp-surface2 transition-colors"
           >
-            ✕
+            {categoryIcon && <span className="text-[11px]">{categoryIcon}</span>}
+            <span className="text-ctp-subtext1 capitalize">{effectiveCategory}</span>
           </button>
+        </Tooltip>
+        {entry.userCategory && (
+          <Tooltip text="Clear category override">
+            <button
+              onClick={() => handleSetCategory(undefined)}
+              className="text-[9px] text-ctp-overlay1 hover:text-ctp-red transition-colors"
+            >
+              ✕
+            </button>
+          </Tooltip>
         )}
         {categoryMenuElement}
       </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Play, PlusCircle, Trash2, RotateCcw } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { simulate, simulateConversation } from '@/services/simulator-service'
@@ -126,13 +127,14 @@ export function SimulatorConversationPane({
               <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1">
                 History ({conversationHistory.length} steps)
               </p>
-              <button
-                onClick={handleClearHistory}
-                className="p-0.5 rounded text-ctp-overlay1 hover:text-ctp-red transition-colors"
-                title="Clear history"
-              >
-                <Trash2 size={11} />
-              </button>
+              <Tooltip text="Clear history">
+                <button
+                  onClick={handleClearHistory}
+                  className="p-0.5 rounded text-ctp-overlay1 hover:text-ctp-red transition-colors"
+                >
+                  <Trash2 size={11} />
+                </button>
+              </Tooltip>
             </div>
             <div className="flex flex-col gap-1.5">
               {conversationHistory.map((step, i) => (

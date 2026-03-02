@@ -37,6 +37,7 @@ import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { WorkspaceToolsModal } from '@/components/tools-modal/WorkspaceToolsModal'
 import type { ToolsTab } from '@/components/tools-modal/WorkspaceToolsModal'
 import type { PersistedDocument, PersistedSnapshot } from '@/types'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { generateId } from '@/lib/uuid'
 
 type RightPanelTab = 'lorebook' | 'entry' | 'analysis' | 'inspector' | 'simulator'
@@ -324,101 +325,108 @@ export function WorkspaceShell() {
 
         <div className="flex items-center gap-1">
           {/* Undo */}
-          <button
-            onClick={handleUndo}
-            disabled={!canUndo}
-            title={`Undo (${modKey}+Z)`}
-            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
-          >
-            <Undo2 size={16} />
-          </button>
+          <Tooltip text={`Undo (${modKey}+Z)`} placement="below">
+            <button
+              onClick={handleUndo}
+              disabled={!canUndo}
+              className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
+            >
+              <Undo2 size={16} />
+            </button>
+          </Tooltip>
 
           {/* Redo */}
-          <button
-            onClick={handleRedo}
-            disabled={!canRedo}
-            title={`Redo (${modKey}+Shift+Z)`}
-            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
-          >
-            <Redo2 size={16} />
-          </button>
+          <Tooltip text={`Redo (${modKey}+Shift+Z)`} placement="below">
+            <button
+              onClick={handleRedo}
+              disabled={!canRedo}
+              className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
+            >
+              <Redo2 size={16} />
+            </button>
+          </Tooltip>
 
           {/* Export */}
-          <button
-            onClick={handleExport}
-            disabled={!activeTabId}
-            title="Export"
-            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
-          >
-            <Download size={16} />
-          </button>
+          <Tooltip text="Export" placement="below">
+            <button
+              onClick={handleExport}
+              disabled={!activeTabId}
+              className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
+            >
+              <Download size={16} />
+            </button>
+          </Tooltip>
 
           {/* Open file */}
-          <label
-            title={`Open file (${modKey}+O)`}
-            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 cursor-pointer transition-colors"
-          >
-            <Upload size={16} />
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json,.png,.charx"
-              onChange={handleFilePickerChange}
-              className="sr-only"
-              data-1p-ignore
-            />
-          </label>
+          <Tooltip text={`Open file (${modKey}+O)`} placement="below">
+            <label className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 cursor-pointer transition-colors">
+              <Upload size={16} />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json,.png,.charx"
+                onChange={handleFilePickerChange}
+                className="sr-only"
+                data-1p-ignore
+              />
+            </label>
+          </Tooltip>
 
           {/* Save snapshot */}
-          <button
-            onClick={() => setShowSnapshotDialog(true)}
-            disabled={!activeTabId}
-            title={`Save snapshot (${modKey}+S)`}
-            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
-          >
-            <BookmarkPlus size={16} />
-          </button>
+          <Tooltip text={`Save snapshot (${modKey}+S)`} placement="below">
+            <button
+              onClick={() => setShowSnapshotDialog(true)}
+              disabled={!activeTabId}
+              className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
+            >
+              <BookmarkPlus size={16} />
+            </button>
+          </Tooltip>
 
           {/* Settings */}
-          <button
-            onClick={() => setSettingsOpen(true)}
-            title="Settings"
-            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
-          >
-            <Settings size={16} />
-          </button>
+          <Tooltip text="Settings" placement="below">
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
+            >
+              <Settings size={16} />
+            </button>
+          </Tooltip>
 
           <div className="w-px h-4 bg-ctp-surface1 mx-0.5" />
 
           {/* Analysis tools modal */}
-          <button
-            onClick={() => { setToolsModalTab('analysis'); setToolsModalOpen(true) }}
-            disabled={!activeTabId}
-            title="Open Analysis panel"
-            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
-          >
-            <BarChart2 size={16} />
-          </button>
+          <Tooltip text="Open Analysis panel" placement="below">
+            <button
+              onClick={() => { setToolsModalTab('analysis'); setToolsModalOpen(true) }}
+              disabled={!activeTabId}
+              className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
+            >
+              <BarChart2 size={16} />
+            </button>
+          </Tooltip>
 
           {/* Simulator tools modal */}
-          <button
-            onClick={() => { setToolsModalTab('simulator'); setToolsModalOpen(true) }}
-            disabled={!activeTabId}
-            title="Open Simulator panel"
-            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
-          >
-            <Zap size={16} />
-          </button>
+          <Tooltip text="Open Simulator panel" placement="below">
+            <button
+              onClick={() => { setToolsModalTab('simulator'); setToolsModalOpen(true) }}
+              disabled={!activeTabId}
+              className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
+            >
+              <Zap size={16} />
+            </button>
+          </Tooltip>
 
           {/* Rules tools modal */}
-          <button
-            onClick={() => { setToolsModalTab('rules'); setToolsModalOpen(true) }}
-            disabled={!activeTabId}
-            title="Open Rules panel"
-            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
-          >
-            <Scale size={16} />
-          </button>
+          <Tooltip text="Open Rules panel" placement="below">
+            <button
+              onClick={() => { setToolsModalTab('rules'); setToolsModalOpen(true) }}
+              disabled={!activeTabId}
+              className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
+            >
+              <Scale size={16} />
+            </button>
+          </Tooltip>
         </div>
       </header>
 
@@ -451,13 +459,14 @@ export function WorkspaceShell() {
           }}
         >
           {leftCollapsed ? (
-            <button
-              className="flex-1 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
-              onClick={() => setLeftCollapsed(false)}
-              title="Expand entries panel"
-            >
-              <ChevronRight size={14} />
-            </button>
+            <Tooltip text="Expand entries panel">
+              <button
+                className="flex-1 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
+                onClick={() => setLeftCollapsed(false)}
+              >
+                <ChevronRight size={14} />
+              </button>
+            </Tooltip>
           ) : (
             <>
               {/* Left panel tab switcher */}
@@ -477,13 +486,14 @@ export function WorkspaceShell() {
                     </button>
                   ))}
                 </div>
-                <button
-                  onClick={() => setLeftCollapsed(true)}
-                  title="Collapse panel"
-                  className="p-1 mx-1 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
-                >
-                  <ChevronLeft size={14} />
-                </button>
+                <Tooltip text="Collapse panel">
+                  <button
+                    onClick={() => setLeftCollapsed(true)}
+                    className="p-1 mx-1 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                </Tooltip>
               </div>
 
               {/* Left panel content */}
@@ -540,13 +550,14 @@ export function WorkspaceShell() {
           }}
         >
           {rightCollapsed ? (
-            <button
-              className="flex-1 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
-              onClick={() => setRightCollapsed(false)}
-              title="Expand editor panel"
-            >
-              <ChevronLeft size={14} />
-            </button>
+            <Tooltip text="Expand editor panel">
+              <button
+                className="flex-1 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
+                onClick={() => setRightCollapsed(false)}
+              >
+                <ChevronLeft size={14} />
+              </button>
+            </Tooltip>
           ) : (
             <>
               {/* Panel header with tabs */}
@@ -570,13 +581,14 @@ export function WorkspaceShell() {
                     </button>
                   ))}
                 </div>
-                <button
-                  onClick={() => setRightCollapsed(true)}
-                  title="Collapse panel"
-                  className="p-1 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
-                >
-                  <ChevronRight size={14} />
-                </button>
+                <Tooltip text="Collapse panel">
+                  <button
+                    onClick={() => setRightCollapsed(true)}
+                    className="p-1 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </Tooltip>
               </div>
 
               {/* Tab: Lorebook */}
@@ -605,13 +617,14 @@ export function WorkspaceShell() {
                         onChange={handleToggleEnabled}
                         aria-label={selectedEntry.enabled ? 'Disable entry' : 'Enable entry'}
                       />
-                      <button
-                        onClick={() => setModalEntryId(selectedEntryId!)}
-                        title="Open in full editor"
-                        className="p-1 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
-                      >
-                        <Maximize2 size={12} />
-                      </button>
+                      <Tooltip text="Open in full editor">
+                        <button
+                          onClick={() => setModalEntryId(selectedEntryId!)}
+                          className="p-1 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
+                        >
+                          <Maximize2 size={12} />
+                        </button>
+                      </Tooltip>
                     </div>
                   )}
                   {selectedEntryId ? (

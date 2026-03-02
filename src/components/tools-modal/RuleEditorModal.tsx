@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import type { CustomRule, Rule, RuleCategory, FindingSeverity } from '@/types'
 import { ConditionBuilder } from './ConditionBuilder'
 import { RuleTestingPane } from './RuleTestingPane'
@@ -189,13 +190,14 @@ export function RuleEditorModal({ initialRule, copySource, tabId, onSave, onClos
               ))}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
-            title="Close (Esc)"
-          >
-            <X size={14} />
-          </button>
+          <Tooltip text="Close (Esc)">
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Content */}

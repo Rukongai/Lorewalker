@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ArrowRight } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
@@ -107,17 +108,18 @@ export function ActivationLinks({ entryId, graph, onNavigate }: ActivationLinksP
           {hasBlockedLeft && (
             <span className="flex items-center gap-0.5">
               <HelpTooltip text="Blocked entries are links prevented by 'Prevent Further Recursion' or 'Non-recursable' flags. They appear struck through. Toggle to hide them." />
-              <button
-                onClick={() => setHideBlockedLeft((v) => !v)}
-                className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${
-                  hideBlockedLeft
-                    ? 'bg-ctp-accent/35 border-ctp-accent/60 text-ctp-accent font-medium'
-                    : 'bg-ctp-surface0 border-ctp-surface1 text-ctp-overlay0 hover:text-ctp-subtext0'
-                }`}
-                title={hideBlockedLeft ? 'Show blocked' : 'Hide blocked'}
-              >
-                {hideBlockedLeft ? 'Blocked: Visible' : 'Blocked: Hide'}
-              </button>
+              <Tooltip text={hideBlockedLeft ? 'Show blocked' : 'Hide blocked'}>
+                <button
+                  onClick={() => setHideBlockedLeft((v) => !v)}
+                  className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${
+                    hideBlockedLeft
+                      ? 'bg-ctp-accent/35 border-ctp-accent/60 text-ctp-accent font-medium'
+                      : 'bg-ctp-surface0 border-ctp-surface1 text-ctp-overlay0 hover:text-ctp-subtext0'
+                  }`}
+                >
+                  {hideBlockedLeft ? 'Blocked: Visible' : 'Blocked: Hide'}
+                </button>
+              </Tooltip>
             </span>
           )}
         </div>
@@ -146,17 +148,18 @@ export function ActivationLinks({ entryId, graph, onNavigate }: ActivationLinksP
           {hasBlockedRight && (
             <span className="flex items-center gap-0.5">
               <HelpTooltip text="Blocked entries are links prevented by 'Prevent Further Recursion' or 'Non-recursable' flags. They appear struck through. Toggle to hide them." />
-              <button
-                onClick={() => setHideBlockedRight((v) => !v)}
-                className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${
-                  hideBlockedRight
-                    ? 'bg-ctp-accent/35 border-ctp-accent/60 text-ctp-accent font-medium'
-                    : 'bg-ctp-surface0 border-ctp-surface1 text-ctp-overlay0 hover:text-ctp-subtext0'
-                }`}
-                title={hideBlockedRight ? 'Show blocked' : 'Hide blocked'}
-              >
-                {hideBlockedRight ? 'Blocked: Visible' : 'Blocked: Hide'}
-              </button>
+              <Tooltip text={hideBlockedRight ? 'Show blocked' : 'Hide blocked'}>
+                <button
+                  onClick={() => setHideBlockedRight((v) => !v)}
+                  className={`text-[9px] px-1.5 py-0.5 rounded border transition-colors ${
+                    hideBlockedRight
+                      ? 'bg-ctp-accent/35 border-ctp-accent/60 text-ctp-accent font-medium'
+                      : 'bg-ctp-surface0 border-ctp-surface1 text-ctp-overlay0 hover:text-ctp-subtext0'
+                  }`}
+                >
+                  {hideBlockedRight ? 'Blocked: Visible' : 'Blocked: Hide'}
+                </button>
+              </Tooltip>
             </span>
           )}
         </div>

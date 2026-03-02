@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { useDerivedState, EMPTY_STORE } from '@/hooks/useDerivedState'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
@@ -70,31 +71,34 @@ export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-ctp-surface1 shrink-0">
           <div className="flex items-center gap-1">
-            <button
-              onClick={goBack}
-              disabled={backStack.length === 0}
-              title={backStack.length > 0 ? `Back: ${entryMap.get(backStack[backStack.length - 1]) ?? '...'}` : 'No history'}
-              className="p-1 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            <button
-              onClick={goForward}
-              disabled={forwardStack.length === 0}
-              title={forwardStack.length > 0 ? `Forward: ${entryMap.get(forwardStack[0]) ?? '...'}` : 'No forward history'}
-              className="p-1 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight size={14} />
-            </button>
+            <Tooltip text={backStack.length > 0 ? `Back: ${entryMap.get(backStack[backStack.length - 1]) ?? '...'}` : 'No history'}>
+              <button
+                onClick={goBack}
+                disabled={backStack.length === 0}
+                className="p-1 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={14} />
+              </button>
+            </Tooltip>
+            <Tooltip text={forwardStack.length > 0 ? `Forward: ${entryMap.get(forwardStack[0]) ?? '...'}` : 'No forward history'}>
+              <button
+                onClick={goForward}
+                disabled={forwardStack.length === 0}
+                className="p-1 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </Tooltip>
             <span className="text-xs font-medium text-ctp-subtext0 uppercase tracking-wider">Entry</span>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
-            title="Close (Esc)"
-          >
-            <X size={14} />
-          </button>
+          <Tooltip text="Close (Esc)">
+            <button
+              onClick={onClose}
+              className="p-1 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Quadrant editor */}

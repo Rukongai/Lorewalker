@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { ChevronDown, ChevronRight, Trash2, RotateCcw } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { listDocuments, deleteDocument, listSnapshots, deleteSnapshot } from '@/services/persistence-service'
@@ -170,38 +171,41 @@ export function FilesPanel({ onRestoreDoc }: FilesPanelProps) {
               <li key={doc.tabId}>
                 {/* Doc row */}
                 <div className="flex items-center gap-1 px-3 py-1.5 hover:bg-ctp-surface0 group">
-                  <button
-                    className="flex items-center gap-1.5 flex-1 text-left text-ctp-text hover:text-ctp-text min-w-0"
-                    onClick={() => onRestoreDoc(doc)}
-                    title={isOpen ? 'Switch to open tab' : 'Restore this session'}
-                  >
-                    {isOpen
-                      ? <span className="w-[11px] h-[11px] shrink-0" />
-                      : <RotateCcw size={11} className="shrink-0 text-ctp-overlay1" />
-                    }
-                    <span className="truncate flex-1">{doc.fileMeta.fileName}</span>
-                    {isOpen && (
-                      <span className="text-[10px] text-ctp-accent shrink-0 ml-1">open</span>
-                    )}
-                    <span className="text-ctp-overlay1 shrink-0 ml-1">{relativeTime(doc.savedAt)}</span>
-                  </button>
-                  <button
-                    className="p-0.5 rounded text-ctp-overlay0 hover:text-ctp-red hover:bg-ctp-surface1 transition-colors opacity-0 group-hover:opacity-100"
-                    onClick={() => handleDeleteDoc(doc.tabId)}
-                    title="Delete from history"
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                  <button
-                    className="p-0.5 rounded text-ctp-overlay0 hover:text-ctp-subtext1 hover:bg-ctp-surface1 transition-colors"
-                    onClick={() => handleToggleExpand(doc.tabId)}
-                    title="Show snapshots"
-                  >
-                    {expandedTabIds.has(doc.tabId)
-                      ? <ChevronDown size={11} />
-                      : <ChevronRight size={11} />
-                    }
-                  </button>
+                  <Tooltip text={isOpen ? 'Switch to open tab' : 'Restore this session'}>
+                    <button
+                      className="flex items-center gap-1.5 flex-1 text-left text-ctp-text hover:text-ctp-text min-w-0"
+                      onClick={() => onRestoreDoc(doc)}
+                    >
+                      {isOpen
+                        ? <span className="w-[11px] h-[11px] shrink-0" />
+                        : <RotateCcw size={11} className="shrink-0 text-ctp-overlay1" />
+                      }
+                      <span className="truncate flex-1">{doc.fileMeta.fileName}</span>
+                      {isOpen && (
+                        <span className="text-[10px] text-ctp-accent shrink-0 ml-1">open</span>
+                      )}
+                      <span className="text-ctp-overlay1 shrink-0 ml-1">{relativeTime(doc.savedAt)}</span>
+                    </button>
+                  </Tooltip>
+                  <Tooltip text="Delete from history">
+                    <button
+                      className="p-0.5 rounded text-ctp-overlay0 hover:text-ctp-red hover:bg-ctp-surface1 transition-colors opacity-0 group-hover:opacity-100"
+                      onClick={() => handleDeleteDoc(doc.tabId)}
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </Tooltip>
+                  <Tooltip text="Show snapshots">
+                    <button
+                      className="p-0.5 rounded text-ctp-overlay0 hover:text-ctp-subtext1 hover:bg-ctp-surface1 transition-colors"
+                      onClick={() => handleToggleExpand(doc.tabId)}
+                    >
+                      {expandedTabIds.has(doc.tabId)
+                        ? <ChevronDown size={11} />
+                        : <ChevronRight size={11} />
+                      }
+                    </button>
+                  </Tooltip>
                 </div>
 
                 {/* Snapshots */}
@@ -216,20 +220,22 @@ export function FilesPanel({ onRestoreDoc }: FilesPanelProps) {
                           <div className="truncate text-ctp-subtext1">{snap.name}</div>
                           <div className="text-ctp-overlay0 text-[10px]">{relativeTime(snap.savedAt)}</div>
                         </div>
-                        <button
-                          className="p-0.5 rounded text-ctp-overlay0 hover:text-ctp-green hover:bg-ctp-surface1 transition-colors opacity-0 group-hover/snap:opacity-100"
-                          onClick={() => handleRestoreSnapshot(doc, snap)}
-                          title="Restore snapshot"
-                        >
-                          <RotateCcw size={10} />
-                        </button>
-                        <button
-                          className="p-0.5 rounded text-ctp-overlay0 hover:text-ctp-red hover:bg-ctp-surface1 transition-colors opacity-0 group-hover/snap:opacity-100"
-                          onClick={() => handleDeleteSnapshot(doc.tabId, snap.id)}
-                          title="Delete snapshot"
-                        >
-                          <Trash2 size={10} />
-                        </button>
+                        <Tooltip text="Restore snapshot">
+                          <button
+                            className="p-0.5 rounded text-ctp-overlay0 hover:text-ctp-green hover:bg-ctp-surface1 transition-colors opacity-0 group-hover/snap:opacity-100"
+                            onClick={() => handleRestoreSnapshot(doc, snap)}
+                          >
+                            <RotateCcw size={10} />
+                          </button>
+                        </Tooltip>
+                        <Tooltip text="Delete snapshot">
+                          <button
+                            className="p-0.5 rounded text-ctp-overlay0 hover:text-ctp-red hover:bg-ctp-surface1 transition-colors opacity-0 group-hover/snap:opacity-100"
+                            onClick={() => handleDeleteSnapshot(doc.tabId, snap.id)}
+                          >
+                            <Trash2 size={10} />
+                          </button>
+                        </Tooltip>
                       </li>
                     ))}
                   </ul>

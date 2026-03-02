@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { EditorState, StateEffect, StateField, RangeSetBuilder } from '@codemirror/state'
 import { EditorView, Decoration, type DecorationSet } from '@codemirror/view'
 import type { RecursionGraph } from '@/types'
@@ -218,15 +219,16 @@ export function ContentEditor({ value, entryId, graph, onChange, preventRecursio
         className="w-full bg-ctp-surface0 border border-ctp-surface1 rounded focus-within:border-ctp-accent transition-colors"
       />
 
-      <button
-        type="button"
-        onClick={() => !preventRecursion && setHighlight((v) => !v)}
-        title={preventRecursion ? 'Keyword highlighting disabled: Prevent Further Recursion is enabled' : effectiveHighlight ? 'Hide keyword highlights' : 'Show keyword highlights'}
-        disabled={preventRecursion}
-        className={`absolute top-1.5 right-1.5 p-1 rounded transition-colors z-10 ${preventRecursion ? 'text-ctp-surface1 cursor-not-allowed' : 'text-ctp-overlay0 hover:text-ctp-subtext0 hover:bg-ctp-surface1'}`}
-      >
-        {effectiveHighlight ? <Eye size={11} /> : <EyeOff size={11} />}
-      </button>
+      <Tooltip text={preventRecursion ? 'Keyword highlighting disabled: Prevent Further Recursion is enabled' : effectiveHighlight ? 'Hide keyword highlights' : 'Show keyword highlights'}>
+        <button
+          type="button"
+          onClick={() => !preventRecursion && setHighlight((v) => !v)}
+          disabled={preventRecursion}
+          className={`absolute top-1.5 right-1.5 p-1 rounded transition-colors z-10 ${preventRecursion ? 'text-ctp-surface1 cursor-not-allowed' : 'text-ctp-overlay0 hover:text-ctp-subtext0 hover:bg-ctp-surface1'}`}
+        >
+          {effectiveHighlight ? <Eye size={11} /> : <EyeOff size={11} />}
+        </button>
+      </Tooltip>
 
       {effectiveHighlight && hasMatches && (
         <div className="mt-1 flex flex-wrap gap-1">

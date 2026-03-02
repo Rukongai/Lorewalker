@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { X } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { useDerivedState } from '@/hooks/useDerivedState'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { AnalysisTabContent } from './AnalysisTabContent'
@@ -73,13 +74,14 @@ export function WorkspaceToolsModal({
           </div>
 
           {/* Close button */}
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
-            title="Close (Esc)"
-          >
-            <X size={16} />
-          </button>
+          <Tooltip text="Close (Esc)">
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </Tooltip>
         </div>
 
         {/* Content */}

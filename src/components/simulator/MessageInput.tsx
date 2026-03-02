@@ -1,4 +1,5 @@
 import { Plus, Trash2 } from 'lucide-react'
+import { Tooltip } from '@/components/ui/Tooltip'
 import type { SimMessage } from '@/types'
 
 interface MessageInputProps {
@@ -51,13 +52,14 @@ export function MessageInput({ messages, onChange }: MessageInputProps) {
                 </option>
               ))}
             </select>
-            <button
-              onClick={() => removeMessage(i)}
-              className="p-0.5 rounded text-ctp-overlay1 hover:text-ctp-red transition-colors"
-              title="Remove message"
-            >
-              <Trash2 size={10} />
-            </button>
+            <Tooltip text="Remove message">
+              <button
+                onClick={() => removeMessage(i)}
+                className="p-0.5 rounded text-ctp-overlay1 hover:text-ctp-red transition-colors"
+              >
+                <Trash2 size={10} />
+              </button>
+            </Tooltip>
           </div>
           <textarea
             value={msg.content}
