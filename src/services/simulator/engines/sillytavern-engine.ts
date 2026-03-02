@@ -259,6 +259,10 @@ function simulate(
         recursionTrace.push({
           step: stepIndex,
           scannedEntryId: sourceEntry.id,
+          triggeredByEntryId:
+            activatedEntry.activatedBy === 'recursion'
+              ? activatedEntry.triggerChain[0] ?? null
+              : null,
           activatedEntryIds: stepActivated,
           matchDetails,
         })

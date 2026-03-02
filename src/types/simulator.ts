@@ -63,6 +63,7 @@ export interface SkippedEntry {
 export interface RecursionStep {
   step: number;
   scannedEntryId: string;
+  triggeredByEntryId: string | null;
   activatedEntryIds: string[];
   matchDetails: { entryId: string; keyword: string }[];
 }

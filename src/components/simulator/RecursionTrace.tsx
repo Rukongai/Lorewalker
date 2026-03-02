@@ -20,6 +20,8 @@ export function RecursionTrace({ steps, entries }: RecursionTraceProps) {
     )
   }
 
+  const currentScanRound = stepIndex !== 'all' ? steps[stepIndex as number].step + 1 : null
+
   return (
     <div className="flex flex-col gap-2">
       {/* Controls */}
@@ -34,7 +36,7 @@ export function RecursionTrace({ steps, entries }: RecursionTraceProps) {
               <ChevronLeft size={12} />
             </button>
             <span className="text-[10px] text-ctp-subtext0 tabular-nums">
-              Step {(stepIndex as number) + 1} of {steps.length}
+              Scan {currentScanRound} · Step {(stepIndex as number) + 1} of {steps.length}
             </span>
             <button
               onClick={() => setStepIndex((i) => Math.min(steps.length - 1, (i as number) + 1))}
@@ -49,7 +51,7 @@ export function RecursionTrace({ steps, entries }: RecursionTraceProps) {
           onClick={() => setStepIndex(stepIndex === 'all' ? 0 : 'all')}
           className="ml-auto text-[10px] text-ctp-accent hover:text-ctp-blue transition-colors"
         >
-          {stepIndex === 'all' ? 'Step view' : 'All Steps'}
+          {stepIndex === 'all' ? 'Step view' : 'Grouped'}
         </button>
       </div>
 
@@ -58,29 +60,57 @@ export function RecursionTrace({ steps, entries }: RecursionTraceProps) {
         <StepDetail step={steps[stepIndex as number]} entries={entries} />
       )}
 
-      {/* All steps view */}
+      {/* Grouped view */}
       {stepIndex === 'all' && (
-        <div className="flex flex-col gap-1 px-3">
-          {steps.map((step, i) => (
-            <div key={i} className="pl-2 border-l-2 border-ctp-surface1">
-              <p className="text-[10px] font-semibold text-ctp-subtext0">
-                Step {i + 1}: <span className="text-ctp-mauve">{entryName(entries, step.scannedEntryId)}</span>
-              </p>
-              <div className="pl-2">
-                {step.activatedEntryIds.map((id) => (
-                  <p key={id} className="text-[10px] text-ctp-text">
-                    → <span className="text-ctp-green">{entryName(entries, id)}</span>
-                    {' '}
-                    <span className="text-ctp-overlay1">
-                      ({step.matchDetails.filter((m) => m.entryId === id).map((m) => m.keyword).join(', ')})
-                    </span>
-                  </p>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        <GroupedView steps={steps} entries={entries} />
       )}
+    </div>
+  )
+}
+
+function GroupedView({ steps, entries }: { steps: RecursionStep[]; entries: WorkingEntry[] }) {
+  const scanGroups = steps.reduce<Map<number, RecursionStep[]>>((acc, step) => {
+    const group = acc.get(step.step) ?? []
+    group.push(step)
+    acc.set(step.step, group)
+    return acc
+  }, new Map())
+
+  return (
+    <div className="flex flex-col gap-3 px-3">
+      {Array.from(scanGroups.entries()).map(([scanIndex, scanSteps]) => (
+        <div key={scanIndex}>
+          <p className="text-[10px] text-ctp-subtext0 font-semibold mb-1">
+            Scan {scanIndex + 1}
+          </p>
+          <div className="flex flex-col gap-1.5 pl-2 border-l-2 border-ctp-surface1">
+            {scanSteps.map((step, i) => (
+              <div key={i}>
+                <p className="text-[10px] text-ctp-mauve">
+                  {i + 1}. {entryName(entries, step.scannedEntryId)}
+                  {step.triggeredByEntryId && (
+                    <span className="text-ctp-overlay1 italic ml-1">
+                      (From {entryName(entries, step.triggeredByEntryId)})
+                    </span>
+                  )}
+                </p>
+                <div className="pl-3">
+                  {step.activatedEntryIds.map((id) => (
+                    <p key={id} className="text-[10px]">
+                      <span className="text-ctp-text">→ </span>
+                      <span className="text-ctp-green">{entryName(entries, id)}</span>
+                      {' '}
+                      <span className="text-ctp-overlay1">
+                        ({step.matchDetails.filter((m) => m.entryId === id).map((m) => m.keyword).join(', ')})
+                      </span>
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

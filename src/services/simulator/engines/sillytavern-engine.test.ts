@@ -226,6 +226,7 @@ describe('SillyTavernEngine', () => {
       expect(npcEntry?.activatedBy).toBe('recursion')
       expect(result.recursionTrace).toHaveLength(1)
       expect(result.recursionTrace[0].scannedEntryId).toBe('location')
+      expect(result.recursionTrace[0].triggeredByEntryId).toBeNull()
       expect(result.recursionTrace[0].activatedEntryIds).toContain('npc')
     })
 
@@ -284,6 +285,30 @@ describe('SillyTavernEngine', () => {
       expect(activatedIds).toContain('a')
       expect(activatedIds).toContain('b')
       expect(activatedIds).not.toContain('c')
+    })
+
+    it('sets triggeredByEntryId correctly for multi-level recursion', () => {
+      // A (keyword) → B (scan 0) → C (scan 1)
+      const entryA = makeEntry({ id: 'a', keys: ['alpha'], content: 'beta is here.' })
+      const entryB = makeEntry({ id: 'b', keys: ['beta'], content: 'gamma is here.' })
+      const entryC = makeEntry({ id: 'c', keys: ['gamma'], content: '' })
+
+      const ctx = makeContext({
+        messages: [{ role: 'user', content: 'alpha appears.' }],
+      })
+      const result = sillyTavernEngine.simulate([entryA, entryB, entryC], ctx)
+
+      // Scan 0: A is scanned, activates B — A was keyword-activated so triggeredByEntryId is null
+      const scan0Step = result.recursionTrace.find((s) => s.step === 0 && s.scannedEntryId === 'a')
+      expect(scan0Step).toBeDefined()
+      expect(scan0Step?.triggeredByEntryId).toBeNull()
+      expect(scan0Step?.activatedEntryIds).toContain('b')
+
+      // Scan 1: B is scanned, activates C — B was recursion-activated by A
+      const scan1Step = result.recursionTrace.find((s) => s.step === 1 && s.scannedEntryId === 'b')
+      expect(scan1Step).toBeDefined()
+      expect(scan1Step?.triggeredByEntryId).toBe('a')
+      expect(scan1Step?.activatedEntryIds).toContain('c')
     })
   })
 
