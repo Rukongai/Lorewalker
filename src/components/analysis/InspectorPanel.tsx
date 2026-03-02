@@ -1,6 +1,8 @@
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { FindingItem } from './FindingItem'
+import { cn } from '@/lib/cn'
+import { getTypeBadge } from '@/lib/entry-badge'
 import type { RecursionGraph } from '@/types'
 
 interface InspectorPanelProps {
@@ -47,13 +49,7 @@ export function InspectorPanel({ tabId, graph, showFindings = true, onNavigate, 
 
   const entryName = (id: string) => entries.find((e) => e.id === id)?.name || id
 
-  const typeBadge = !entry.enabled
-    ? 'OFF'
-    : entry.constant
-    ? 'CONST'
-    : entry.selective
-    ? 'SEL'
-    : 'KW'
+  const badge = getTypeBadge(entry)
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -61,8 +57,8 @@ export function InspectorPanel({ tabId, graph, showFindings = true, onNavigate, 
       <div className="p-3 border-b border-ctp-surface0 shrink-0">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xs font-medium text-ctp-text truncate flex-1">{entry.name || '(unnamed)'}</span>
-          <span className="text-[10px] font-mono px-1 py-0.5 rounded bg-ctp-surface1 text-ctp-subtext0 shrink-0">
-            {typeBadge}
+          <span className={cn('text-[10px] font-mono px-1 py-0.5 rounded shrink-0', badge.color)}>
+            {badge.label}
           </span>
         </div>
         <p className="text-[10px] text-ctp-overlay1">{entry.tokenCount} tokens</p>
