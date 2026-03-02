@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { modKey } from '@/lib/platform'
 import { useStore } from 'zustand'
-import { Upload, Download, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2, BarChart2, Zap } from 'lucide-react'
+import { Upload, Download, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2, BarChart2, Scale, Zap } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { FilesPanel } from './FilesPanel'
 import { SaveSnapshotDialog } from './SaveSnapshotDialog'
@@ -408,6 +408,16 @@ export function WorkspaceShell() {
             className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
           >
             <Zap size={16} />
+          </button>
+
+          {/* Rules tools modal */}
+          <button
+            onClick={() => { setToolsModalTab('rules'); setToolsModalOpen(true) }}
+            disabled={!activeTabId}
+            title="Open Rules panel"
+            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
+          >
+            <Scale size={16} />
           </button>
         </div>
       </header>
