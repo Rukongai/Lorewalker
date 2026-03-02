@@ -109,7 +109,6 @@ export function LorebookSettingsPanel() {
             value={lorebookDefaults.contextBudgetPercent}
             onChange={(e) => setLorebookDefaults({ contextBudgetPercent: Math.max(0, Math.min(100, Number(e.target.value))) })}
           />
-          <span className="text-xs text-ctp-overlay0">%</span>
         </div>
       </div>
 
