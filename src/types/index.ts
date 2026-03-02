@@ -28,6 +28,13 @@ export type {
   CategoryScore,
   Rubric,
   RubricRegistry,
+  ComparisonOp,
+  LogicOp,
+  ConditionLeaf,
+  ConditionGroup,
+  SerializedEvaluation,
+  CustomRule,
+  DocumentRuleOverrides,
 } from './analysis'
 
 export type {

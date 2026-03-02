@@ -71,3 +71,58 @@ export interface RubricRegistry {
   getActiveRubric(): Rubric;
   register(rubric: Rubric): void;
 }
+
+// --- Custom Rules ---
+
+export type ComparisonOp =
+  | '=='
+  | '!='
+  | '>'
+  | '<'
+  | '>='
+  | '<='
+  | 'includes'
+  | 'not-includes'
+  | 'matches';
+
+export type LogicOp = 'AND' | 'OR';
+
+export interface ConditionLeaf {
+  type: 'leaf';
+  left: string;      // variable path, e.g. "entry.keys.length"
+  operator: ComparisonOp;
+  right: string;     // literal value as string
+}
+
+export interface ConditionGroup {
+  type: 'group';
+  negate: boolean;
+  logic: LogicOp;
+  conditions: ConditionLeaf[];
+}
+
+export interface SerializedEvaluation {
+  logic: LogicOp;
+  items: Array<ConditionLeaf | ConditionGroup>;
+}
+
+export interface CustomRule {
+  id: string;
+  name: string;
+  description: string;
+  category: RuleCategory;
+  severity: FindingSeverity;
+  enabled: boolean;
+  requiresLLM: boolean;
+  evaluation?: SerializedEvaluation;   // deterministic rules only
+  message: string;                     // supports {{entry.name}}, {{entry.keys.length}}, etc.
+  systemPrompt?: string;               // LLM rules only
+  userPrompt?: string;                 // LLM rules only
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DocumentRuleOverrides {
+  disabledRuleIds: string[];   // workspace/default rule IDs disabled for this doc
+  customRules: CustomRule[];   // doc-specific custom rules
+}
