@@ -41,9 +41,12 @@ export function RuleEditorModal({ initialRule, copySource, tabId, onSave, onClos
   const [enabled, setEnabled] = useState(initialRule?.enabled ?? true)
   const [evaluation, setEvaluation] = useState<SerializedEvaluation>(
     initialRule?.evaluation ??
-    (copySource ? (RULE_SEEDS[copySource.id] ?? EMPTY_EVALUATION) : EMPTY_EVALUATION)
+    (copySource ? (RULE_SEEDS[copySource.id]?.evaluation ?? EMPTY_EVALUATION) : EMPTY_EVALUATION)
   )
-  const [message, setMessage] = useState(initialRule?.message ?? '')
+  const [message, setMessage] = useState(
+    initialRule?.message ??
+    (copySource ? (RULE_SEEDS[copySource.id]?.message ?? '') : '')
+  )
   const [systemPrompt, setSystemPrompt] = useState(initialRule?.systemPrompt ?? '')
   const [userPrompt, setUserPrompt] = useState(initialRule?.userPrompt ?? '')
   const [errors, setErrors] = useState<string[]>([])
@@ -313,7 +316,7 @@ export function RuleEditorModal({ initialRule, copySource, tabId, onSave, onClos
                 <p className="text-xs text-ctp-overlay1 mb-3">
                   Entry matches if the condition tree is true. A finding is generated for each matching entry.
                 </p>
-                {copySource && !RULE_SEEDS[copySource.id] && evaluation.items.length === 0 && (
+                {copySource && !RULE_SEEDS[copySource.id]?.evaluation && evaluation.items.length === 0 && (
                   <p className="text-xs text-ctp-overlay1 bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1.5 mb-3">
                     This rule's logic can't be auto-translated. Build conditions manually that replicate what{' '}
                     <strong className="text-ctp-subtext1">{copySource.name}</strong> checks.
