@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { modKey } from '@/lib/platform'
 import { useStore } from 'zustand'
-import { Upload, Download, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
+import { Upload, Download, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2, BarChart2, Zap } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { FilesPanel } from './FilesPanel'
 import { SaveSnapshotDialog } from './SaveSnapshotDialog'
@@ -34,6 +34,7 @@ import { AnalysisPanel } from '@/components/analysis/AnalysisPanel'
 import { InspectorPanel } from '@/components/analysis/InspectorPanel'
 import { SimulatorPanel } from '@/components/simulator/SimulatorPanel'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
+import { WorkspaceToolsModal } from '@/components/tools-modal/WorkspaceToolsModal'
 import type { PersistedDocument, PersistedSnapshot } from '@/types'
 import { generateId } from '@/lib/uuid'
 
@@ -68,6 +69,8 @@ export function WorkspaceShell() {
   } | null>(null)
 
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [toolsModalOpen, setToolsModalOpen] = useState(false)
+  const [toolsModalTab, setToolsModalTab] = useState<'analysis' | 'simulator'>('analysis')
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('entry')
   const [toasts, setToasts] = useState<UndoToast[]>([])
 
@@ -382,6 +385,28 @@ export function WorkspaceShell() {
           >
             <Settings size={16} />
           </button>
+
+          <div className="w-px h-4 bg-ctp-surface1 mx-0.5" />
+
+          {/* Analysis tools modal */}
+          <button
+            onClick={() => { setToolsModalTab('analysis'); setToolsModalOpen(true) }}
+            disabled={!activeTabId}
+            title="Open Analysis panel"
+            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
+          >
+            <BarChart2 size={16} />
+          </button>
+
+          {/* Simulator tools modal */}
+          <button
+            onClick={() => { setToolsModalTab('simulator'); setToolsModalOpen(true) }}
+            disabled={!activeTabId}
+            title="Open Simulator panel"
+            className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
+          >
+            <Zap size={16} />
+          </button>
         </div>
       </header>
 
@@ -623,6 +648,18 @@ export function WorkspaceShell() {
         <EntryEditorModal
           entryId={modalEntryId}
           onClose={() => setModalEntryId(null)}
+        />
+      )}
+      {toolsModalOpen && (
+        <WorkspaceToolsModal
+          tab={toolsModalTab}
+          onTabChange={setToolsModalTab}
+          onClose={() => setToolsModalOpen(false)}
+          onOpenEntry={(entryId) => setModalEntryId(entryId)}
+          onSelectEntry={(entryId) => {
+            setToolsModalOpen(false)
+            realStore?.getState().selectEntry(entryId)
+          }}
         />
       )}
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
