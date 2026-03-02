@@ -16,6 +16,9 @@ const SEVERITY_COLORS: Record<FindingSeverity, string> = {
   suggestion: 'text-ctp-sapphire bg-ctp-sapphire/10 border-ctp-sapphire/30',
 }
 
+const CATEGORY_ORDER: RuleCategory[] = ['structure', 'config', 'keywords', 'recursion', 'budget', 'content']
+const SEVERITY_ORDER: FindingSeverity[] = ['error', 'warning', 'suggestion']
+
 interface DefaultRuleRow {
   kind: 'default'
   rule: Rule
@@ -183,49 +186,65 @@ export function RulesTabContent({ tabId }: RulesTabContentProps) {
           {allRows.length === 0 && (
             <p className="px-4 py-4 text-xs text-ctp-overlay0">No rules</p>
           )}
-          {allRows.map((row) => {
-            const rowId = row.kind === 'default' ? `default:${row.rule.id}` : `custom:${row.rule.id}`
-            const enabled = isRuleEnabled(row)
-            const name = row.rule.name
-            const severity = row.rule.severity
-            const isSelected = selectedId === rowId
-
+          {CATEGORY_ORDER.map((cat) => {
+            const rows = SEVERITY_ORDER.flatMap((sev) =>
+              allRows.filter((r) => r.rule.category === cat && r.rule.severity === sev)
+            )
+            if (rows.length === 0) return null
             return (
-              <button
-                key={rowId}
-                onClick={() => setSelectedId(isSelected ? null : rowId)}
-                className={`w-full flex items-start gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-ctp-surface0 ${
-                  isSelected ? 'bg-ctp-surface0/70' : ''
-                } ${!enabled ? 'opacity-50' : ''}`}
-              >
-                {/* Enable/disable checkbox */}
-                <input
-                  type="checkbox"
-                  checked={enabled}
-                  onChange={(e) => {
-                    e.stopPropagation()
-                    handleToggle(row, e.target.checked)
-                  }}
-                  className="mt-0.5 shrink-0 accent-ctp-accent"
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-ctp-text font-medium truncate">{name}</span>
-                    {row.kind === 'custom' && (
-                      <span className="text-[10px] text-ctp-mauve border border-ctp-mauve/30 px-1 rounded">
-                        {row.scope === 'document' ? 'doc' : 'ws'}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className={`text-[10px] border px-1 rounded font-medium ${SEVERITY_COLORS[severity]}`}>
-                      {severity}
-                    </span>
-                    <span className="text-[10px] text-ctp-overlay1">{getCategoryLabel(row.rule.category)}</span>
-                  </div>
+              <div key={cat}>
+                <div className="flex items-center gap-2 px-3 py-1.5 sticky top-0 bg-ctp-mantle border-b border-t border-ctp-surface0 z-10">
+                  <span className="text-[11px] font-semibold text-ctp-subtext0 uppercase tracking-wide">
+                    {getCategoryLabel(cat)}
+                  </span>
+                  <span className="text-[10px] text-ctp-overlay0 bg-ctp-surface0 rounded px-1">
+                    {rows.length}
+                  </span>
                 </div>
-              </button>
+                {rows.map((row) => {
+                  const rowId = row.kind === 'default' ? `default:${row.rule.id}` : `custom:${row.rule.id}`
+                  const enabled = isRuleEnabled(row)
+                  const name = row.rule.name
+                  const severity = row.rule.severity
+                  const isSelected = selectedId === rowId
+
+                  return (
+                    <button
+                      key={rowId}
+                      onClick={() => setSelectedId(isSelected ? null : rowId)}
+                      className={`w-full flex items-start gap-2 px-3 py-2 text-left text-xs transition-colors hover:bg-ctp-surface0 ${
+                        isSelected ? 'bg-ctp-surface0/70' : ''
+                      } ${!enabled ? 'opacity-50' : ''}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={enabled}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          handleToggle(row, e.target.checked)
+                        }}
+                        className="mt-0.5 shrink-0 accent-ctp-accent"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-ctp-text font-medium truncate">{name}</span>
+                          {row.kind === 'custom' && (
+                            <span className="text-[10px] text-ctp-mauve border border-ctp-mauve/30 px-1 rounded">
+                              {row.scope === 'document' ? 'doc' : 'ws'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className={`text-[10px] border px-1 rounded font-medium ${SEVERITY_COLORS[severity]}`}>
+                            {severity}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
             )
           })}
         </div>
