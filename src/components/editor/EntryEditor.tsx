@@ -1,20 +1,18 @@
 import { useCallback, useState, useMemo } from 'react'
-import { Tooltip } from '@/components/ui/Tooltip'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
 import type { WorkingEntry, SelectiveLogic, EntryPosition, RoleCallPosition } from '@/types'
 import { estimateTokenCount } from '@/lib/token-estimate'
-import { getEntryIcon } from '@/lib/entry-type'
-import { ContentEditor } from './ContentEditor'
 import { KeywordInput } from './KeywordInput'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
 import { ActivationLinks } from './ActivationLinks'
-import { useCategoryMenu } from '@/components/entry-list/CategoryMenu'
 import { RoleCallPositionSelect } from './RoleCallPositionSelect'
 import { RCActivationSection } from './RCActivationSection'
 import { FieldGroup, Field, inputClass } from '@/features/editor/primitives'
+import { ContentField } from '@/features/editor/ContentField'
+import { CategoryAssign } from '@/features/editor/CategoryAssign'
 
 function CategoryPane({
   categories,
@@ -285,11 +283,6 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
     if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
   }, [realStore, entryId, activeTabId])
 
-  const effectiveCategory = entry?.userCategory ?? 'generic'
-  const categoryIcon = getEntryIcon(effectiveCategory)
-
-  const { openMenu: openCategoryMenu, menuElement: categoryMenuElement } = useCategoryMenu(handleSetCategory)
-
   if (!entry) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -329,29 +322,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
           />
         </Field>
       )}
-      <div className="flex items-center gap-2 px-0.5">
-        <span className="text-[11px] text-ctp-subtext0">Category</span>
-        <Tooltip text="Click to change category">
-          <button
-            onClick={(e) => openCategoryMenu(e, entry.userCategory)}
-            className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs bg-ctp-surface0 hover:bg-ctp-surface1 border border-ctp-surface2 transition-colors"
-          >
-            {categoryIcon && <span className="text-[11px]">{categoryIcon}</span>}
-            <span className="text-ctp-subtext1 capitalize">{effectiveCategory}</span>
-          </button>
-        </Tooltip>
-        {entry.userCategory && (
-          <Tooltip text="Clear category override">
-            <button
-              onClick={() => handleSetCategory(undefined)}
-              className="text-[9px] text-ctp-overlay1 hover:text-ctp-red transition-colors"
-            >
-              ✕
-            </button>
-          </Tooltip>
-        )}
-        {categoryMenuElement}
-      </div>
+      <CategoryAssign userCategory={entry.userCategory} onSetCategory={handleSetCategory} />
     </>
   )
 
@@ -361,7 +332,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
         {`Content (${entry.tokenCount} tokens)`}
         <HelpTooltip text="The text injected into the AI's context when this entry activates. Supports Markdown-style formatting depending on your AI platform." />
       </span>
-      <ContentEditor
+      <ContentField
         value={entry.content}
         entryId={entryId}
         graph={graph}
