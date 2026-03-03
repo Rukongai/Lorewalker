@@ -34,7 +34,7 @@ const EMPTY_GRAPH: RecursionGraph = {
   edgeMeta: new Map(),
 }
 
-function buildConnectionRows(
+export function buildConnectionRows(
   entryId: string,
   entries: WorkingEntry[],
   graph: RecursionGraph
