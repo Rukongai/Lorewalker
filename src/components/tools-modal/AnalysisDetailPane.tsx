@@ -7,6 +7,7 @@ interface AnalysisDetailPaneProps {
   graph: RecursionGraph
   onOpenEntry: (entryId: string) => void
   onSelectEntry: (entryId: string) => void
+  onNavigateToKeyword?: (keyword: string) => void
 }
 
 const SEVERITY_BADGE: Record<string, string> = {
@@ -27,6 +28,7 @@ export function AnalysisDetailPane({
   graph,
   onOpenEntry,
   onSelectEntry,
+  onNavigateToKeyword,
 }: AnalysisDetailPaneProps) {
   if (!finding) {
     return (
@@ -100,6 +102,32 @@ export function AnalysisDetailPane({
             onOpenEntry={onOpenEntry}
             onSelectEntry={onSelectEntry}
           />
+        </div>
+      )}
+
+      {/* Related keywords with navigate-to links */}
+      {finding.relatedKeywords && finding.relatedKeywords.length > 0 && onNavigateToKeyword && (
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1 mb-2">
+            Related Keywords
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {finding.relatedKeywords.map((kw) => (
+              <div
+                key={kw}
+                className="flex items-center gap-1 px-2 py-1 rounded border border-ctp-surface1 bg-ctp-surface0 text-xs"
+              >
+                <span className="text-ctp-text font-mono">{kw}</span>
+                <button
+                  onClick={() => onNavigateToKeyword(kw)}
+                  title="View in Keyword Analyzer"
+                  className="text-ctp-accent hover:text-ctp-accent/80 transition-colors ml-1"
+                >
+                  → Keywords
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

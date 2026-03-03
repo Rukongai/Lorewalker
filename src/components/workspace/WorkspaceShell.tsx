@@ -1,10 +1,12 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { modKey } from '@/lib/platform'
 import { useStore } from 'zustand'
-import { Upload, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2, BarChart2, Scale, Zap, Github } from 'lucide-react'
+import { Upload, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2, BarChart2, Scale, Zap, Github, Newspaper } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { FilesPanel } from './FilesPanel'
 import { SaveSnapshotDialog } from './SaveSnapshotDialog'
+import { WhatsNewDialog } from './WhatsNewDialog'
+import { LATEST_CHANGELOG_DATE } from '@/changelog'
 import { WelcomeScreen } from './WelcomeScreen'
 import { StatusBar } from './StatusBar'
 import { LorebookPickerDialog } from './LorebookPickerDialog'
@@ -79,6 +81,11 @@ export function WorkspaceShell() {
     entries: WorkingEntry[]
     resolve: (value: boolean) => void
   } | null>(null)
+
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false)
+  const lastSeenChangelogDate = useWorkspaceStore((s) => s.lastSeenChangelogDate)
+  const setLastSeenChangelogDate = useWorkspaceStore((s) => s.setLastSeenChangelogDate)
+  const hasUnreadChangelog = lastSeenChangelogDate === null || lastSeenChangelogDate < LATEST_CHANGELOG_DATE
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toolsModalOpen, setToolsModalOpen] = useState(false)
@@ -299,6 +306,7 @@ export function WorkspaceShell() {
     onRedo: handleRedo,
     onNewEntry: handleNewEntry,
     onClearSelection: handleClearSelection,
+    onOpenFile: () => fileInputRef.current?.click(),
   })
 
   const startDrag = useCallback((e: React.MouseEvent, side: 'left' | 'right') => {
@@ -359,6 +367,20 @@ export function WorkspaceShell() {
               <Github size={16} />
             </a>
           </Tooltip>
+
+          {/* What's New */}
+          <Tooltip text="What's New" placement="below">
+            <button
+              onClick={() => setWhatsNewOpen(true)}
+              className="relative p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
+            >
+              <Newspaper size={16} />
+              {hasUnreadChangelog && (
+                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-ctp-peach" />
+              )}
+            </button>
+          </Tooltip>
+
           <div className="w-px h-4 bg-ctp-surface1 mx-0.5" />
           {/* Undo */}
           <Tooltip text={`Undo (${modKey}+Z)`} placement="below">
@@ -485,7 +507,7 @@ export function WorkspaceShell() {
 
         {/* Left panel: entry list */}
         <aside
-          className="shrink-0 border-r border-ctp-surface1 bg-ctp-mantle flex flex-col overflow-hidden"
+          className="relative shrink-0 border-r border-ctp-surface1 bg-ctp-mantle flex flex-col overflow-hidden"
           style={{
             width: leftCollapsed ? COLLAPSED_WIDTH : leftWidth,
             transition: isResizing ? 'none' : 'width 200ms ease-in-out',
@@ -494,10 +516,10 @@ export function WorkspaceShell() {
           {leftCollapsed ? (
             <Tooltip text="Expand entries panel">
               <button
-                className="flex-1 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
+                className="absolute inset-0 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
                 onClick={() => setLeftCollapsed(false)}
               >
-                <ChevronRight size={14} />
+                <ChevronRight size={18} />
               </button>
             </Tooltip>
           ) : (
@@ -531,7 +553,7 @@ export function WorkspaceShell() {
 
               {/* Left panel content */}
               {leftPanelTab === 'files'
-                ? <FilesPanel onRestoreDoc={handleRestoreDoc} snapshotSaveCount={snapshotSaveCount} />
+                ? <FilesPanel onRestoreDoc={handleRestoreDoc} onFileOpened={() => setLeftPanelTab('entries')} snapshotSaveCount={snapshotSaveCount} />
                 : <EntryList onOpenModal={setModalEntryId} />
               }
             </>
@@ -578,7 +600,7 @@ export function WorkspaceShell() {
 
         {/* Right panel: entry editor */}
         <aside
-          className="shrink-0 border-l border-ctp-surface1 bg-ctp-mantle flex flex-col overflow-hidden"
+          className="relative shrink-0 border-l border-ctp-surface1 bg-ctp-mantle flex flex-col overflow-hidden"
           style={{
             width: rightCollapsed ? COLLAPSED_WIDTH : rightWidth,
             transition: isResizing ? 'none' : 'width 200ms ease-in-out',
@@ -587,10 +609,10 @@ export function WorkspaceShell() {
           {rightCollapsed ? (
             <Tooltip text="Expand editor panel">
               <button
-                className="flex-1 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
+                className="absolute inset-0 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
                 onClick={() => setRightCollapsed(false)}
               >
-                <ChevronLeft size={14} />
+                <ChevronLeft size={18} />
               </button>
             </Tooltip>
           ) : (
@@ -784,6 +806,15 @@ export function WorkspaceShell() {
           }}
         />
       )}
+
+      <WhatsNewDialog
+        open={whatsNewOpen}
+        lastSeenDate={lastSeenChangelogDate}
+        onClose={() => {
+          setLastSeenChangelogDate(LATEST_CHANGELOG_DATE)
+          setWhatsNewOpen(false)
+        }}
+      />
 
       <ToastStack toasts={toasts} />
     </div>

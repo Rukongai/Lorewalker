@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { useDerivedState } from '@/hooks/useDerivedState'
@@ -6,13 +6,15 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 import { AnalysisTabContent } from './AnalysisTabContent'
 import { SimulatorTabContent } from './SimulatorTabContent'
 import { RulesTabContent } from './RulesTabContent'
+import { KeywordsTabContent } from '@/components/keywords/KeywordsTabContent'
 
-export type ToolsTab = 'analysis' | 'simulator' | 'rules'
+export type ToolsTab = 'analysis' | 'simulator' | 'rules' | 'keywords'
 
 const TAB_LABELS: Record<ToolsTab, string> = {
   analysis: 'Analysis',
   simulator: 'Simulator',
   rules: 'Rules',
+  keywords: 'Keywords',
 }
 
 interface WorkspaceToolsModalProps {
@@ -32,6 +34,13 @@ export function WorkspaceToolsModal({
 }: WorkspaceToolsModalProps) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const { graph } = useDerivedState(activeTabId ?? '')
+
+  const [initialKeyword, setInitialKeyword] = useState<string | null>(null)
+
+  function handleNavigateToKeyword(keyword: string) {
+    onTabChange('keywords')
+    setInitialKeyword(keyword)
+  }
 
   // Close on Escape (EntryEditorModal uses capture+stopImmediatePropagation, so it fires first)
   useEffect(() => {
@@ -58,7 +67,7 @@ export function WorkspaceToolsModal({
         <div className="flex items-center justify-between px-4 py-2 border-b border-ctp-surface1 shrink-0">
           {/* Tab bar */}
           <div className="flex items-center gap-1">
-            {(['analysis', 'simulator', 'rules'] as ToolsTab[]).map((t) => (
+            {(['analysis', 'simulator', 'rules', 'keywords'] as ToolsTab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => onTabChange(t)}
@@ -92,6 +101,7 @@ export function WorkspaceToolsModal({
               graph={graph}
               onOpenEntry={onOpenEntry}
               onSelectEntry={onSelectEntry}
+              onNavigateToKeyword={handleNavigateToKeyword}
             />
           )}
           {tab === 'simulator' && (
@@ -103,6 +113,15 @@ export function WorkspaceToolsModal({
           )}
           {tab === 'rules' && (
             <RulesTabContent tabId={activeTabId} />
+          )}
+          {tab === 'keywords' && (
+            <KeywordsTabContent
+              tabId={activeTabId}
+              onSelectEntry={onSelectEntry}
+              onOpenEntry={onOpenEntry}
+              initialKeyword={initialKeyword}
+              onInitialKeywordConsumed={() => setInitialKeyword(null)}
+            />
           )}
         </div>
       </div>

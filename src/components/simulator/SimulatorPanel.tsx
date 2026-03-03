@@ -1,15 +1,22 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Play, PlusCircle, Trash2, Network, RotateCcw } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { simulate, simulateConversation } from '@/services/simulator-service'
-import type { SimMessage, SimulationContext, SimulationSettings } from '@/types'
+import { buildKeywordInventory } from '@/services/keyword-analysis-service'
+import type { SimMessage, SimulationContext, SimulationSettings, ActivatedEntry, WorkingEntry } from '@/types'
 import { MessageInput } from './MessageInput'
 import { ActivationResults } from './ActivationResults'
 
 interface SimulatorPanelProps {
   tabId: string | null
+}
+
+type ResultsTab = 'activation' | 'breakdown'
+
+function entryName(entries: WorkingEntry[], id: string): string {
+  return entries.find((e) => e.id === id)?.name ?? id
 }
 
 export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
@@ -21,6 +28,10 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
 
   // Local message composition state (pushed to store on run)
   const [localMessages, setLocalMessages] = useState<SimMessage[]>(() => simulatorState.messages)
+  const [resultsTab, setResultsTab] = useState<ResultsTab>('activation')
+  const [selectedKeyword, setSelectedKeyword] = useState<string>('')
+
+  const keywordStats = useMemo(() => buildKeywordInventory(entries), [entries])
 
   if (!tabId) {
     return (
@@ -30,11 +41,11 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
     )
   }
 
-  function handleRun() {
+  function runWithMessages(messages: SimMessage[]) {
     if (!realStore) return
     const state = realStore.getState()
     const context: SimulationContext = {
-      messages: localMessages,
+      messages,
       scanDepth: state.bookMeta.scanDepth,
       tokenBudget: state.bookMeta.tokenBudget,
       caseSensitive: state.bookMeta.caseSensitive,
@@ -42,9 +53,21 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
       maxRecursionSteps: state.bookMeta.maxRecursionSteps,
       includeNames: state.bookMeta.includeNames,
     }
-    state.setSimulatorMessages(localMessages)
+    state.setSimulatorMessages(messages)
     const result = simulate(state.entries, context)
     state.setSimulatorResult(result)
+  }
+
+  function handleRun() {
+    runWithMessages(localMessages)
+  }
+
+  function handleKeywordSelect(keyword: string) {
+    if (!keyword) return
+    setSelectedKeyword('')
+    const messages: SimMessage[] = [{ role: 'user', content: keyword }]
+    setLocalMessages(messages)
+    runWithMessages(messages)
   }
 
   function handleAddToConversation() {
@@ -85,6 +108,67 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
 
   const { lastResult, conversationHistory, connectionsMode } = simulatorState
 
+  // Keyword breakdown: group activated entries by matched keyword
+  function renderBreakdown() {
+    if (!lastResult) return null
+
+    const byKeyword = new Map<string, ActivatedEntry[]>()
+    const constants: ActivatedEntry[] = []
+    const recursion: ActivatedEntry[] = []
+
+    for (const ae of lastResult.activatedEntries) {
+      if (ae.activatedBy === 'constant') {
+        constants.push(ae)
+      } else if (ae.activatedBy === 'recursion') {
+        recursion.push(ae)
+      } else {
+        // keyword-triggered
+        const kws = ae.matchedKeywords.length > 0 ? ae.matchedKeywords : ['(unknown)']
+        for (const kw of kws) {
+          const group = byKeyword.get(kw) ?? []
+          group.push(ae)
+          byKeyword.set(kw, group)
+        }
+      }
+    }
+
+    const sections: Array<{ label: string; entries: ActivatedEntry[] }> = []
+    if (constants.length > 0) sections.push({ label: 'Constants', entries: constants })
+    for (const [kw, aes] of byKeyword) {
+      sections.push({ label: kw, entries: aes })
+    }
+    if (recursion.length > 0) sections.push({ label: 'Recursion', entries: recursion })
+
+    if (sections.length === 0) {
+      return (
+        <p className="px-3 py-3 text-xs text-ctp-overlay0 text-center">No entries activated</p>
+      )
+    }
+
+    return (
+      <div className="flex flex-col gap-2 pb-3">
+        {sections.map((section) => (
+          <div key={section.label}>
+            <p className="px-3 py-1 text-[9px] font-semibold uppercase tracking-wider text-ctp-overlay1 font-mono">
+              {section.label}
+            </p>
+            <div className="flex flex-col gap-0.5 px-3">
+              {section.entries.map((ae) => (
+                <button
+                  key={ae.entryId}
+                  onClick={() => handleSelectEntry(ae.entryId)}
+                  className="text-left text-xs text-ctp-text hover:bg-ctp-surface0 rounded px-1 py-0.5 transition-colors truncate"
+                >
+                  {entryName(entries, ae.entryId)}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Engine badge */}
@@ -98,6 +182,37 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
       <div className="flex flex-col gap-2 p-3 overflow-y-auto flex-1 min-h-0">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1">Messages</p>
         <MessageInput messages={localMessages} onChange={setLocalMessages} />
+
+        {/* Simulate keyword quick-fire */}
+        {keywordStats.length > 0 && (
+          <select
+            value={selectedKeyword}
+            onChange={(e) => handleKeywordSelect(e.target.value)}
+            className="w-full bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1.5 text-xs text-ctp-text focus:outline-none focus:border-ctp-accent"
+          >
+            <option value="">Simulate keyword…</option>
+            <optgroup label="Primary keys">
+              {keywordStats
+                .filter((s) => !s.isSecondary)
+                .map((s, i) => (
+                  <option key={`pri-${i}`} value={s.keyword}>
+                    {s.keyword}
+                  </option>
+                ))}
+            </optgroup>
+            {keywordStats.some((s) => s.isSecondary) && (
+              <optgroup label="Secondary keys">
+                {keywordStats
+                  .filter((s) => s.isSecondary)
+                  .map((s, i) => (
+                    <option key={`sec-${i}`} value={s.keyword}>
+                      {s.keyword}
+                    </option>
+                  ))}
+              </optgroup>
+            )}
+          </select>
+        )}
 
         {/* Run button */}
         <button
@@ -140,12 +255,31 @@ export function SimulatorPanel({ tabId }: SimulatorPanelProps) {
         {/* Results */}
         {lastResult && (
           <div className="bg-ctp-surface0 rounded">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1 px-3 pt-2 pb-1">Results</p>
-            <ActivationResults
-              result={lastResult}
-              entries={entries}
-              onSelectEntry={handleSelectEntry}
-            />
+            {/* Results tab bar */}
+            <div className="flex items-center gap-1 px-3 pt-2 pb-1">
+              {(['activation', 'breakdown'] as ResultsTab[]).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setResultsTab(t)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider transition-colors ${
+                    resultsTab === t
+                      ? 'bg-ctp-surface2 text-ctp-text'
+                      : 'text-ctp-overlay1 hover:text-ctp-subtext0'
+                  }`}
+                >
+                  {t === 'activation' ? 'Activation' : 'Keyword Breakdown'}
+                </button>
+              ))}
+            </div>
+
+            {resultsTab === 'activation' && (
+              <ActivationResults
+                result={lastResult}
+                entries={entries}
+                onSelectEntry={handleSelectEntry}
+              />
+            )}
+            {resultsTab === 'breakdown' && renderBreakdown()}
           </div>
         )}
 

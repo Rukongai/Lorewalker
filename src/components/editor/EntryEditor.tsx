@@ -108,6 +108,8 @@ interface EntryEditorProps {
   entryId: string
   layout?: 'single' | 'wide' | 'quadrant'
   onNavigate?: (entryId: string) => void
+  renderBottomMiddleHeader?: () => React.ReactNode
+  renderBottomRightHeader?: () => React.ReactNode
   renderBottomLeft?: () => React.ReactNode
   renderBottomRight?: () => React.ReactNode
 }
@@ -177,37 +179,55 @@ function QuadrantLayout({
   nameField,
   contentField,
   fieldGroups,
+  renderBottomMiddleHeader,
+  renderBottomRightHeader,
   renderBottomLeft,
   renderBottomRight,
 }: {
   nameField: React.ReactNode
   contentField: React.ReactNode
   fieldGroups: React.ReactNode
+  renderBottomMiddleHeader?: () => React.ReactNode
+  renderBottomRightHeader?: () => React.ReactNode
   renderBottomLeft?: () => React.ReactNode
   renderBottomRight?: () => React.ReactNode
 }) {
   return (
-    <div className="flex h-full">
-      {/* Left column: 60% wide, top 40% / bottom 60% */}
-      <div className="flex flex-col border-r border-ctp-surface1" style={{ width: '60%' }}>
-        {/* Top-left: name + content */}
-        <div className="overflow-y-auto p-3 space-y-3 border-b border-ctp-surface1" style={{ flex: '40 1 0' }}>
+    <div className="flex flex-col h-full">
+      {/* Top row: left 60% name+content / right 40% field groups */}
+      <div className="flex overflow-hidden border-b border-ctp-surface1" style={{ flex: '40 1 0' }}>
+        <div className="border-r border-ctp-surface1 overflow-y-auto p-3 space-y-3" style={{ width: '60%' }}>
           {nameField}
           {contentField}
         </div>
-        {/* Bottom-left: connections pane (injected by modal) */}
-        <div className="overflow-hidden" style={{ flex: '60 1 0' }}>
-          {renderBottomLeft?.()}
-        </div>
-      </div>
-      {/* Right column: 40% wide, top 60% / bottom 40% */}
-      <div className="flex flex-col" style={{ width: '40%' }}>
-        {/* Top-right: category pane or field groups */}
-        <div className="overflow-hidden border-b border-ctp-surface1" style={{ flex: '40 1 0' }}>
+        <div className="overflow-hidden" style={{ width: '40%' }}>
           {fieldGroups}
         </div>
-        {/* Bottom-right: findings pane (injected by modal) */}
-        <div className="overflow-hidden" style={{ flex: '60 1 0' }}>
+      </div>
+
+      {/* Bottom section: 3-column CSS Grid — col 0+1 = 1.5fr each (matches ActivationLinks 50/50), col 2 = 2fr */}
+      <div
+        className="overflow-hidden"
+        style={{
+          flex: '60 1 0',
+          display: 'grid',
+          gridTemplateColumns: '1.5fr 1.5fr 2fr',
+          gridTemplateRows: 'auto 1fr',
+        }}
+      >
+        {/* Header row — 3 cells, same grid row = same height automatically */}
+        <div className="border-b border-r border-ctp-surface1 overflow-hidden" />
+        <div className="border-b border-r border-ctp-surface1 overflow-hidden">
+          {renderBottomMiddleHeader?.()}
+        </div>
+        <div className="border-b border-ctp-surface1 overflow-hidden">
+          {renderBottomRightHeader?.()}
+        </div>
+        {/* Content row — left spans cols 0+1 to match the 3fr area */}
+        <div className="overflow-hidden border-r border-ctp-surface1" style={{ gridColumn: 'span 2' }}>
+          {renderBottomLeft?.()}
+        </div>
+        <div className="overflow-hidden">
           {renderBottomRight?.()}
         </div>
       </div>
@@ -215,7 +235,7 @@ function QuadrantLayout({
   )
 }
 
-export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBottomLeft, renderBottomRight }: EntryEditorProps) {
+export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBottomMiddleHeader, renderBottomRightHeader, renderBottomLeft, renderBottomRight }: EntryEditorProps) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
@@ -1354,6 +1374,8 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
             onSelect={handleCategorySelect}
           />
         }
+        renderBottomMiddleHeader={renderBottomMiddleHeader}
+        renderBottomRightHeader={renderBottomRightHeader}
         renderBottomLeft={renderBottomLeft}
         renderBottomRight={renderBottomRight}
       />
