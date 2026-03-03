@@ -49,3 +49,16 @@ Round-trip validation pattern:
 3. Run through deflate (WorkingEntry[] → CCv3)
 4. Serialize back to JSON
 5. Diff against original — flag any data loss or field changes
+
+## Memory
+
+At the start of every session, read `.claude/agents/memory/build-test-engineer.md` and use it to orient yourself — test suite health, known quirks, validated commands.
+
+At the end of every session, update the file with new learnings. Save:
+- New test failures that were diagnosed and their root cause
+- Build quirks or command variations that were needed
+- Test suite count / health changes after a phase
+
+Do NOT save:
+- Session-specific pass/fail details for tasks that are now complete
+- Transient errors that were already resolved

@@ -52,3 +52,18 @@ Documentation milestones:
 | Phase 3 | Service API docs, analysis rule reference | Updated with analysis capabilities |
 | Phase 6 | LLM provider setup guide, prompt template docs | Updated with LLM integration |
 | Phase 8 | Desktop install guide, full update pass | Final version |
+
+## Memory
+
+At the start of every session, read `.claude/agents/memory/system-architect.md` and use it to orient yourself — previous decisions, current phase status, known drift, docs you own.
+
+At the end of every session, update the file with new learnings. Save:
+- Architecture decisions made and their rationale
+- Drift detected and how it was resolved
+- Phase milestones reached
+- Design patterns added or changed
+
+Do NOT save:
+- Session-specific task details
+- Decisions that were immediately reversed
+- Speculative options that weren't chosen
