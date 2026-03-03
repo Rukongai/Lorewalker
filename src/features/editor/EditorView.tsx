@@ -12,6 +12,7 @@ import { GroupFields } from './fields/GroupFields'
 import { ScanOverrideFields } from './fields/ScanOverrideFields'
 import { MatchSourceFields } from './fields/MatchSourceFields'
 import { CharFilterFields } from './fields/CharFilterFields'
+import { TriggersFields } from './fields/TriggersFields'
 import { BudgetFields } from './fields/BudgetFields'
 import { AdvancedFields } from './fields/AdvancedFields'
 import { ConnectionsList } from '@/features/health'
@@ -185,6 +186,12 @@ export function EditorView({
         {isPlatform && (
           <FieldGroup label="Character Filter" defaultCollapsed>
             <CharFilterFields entry={entry} onChange={onEntryChange} />
+          </FieldGroup>
+        )}
+
+        {isSillyTavern && (
+          <FieldGroup label="Triggers" stOnly defaultCollapsed>
+            <TriggersFields triggers={entry.triggers} onChange={(triggers) => onEntryChange({ triggers })} />
           </FieldGroup>
         )}
 
