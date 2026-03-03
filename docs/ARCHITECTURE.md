@@ -33,7 +33,7 @@ This document is the source of truth for Lorewalker's design. Implementation age
 │                         UI Layer                                       │
 │  WorkspaceShell > TabBar, FilesPanel, EntryList, GraphCanvas,        │
 │  EntryEditor, AnalysisPanel, SimulatorPanel, InspectorPanel,         │
-│  StatusBar, WorkspaceToolsModal, EntryEditorModal, SettingsDialog    │
+│  StatusBar, LorebookWorkspace, EntryWorkspace, SettingsDialog        │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -45,27 +45,24 @@ This document is the source of truth for Lorewalker's design. Implementation age
 src/
 ├── assets/
 ├── components/
-│   ├── analysis/          — AnalysisPanel, FindingItem, InspectorPanel, DeepAnalysisDialog, ModalFindingsPane
-│   ├── editor/            — EntryEditor, EntryEditorModal, ContentEditor, KeywordInput, BookMetaEditor,
+│   ├── analysis/          — AnalysisPanel, FindingItem, InspectorPanel, DeepAnalysisDialog
+│   ├── editor/            — EntryEditor, ContentEditor, KeywordInput, BookMetaEditor,
 │   │                        ActivationLinks, RCActivationSection, RoleCallPositionSelect,
 │   │                        KeywordObjectsEditor, ConditionsEditor, ConditionsViewer
 │   ├── entry-list/        — EntryList, EntryListItem, CategoryMenu
 │   ├── graph/             — GraphCanvas, GraphControls, GraphLegend, EntryNode, RecursionEdge,
 │   │                        GraphAddButton, EdgeConnectDialog
 │   ├── inspector/
-│   ├── keywords/          — KeywordsTabContent, KeywordTable, KeywordDetailPane
+│   ├── keywords/          — KeywordTable, KeywordDetailPane
 │   ├── settings/          — SettingsDialog, LlmToolsPanel, ProviderSettingsPanel, LorebookSettingsPanel
 │   ├── shared/            — ErrorBoundary, ToastStack, Toggle
 │   ├── simulator/         — SimulatorPanel, ActivationResults, RecursionTrace, MessageInput
-│   ├── tools-modal/       — WorkspaceToolsModal, AnalysisTabContent, SimulatorTabContent,
-│   │                        RulesTabContent, KeywordsTabContent (root), AnalysisFindingList,
-│   │                        AnalysisDetailPane, AnalysisViolationList, ChainDiagram,
-│   │                        SimulatorConversationPane, SimulatorResultsPane, RuleEditorModal,
-│   │                        RuleTestingPane, ConditionBuilder, VariablePicker, TemplateField
 │   ├── ui/                — Tooltip, HelpTooltip
 │   └── workspace/         — WorkspaceShell, TabBar, FilesPanel, WelcomeScreen, StatusBar,
 │                            ExportButton, LorebookPickerDialog, SaveSnapshotDialog,
 │                            WhatsNewDialog, KeywordNameDialog
+├── layouts/
+│   └── desktop/           — LorebookWorkspace, EntryWorkspace
 ├── hooks/
 │   ├── useDerivedState.ts     — debounced graph + analysis recomputation, exports EMPTY_STORE
 │   ├── useAutosave.ts         — 2s debounced autosave to IndexedDB
@@ -397,7 +394,7 @@ lorewalker-db/
 **Public API:**
 - `buildKeywordInventory(entries: WorkingEntry[]): KeywordStat[]` — returns per-keyword usage statistics across the lorebook
 
-**Used by:** `KeywordsTabContent` in WorkspaceToolsModal.
+**Used by:** `KeywordsView` in `LorebookWorkspace` and `EntryWorkspace`.
 
 ---
 
@@ -663,15 +660,15 @@ The graph is built by scanning each entry's `content` field for substrings match
 ## UI Component Map
 
 ### WorkspaceShell (`src/components/workspace/WorkspaceShell.tsx`)
-Root layout component. Manages panel arrangement, modal state, tab bar, and global actions. Lazy-loads heavy components (GraphCanvas, EntryEditorModal, WorkspaceToolsModal, SettingsDialog).
+Root layout component. Manages panel arrangement, modal state, tab bar, and global actions. Lazy-loads heavy components (GraphCanvas, EntryWorkspace, LorebookWorkspace, SettingsDialog).
 
 **Modal state managed here:**
-- `modalEntryId: string | null` — entry open in EntryEditorModal
+- `modalEntryId: string | null` — entry open in EntryWorkspace
 - `settingsOpen: boolean` — SettingsDialog visibility
-- `toolsModalOpen: boolean` — WorkspaceToolsModal visibility
-- `toolsModalTab: 'analysis' | 'simulator' | 'rules' | 'keywords'` — active tools modal tab
+- `toolsModalOpen: boolean` — LorebookWorkspace visibility
+- `toolsModalTab: 'health' | 'simulator' | 'rules' | 'keywords'` — active lorebook workspace tab
 
-**Toolbar buttons:** Undo, Redo, Export, Open File, Save Snapshot, Settings, Analysis (BarChart2), Simulator (Zap), Rules (Scale)
+**Toolbar buttons:** Undo, Redo, Export, Open File, Save Snapshot, Settings, Health (BarChart2), Simulator (Zap), Rules (Scale)
 
 ### TabBar (`src/components/workspace/TabBar.tsx`)
 Displays open document tabs with dirty indicator, close button.
@@ -724,14 +721,14 @@ Dialog shown when user drags an edge between nodes. Lets user choose which keywo
 ### EntryEditor (`src/components/editor/EntryEditor.tsx`)
 Right panel entry form. All WorkingEntry fields organized in logical groups. Inline findings from AnalysisPanel for the selected entry.
 
-### EntryEditorModal (`src/components/editor/EntryEditorModal.tsx`)
-Full-screen modal variant of the entry editor. **z-50.** Opened by double-clicking a node or from WorkspaceToolsModal's `onOpenEntry` callback.
+### EntryWorkspace (`src/layouts/desktop/EntryWorkspace.tsx`)
+Full-screen layout container for per-entry editing and analysis. **z-50.** Opened by double-clicking a node or from LorebookWorkspace's `onOpenEntry` callback.
 
-**Escape handling:** capture phase + `stopImmediatePropagation()` — fires before WorkspaceToolsModal's bubble handler, preventing Escape from closing both.
+**Escape handling:** capture phase + `stopImmediatePropagation()` — fires before LorebookWorkspace's bubble handler, preventing Escape from closing both.
 
-**Navigation:** back/forward stack — supports navigating entry history within the modal session.
+**Navigation:** browser-style back/forward history stack within the modal session.
 
-**Sub-components:** ActivationLinks (lower-left), ModalFindingsPane (lower-right).
+**Four tabs:** Edit (EditorView), Health (HealthView scope="entry"), Simulator (SimulatorView scope="entry"), Keywords (KeywordsView scope="entry").
 
 **Dimensions:** `90vw` × `90vh`, min-width `640px`.
 
@@ -768,11 +765,8 @@ Right panel "Inspector" tab. Per-entry findings, incoming/outgoing edges, token 
 ### DeepAnalysisDialog (`src/components/analysis/DeepAnalysisDialog.tsx`)
 Modal for confirming LLM deep analysis. Shows token estimate, provider selection, and runs the analysis.
 
-### ModalFindingsPane (`src/components/analysis/ModalFindingsPane.tsx`)
-Compact findings list shown in the lower-right quadrant of EntryEditorModal.
-
 ### SimulatorPanel (`src/components/simulator/SimulatorPanel.tsx`)
-Right panel "Simulator" tab. Message input, settings, engine selector, run button. Delegates heavy UI to WorkspaceToolsModal's simulator tab.
+Right panel "Simulator" tab. Message input, settings, engine selector, run button. Delegates heavy UI to LorebookWorkspace's simulator tab.
 
 ### ActivationResults (`src/components/simulator/ActivationResults.tsx`)
 Displays list of activated entries with trigger details, matched keywords, token cost.
@@ -780,54 +774,22 @@ Displays list of activated entries with trigger details, matched keywords, token
 ### RecursionTrace (`src/components/simulator/RecursionTrace.tsx`)
 Step-by-step display of recursion unfolding.
 
-### WorkspaceToolsModal (`src/components/tools-modal/WorkspaceToolsModal.tsx`)
-Large overlay modal for complex analysis, simulation, and custom rules workflows. **z-40.**
+### LorebookWorkspace (`src/layouts/desktop/LorebookWorkspace.tsx`)
+Large layout container for lorebook-wide analysis, simulation, rules, and keywords workflows. **z-40.**
 
 **Dimensions:** `95vw` × `90vh`
 
 **Four tabs:**
-1. **analysis** — `AnalysisTabContent` (full finding list, detail pane, chain diagram)
-2. **simulator** — `SimulatorTabContent` (conversation pane, results pane)
-3. **rules** — `RulesTabContent` (built-in rule list with enable/disable toggles, custom rules with CRUD, rule editor modal)
-4. **keywords** — `KeywordsTabContent` (keyword inventory table, detail pane, usage statistics)
+1. **health** — `HealthView` scope="lorebook" (full finding list, health score, deep analysis trigger)
+2. **simulator** — `SimulatorView` scope="lorebook" (message composer, settings, results)
+3. **rules** — `RulesView` (built-in rule list with enable/disable toggles, custom rules with CRUD, rule editor)
+4. **keywords** — `KeywordsView` scope="lorebook" (keyword inventory table, detail pane, usage statistics)
 
-**Escape handling:** bubble phase (standard `window.addEventListener('keydown', handler)` without capture flag). Escape closes WorkspaceToolsModal only when EntryEditorModal is not open (because EntryEditorModal at z-50 captures Escape first and calls `stopImmediatePropagation()`).
+**Escape handling:** bubble phase (standard `window.addEventListener('keydown', handler)` without capture flag). Escape closes LorebookWorkspace only when EntryWorkspace is not open (because EntryWorkspace at z-50 captures Escape first and calls `stopImmediatePropagation()`).
 
 **Navigation callbacks:**
-- `onOpenEntry(entryId)` — open the entry in EntryEditorModal (which overlays at z-50 on top of WorkspaceToolsModal)
-- `onSelectEntry(entryId)` — select the entry in the sidebar and close WorkspaceToolsModal
-
-**EMPTY_STORE pattern:** Sub-components in this modal also use `EMPTY_STORE` for unconditional hook calls.
-
-### RulesTabContent (`src/components/tools-modal/RulesTabContent.tsx`)
-Rules management UI: built-in rule list with per-rule enable/disable, custom rule list with add/edit/delete. Launches `RuleEditorModal`.
-
-### RuleEditorModal (`src/components/tools-modal/RuleEditorModal.tsx`)
-Modal within WorkspaceToolsModal for creating/editing custom rules. Uses `ConditionBuilder` and `TemplateField`.
-
-### ConditionBuilder (`src/components/tools-modal/ConditionBuilder.tsx`)
-Visual UI for building `SerializedEvaluation` trees (groups, leaves, operators, variables).
-
-### RuleTestingPane (`src/components/tools-modal/RuleTestingPane.tsx`)
-Live rule tester — shows which entries in the active document would match the current custom rule definition.
-
-### VariablePicker (`src/components/tools-modal/VariablePicker.tsx`)
-Dropdown for selecting condition variables (entry field paths) in ConditionBuilder.
-
-### TemplateField (`src/components/tools-modal/TemplateField.tsx`)
-Message template input with variable interpolation preview (`{{entry.name}}` etc.).
-
-### AnalysisTabContent, AnalysisFindingList, AnalysisDetailPane (`src/components/tools-modal/`)
-Full-size analysis view inside WorkspaceToolsModal. Shows all findings with full detail pane and chain diagram.
-
-### ChainDiagram (`src/components/tools-modal/ChainDiagram.tsx`)
-Compact recursion chain visualization for the analysis detail pane.
-
-### KeywordsTabContent, KeywordTable, KeywordDetailPane (`src/components/keywords/`)
-Keywords inventory view inside WorkspaceToolsModal. `KeywordsTabContent` is the tab root. `KeywordTable` is a searchable/sortable table of all unique keywords across all entries (powered by `KeywordAnalysisService.buildKeywordInventory`). `KeywordDetailPane` shows per-keyword details including which entries use it, match options, and occurrence count.
-
-### SimulatorTabContent, SimulatorConversationPane, SimulatorResultsPane (`src/components/tools-modal/`)
-Full-size simulator UI inside WorkspaceToolsModal with conversation builder and multi-message result display.
+- `onOpenEntry(entryId)` — open the entry in EntryWorkspace (which overlays at z-50 on top of LorebookWorkspace)
+- `onSelectEntry(entryId)` — select the entry in the sidebar and close LorebookWorkspace
 
 ### SettingsDialog (`src/components/settings/SettingsDialog.tsx`)
 Settings modal. **z-50.** Two-column layout: category sidebar (draggable width, 100px–300px) + content panel.
@@ -877,14 +839,14 @@ Inline `?` icon that wraps `Tooltip`. Used in form fields for contextual help. N
 
 ```
 z-9999  Tooltip portal               — never clipped, always on top
-z-50    EntryEditorModal             — capture Escape + stopImmediatePropagation
+z-50    EntryWorkspace               — capture Escape + stopImmediatePropagation
 z-50    SettingsDialog               — standard close
-z-40    WorkspaceToolsModal          — bubble Escape (blocked by z-50 if both open)
+z-40    LorebookWorkspace            — bubble Escape (blocked by z-50 if both open)
 ```
 
 **Rules for adding new modals:**
-- Modals that should close *before* EntryEditorModal → use z-40, bubble Escape
-- Modals that should close *instead of* WorkspaceToolsModal → use z-50, capture Escape + `stopImmediatePropagation()`
+- Modals that should close *before* EntryWorkspace → use z-40, bubble Escape
+- Modals that should close *instead of* LorebookWorkspace → use z-50, capture Escape + `stopImmediatePropagation()`
 - Portals that must never be clipped → use z-9999
 
 **Never hardcode z-index values in components.** Define them in Tailwind config or use the class system (`z-40`, `z-50`, `z-[9999]`).
@@ -893,12 +855,12 @@ z-40    WorkspaceToolsModal          — bubble Escape (blocked by z-50 if both 
 
 ## Navigation Delegation Pattern
 
-WorkspaceToolsModal cannot directly control WorkspaceShell's modal state. It delegates through callbacks:
+LorebookWorkspace and EntryWorkspace cannot directly control WorkspaceShell's modal state. They delegate through callbacks:
 
-- `onOpenEntry(entryId)` — called when user clicks an entry in the tools modal that should be opened for editing. WorkspaceShell sets `modalEntryId = entryId`, opening EntryEditorModal on top of WorkspaceToolsModal.
-- `onSelectEntry(entryId)` — called when user wants to navigate to the entry in the sidebar. WorkspaceShell closes WorkspaceToolsModal and sets the selection.
+- `onOpenEntry(entryId)` — called when user clicks an entry that should be opened for editing. WorkspaceShell sets `modalEntryId = entryId`, opening EntryWorkspace on top of LorebookWorkspace.
+- `onSelectEntry(entryId)` — called when user wants to navigate to the entry in the sidebar. WorkspaceShell closes LorebookWorkspace and sets the selection.
 
-This pattern prevents tools-modal components from importing WorkspaceShell internals.
+This pattern prevents layout components from importing WorkspaceShell internals.
 
 ---
 
@@ -930,4 +892,6 @@ This pattern prevents tools-modal components from importing WorkspaceShell inter
 | 22 | SerializedEvaluation as a JSON tree (not a string expression) | Enables round-trip persistence, visual editing in ConditionBuilder, and structured evaluation without dynamic code execution. | Phase 7b |
 | 23 | getTypeBadge in entry-badge.ts as shared utility | Badge label and color are rendered in EntryListItem, EntryNode, and EntryEditorModal. A single source prevents divergence. | Phase 7b |
 | 24 | Portal-based Tooltip at z-9999 | Toolbar buttons inside fixed panels were clipping standard Tooltip z-indexes. Portal renders into document root, always visible. | Phase 7b |
-| 25 | Escape capture + stopImmediatePropagation for EntryEditorModal (z-50) | When both WorkspaceToolsModal and EntryEditorModal are open, Escape should close only EntryEditorModal. Capture phase fires before WorkspaceToolsModal's bubble handler and stopImmediatePropagation prevents it from also closing the tools modal. | Phase 7b |
+| 25 | Escape capture + stopImmediatePropagation for EntryWorkspace (z-50) | When both LorebookWorkspace and EntryWorkspace are open, Escape should close only EntryWorkspace. Capture phase fires before LorebookWorkspace's bubble handler and stopImmediatePropagation prevents it from also closing the lorebook workspace. | Phase 7b |
+| 26 | src/layouts/desktop/ for layout containers | Feature modules (features/*) are portable and scope-aware. Layout containers (layouts/desktop/) read from stores and wire features together. Separation prevents feature modules from being coupled to the shell's navigation model. | Phase 3 Stream B |
+| 27 | Replace WorkspaceToolsModal/EntryEditorModal with LorebookWorkspace/EntryWorkspace | Old modals delegated to ad-hoc component wrappers. New layout containers compose the feature *View modules directly, making each tab independently testable and eliminating 18 redundant wrapper files. | Phase 3 Stream B |

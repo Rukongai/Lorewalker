@@ -103,7 +103,7 @@ export function RuleEditor({ initialRule, copySource, tabId, onSave, onClose }: 
     void navigator.clipboard.writeText(`{{${path}}}`)
   }
 
-  // Escape key — capture phase so it fires before WorkspaceToolsModal's handler
+  // Escape key — capture phase so it fires before LorebookWorkspace's handler
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
