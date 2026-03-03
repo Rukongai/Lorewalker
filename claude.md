@@ -49,7 +49,7 @@ This project uses specialized agents. See `AGENTS.md` for full definitions.
 - **State:** Zustand + immer + zundo (undo/redo)
 - **Graph:** @xyflow/react (React Flow v12)
 - **UI:** Tailwind CSS + shadcn/ui (dark mode default)
-- **Persistence:** IndexedDB via idb-keyval or Dexie
+- **Persistence:** IndexedDB via idb-keyval
 - **Format I/O:** @character-foundry/character-foundry
 - **Testing:** Vitest + React Testing Library
 - **Desktop (deferred):** Tauri
@@ -60,5 +60,9 @@ This project uses specialized agents. See `AGENTS.md` for full definitions.
 - **One Zustand store per tab** — undo/redo is scoped per document. Don't share stores across tabs.
 - **RecursionGraph is derived, not stored** — recomputed incrementally when entries change. Never persist it.
 - **Keyword matching is shared** — defined in `services/simulator/keyword-matching.ts`, imported by both GraphService and SimulatorService. Never duplicate this logic.
-- **Services are pure functions** (except LLMService which manages provider state). Data in, data out. State lives in Zustand stores.
+- **Services are pure functions** (except LLMService and CategorizeService which manage provider state). Data in, data out. State lives in Zustand stores.
 - **Analysis rules** implement a uniform Rule interface regardless of whether they're deterministic or LLM-powered. The `requiresLLM` flag controls when they execute.
+- **RoleCall format** — Two format families are supported: `sillytavern` and `rolecall`. `DocumentStore.activeFormat` determines which editor panels render. When `activeFormat === 'rolecall'`, EntryEditor swaps keyword/activation panels for RoleCall-specific variants (RCActivationSection, KeywordObjectsEditor, ConditionsEditor). TransformService handles both formats via inflate/deflate.
+- **Three-layer rubric assembly** — Active rubric = `defaultRubric` (filtered by disabled IDs) + workspace-level custom rules + per-document rule overrides. Assembled in `useDerivedState` before each analysis run. Never run analysis with just the default rubric.
+- **EMPTY_STORE pattern** — Components that need a DocumentStore but must handle "no active tab" import `EMPTY_STORE` from `src/hooks/useDerivedState.ts` as a fallback. This keeps Zustand `useStore` calls unconditional (Rules of Hooks). Never call `useStore` conditionally.
+- **CategorizeService is also non-pure** — Like LLMService, CategorizeService manages provider state and makes async LLM calls. Both are exceptions to the pure-function service rule.
