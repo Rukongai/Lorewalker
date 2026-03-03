@@ -29,7 +29,9 @@ import { OpenAICompatibleProvider } from '@/services/llm/providers/openai-compat
 import { AnthropicProvider } from '@/services/llm/providers/anthropic'
 const GraphCanvas = lazy(() => import('@/components/graph/GraphCanvas').then(m => ({ default: m.GraphCanvas })))
 const SettingsDialog = lazy(() => import('@/components/settings/SettingsDialog').then(m => ({ default: m.SettingsDialog })))
-const EntryEditorModal = lazy(() => import('@/components/editor/EntryEditorModal').then(m => ({ default: m.EntryEditorModal })))
+const EntryWorkspace = lazy(() => import('@/layouts/desktop/EntryWorkspace').then(m => ({ default: m.EntryWorkspace })))
+const LorebookWorkspace = lazy(() => import('@/layouts/desktop/LorebookWorkspace').then(m => ({ default: m.LorebookWorkspace })))
+import type { LorebookWorkspaceTab } from '@/layouts/desktop/LorebookWorkspace'
 import { BookMetaEditor } from '@/components/editor/BookMetaEditor'
 import { Toggle } from '@/components/shared/Toggle'
 import { ToastStack } from '@/components/shared/ToastStack'
@@ -39,8 +41,6 @@ import { AnalysisPanel } from '@/components/analysis/AnalysisPanel'
 import { InspectorPanel } from '@/components/analysis/InspectorPanel'
 import { SimulatorPanel } from '@/components/simulator/SimulatorPanel'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
-const WorkspaceToolsModal = lazy(() => import('@/components/tools-modal/WorkspaceToolsModal').then(m => ({ default: m.WorkspaceToolsModal })))
-import type { ToolsTab } from '@/components/tools-modal/WorkspaceToolsModal'
 import type { PersistedDocument, PersistedSnapshot } from '@/types'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { generateId } from '@/lib/uuid'
@@ -89,7 +89,7 @@ export function WorkspaceShell() {
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toolsModalOpen, setToolsModalOpen] = useState(false)
-  const [toolsModalTab, setToolsModalTab] = useState<ToolsTab>('analysis')
+  const [toolsModalTab, setToolsModalTab] = useState<LorebookWorkspaceTab>('health')
   const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('entry')
   const [toasts, setToasts] = useState<UndoToast[]>([])
 
@@ -451,9 +451,9 @@ export function WorkspaceShell() {
           <div className="w-px h-4 bg-ctp-surface1 mx-0.5" />
 
           {/* Analysis tools modal */}
-          <Tooltip text="Open Analysis panel" placement="below">
+          <Tooltip text="Open Health panel" placement="below">
             <button
-              onClick={() => { setToolsModalTab('analysis'); setToolsModalOpen(true) }}
+              onClick={() => { setToolsModalTab('health'); setToolsModalOpen(true) }}
               disabled={!activeTabId}
               className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
             >
@@ -730,7 +730,7 @@ export function WorkspaceShell() {
 
       {modalEntryId && (
         <Suspense fallback={null}>
-          <EntryEditorModal
+          <EntryWorkspace
             entryId={modalEntryId}
             onClose={() => setModalEntryId(null)}
           />
@@ -738,7 +738,7 @@ export function WorkspaceShell() {
       )}
       {toolsModalOpen && (
         <Suspense fallback={null}>
-          <WorkspaceToolsModal
+          <LorebookWorkspace
             tab={toolsModalTab}
             onTabChange={setToolsModalTab}
             onClose={() => setToolsModalOpen(false)}
