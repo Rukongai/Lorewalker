@@ -30,7 +30,6 @@ lorewalker/
 │   │   ├── graph-service.ts
 │   │   ├── persistence-service.ts
 │   │   ├── categorize-service.ts
-│   │   ├── simulator-service.ts          # (legacy location, may be in simulator/)
 │   │   │
 │   │   ├── analysis/                     # Analysis pipeline
 │   │   │   ├── analysis-service.ts       # runDeterministic, runLLMRules, computeHealthScore
