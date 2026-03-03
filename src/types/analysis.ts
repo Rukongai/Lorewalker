@@ -128,3 +128,9 @@ export interface DocumentRuleOverrides {
   disabledRuleIds: string[];   // workspace/default rule IDs disabled for this doc
   customRules: CustomRule[];   // doc-specific custom rules
 }
+
+// Evaluation context for custom rule expressions — used by evaluation-engine, custom-rule-adapter, RuleTestingPane
+export interface EvaluationContext {
+  entry: WorkingEntry;
+  book: BookMeta;
+}

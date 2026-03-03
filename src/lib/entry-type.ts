@@ -1,4 +1,5 @@
-export type EntryCategory = 'character' | 'location' | 'rule' | 'event' | 'faction' | 'item' | 'lore' | 'generic'
+import type { EntryCategory } from '@/types'
+export type { EntryCategory }
 
 export const FIXED_CATEGORIES: EntryCategory[] = [
   'character', 'location', 'rule', 'event', 'faction', 'item', 'lore', 'generic',

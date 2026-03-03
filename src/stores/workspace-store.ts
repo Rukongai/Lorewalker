@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { TabMeta, FileMeta, GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults, LorebookDefaults, ThemeId, CustomRule } from '@/types'
+import type { TabMeta, FileMeta, GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults, LorebookDefaults, ThemeId, CustomRule, LlmCategorizationSettings } from '@/types'
 
 const DEFAULT_GRAPH_SETTINGS: GraphLayoutSettings = {
   acyclicer: 'greedy',
@@ -46,12 +46,6 @@ const DEFAULT_LOREBOOK_DEFAULTS: LorebookDefaults = {
   useGroupScoring: false,
   alertOnOverflow: false,
   insertionStrategy: 'evenly',
-}
-
-export interface LlmCategorizationSettings {
-  enabled: boolean
-  providerId?: string
-  skipManualOverrides: boolean
 }
 
 const DEFAULT_LLM_CATEGORIZATION: LlmCategorizationSettings = {

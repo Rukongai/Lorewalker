@@ -9,6 +9,7 @@ export type {
   RoleCallKeyword,
   RoleCallConditionType,
   RoleCallCondition,
+  EntryCategory,
 } from './entry'
 
 export type {
@@ -39,6 +40,7 @@ export type {
   SerializedEvaluation,
   CustomRule,
   DocumentRuleOverrides,
+  EvaluationContext,
 } from './analysis'
 
 export type {
@@ -62,6 +64,7 @@ export type {
   CompletionRequest,
   CompletionResponse,
   TokenUsage,
+  LlmCategorizationSettings,
 } from './llm'
 
 export type { KeywordStat } from './keywords'
