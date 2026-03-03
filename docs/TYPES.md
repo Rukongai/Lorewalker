@@ -244,6 +244,7 @@ interface Finding {
   entryIds: string[];                 // Affected entries (may be empty for book-level findings)
   details?: string;                   // Extended explanation (shown on expand)
   fix?: SuggestedFix;                 // Optional auto-fix
+  relatedKeywords?: string[];         // Populated by cross-entry keyword rules to enable navigation to the keyword analyzer
 }
 
 interface SuggestedFix {

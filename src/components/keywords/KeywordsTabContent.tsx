@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import type { KeywordStat } from '@/types'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
@@ -10,12 +10,16 @@ interface KeywordsTabContentProps {
   tabId: string | null
   onSelectEntry: (id: string) => void
   onOpenEntry: (id: string) => void
+  initialKeyword?: string | null
+  onInitialKeywordConsumed?: () => void
 }
 
 export function KeywordsTabContent({
   tabId,
   onSelectEntry,
   onOpenEntry: _onOpenEntry,
+  initialKeyword,
+  onInitialKeywordConsumed,
 }: KeywordsTabContentProps) {
   const realStore = tabId ? documentStoreRegistry.get(tabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
@@ -26,6 +30,13 @@ export function KeywordsTabContent({
   const [selected, setSelected] = useState<KeywordStat | null>(null)
 
   const stats = useMemo(() => buildKeywordInventory(entries), [entries])
+
+  useEffect(() => {
+    if (!initialKeyword) return
+    const match = stats.find((s) => s.keyword === initialKeyword) ?? null
+    setSelected(match)
+    onInitialKeywordConsumed?.()
+  }, [initialKeyword]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!tabId) {
     return (

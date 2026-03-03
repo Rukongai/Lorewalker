@@ -112,18 +112,39 @@ const duplicateKeywordsRule: Rule = {
 
     const entryNameMap = new Map(context.entries.map((e) => [e.id, e.name]))
 
+    // Invert: for each entry, collect its duplicate keywords and the other entries that share them
+    const entryDuplicates = new Map<string, Array<{ keyword: string; otherIds: string[] }>>()
     for (const [kw, ids] of kwMap) {
-      if (ids.length > 1) {
-        const names = ids.map((id) => entryNameMap.get(id) ?? id)
-        findings.push({
-          id: generateId(),
-          ruleId: 'keywords/duplicate-keywords',
-          severity: 'warning',
-          category: 'keywords',
-          message: `Keyword '${kw}' is shared by entries: ${names.join(', ')}`,
-          entryIds: ids,
-        })
+      if (ids.length < 2) continue
+      for (const entryId of ids) {
+        const otherIds = ids.filter((id) => id !== entryId)
+        const existing = entryDuplicates.get(entryId)
+        if (existing) {
+          existing.push({ keyword: kw, otherIds })
+        } else {
+          entryDuplicates.set(entryId, [{ keyword: kw, otherIds }])
+        }
       }
+    }
+
+    for (const [entryId, dupes] of entryDuplicates) {
+      const entryName = entryNameMap.get(entryId) ?? entryId
+      const n = dupes.length
+      const allOtherIds = [...new Set(dupes.flatMap((d) => d.otherIds))]
+      const detailLines = dupes.map(({ keyword, otherIds }) => {
+        const otherNames = otherIds.map((id) => entryNameMap.get(id) ?? id)
+        return `'${keyword}' — also on: ${otherNames.join(', ')}`
+      })
+      findings.push({
+        id: generateId(),
+        ruleId: 'keywords/duplicate-keywords',
+        severity: 'warning',
+        category: 'keywords',
+        message: `Entry "${entryName}" has ${n} keyword(s) shared with other entries`,
+        details: detailLines.join('\n'),
+        entryIds: [entryId, ...allOtherIds],
+        relatedKeywords: dupes.map((d) => d.keyword),
+      })
     }
 
     return findings
@@ -151,7 +172,10 @@ const substringOverlapRule: Rule = {
       }
     }
 
-    // Check every pair for strict substring relationship
+    // For each entry, collect its keywords that are strict substrings of another entry's keyword
+    // Map: entryId → list of { substringKey, superKeyword, otherEntryId }
+    const entryOverlaps = new Map<string, Array<{ substringKey: string; superKeyword: string; otherEntryId: string }>>()
+
     for (let i = 0; i < allKeys.length; i++) {
       for (let j = 0; j < allKeys.length; j++) {
         if (i === j) continue
@@ -160,20 +184,45 @@ const substringOverlapRule: Rule = {
         // If 'a' uses whole-word matching, it won't fire word-internally inside 'b'
         // (word boundaries prevent substring activation), so no overlap concern.
         if (a.matchWholeWords) continue
-        // a.key is a strict substring of b.key
+        // a.key is a strict substring of b.key, from potentially different entries
         if (a.key !== b.key && b.key.includes(a.key)) {
-          const aName = entryNameMap.get(a.entryId) ?? a.entryId
-          const bName = entryNameMap.get(b.entryId) ?? b.entryId
-          findings.push({
-            id: generateId(),
-            ruleId: 'keywords/substring-overlap',
-            severity: 'warning',
-            category: 'keywords',
-            message: `Entry "${aName}" keyword '${a.key}' is a substring of Entry "${bName}" keyword '${b.key}'`,
-            entryIds: [a.entryId, b.entryId],
-          })
+          const existing = entryOverlaps.get(a.entryId)
+          const overlap = { substringKey: a.key, superKeyword: b.key, otherEntryId: b.entryId }
+          if (existing) {
+            existing.push(overlap)
+          } else {
+            entryOverlaps.set(a.entryId, [overlap])
+          }
         }
       }
+    }
+
+    for (const [entryId, overlaps] of entryOverlaps) {
+      const entryName = entryNameMap.get(entryId) ?? entryId
+      // Deduplicate: unique (substringKey, superKeyword, otherEntryId) triples
+      const seen = new Set<string>()
+      const uniqueOverlaps = overlaps.filter((o) => {
+        const key = `${o.substringKey}|${o.superKeyword}|${o.otherEntryId}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+      const n = new Set(uniqueOverlaps.map((o) => o.substringKey)).size
+      const allOtherIds = [...new Set(uniqueOverlaps.map((o) => o.otherEntryId))]
+      const detailLines = uniqueOverlaps.map(({ substringKey, superKeyword, otherEntryId }) => {
+        const otherName = entryNameMap.get(otherEntryId) ?? otherEntryId
+        return `'${substringKey}' is a substring of ${otherName}'s keyword '${superKeyword}'`
+      })
+      findings.push({
+        id: generateId(),
+        ruleId: 'keywords/substring-overlap',
+        severity: 'warning',
+        category: 'keywords',
+        message: `Entry "${entryName}" has ${n} keyword(s) that are substrings of other entries' keywords`,
+        details: detailLines.join('\n'),
+        entryIds: [entryId, ...allOtherIds],
+        relatedKeywords: [...new Set(uniqueOverlaps.map((o) => o.substringKey))],
+      })
     }
 
     return findings

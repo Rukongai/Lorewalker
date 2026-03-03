@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { useDerivedState } from '@/hooks/useDerivedState'
@@ -34,6 +34,13 @@ export function WorkspaceToolsModal({
 }: WorkspaceToolsModalProps) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const { graph } = useDerivedState(activeTabId ?? '')
+
+  const [initialKeyword, setInitialKeyword] = useState<string | null>(null)
+
+  function handleNavigateToKeyword(keyword: string) {
+    onTabChange('keywords')
+    setInitialKeyword(keyword)
+  }
 
   // Close on Escape (EntryEditorModal uses capture+stopImmediatePropagation, so it fires first)
   useEffect(() => {
@@ -94,6 +101,7 @@ export function WorkspaceToolsModal({
               graph={graph}
               onOpenEntry={onOpenEntry}
               onSelectEntry={onSelectEntry}
+              onNavigateToKeyword={handleNavigateToKeyword}
             />
           )}
           {tab === 'simulator' && (
@@ -111,6 +119,8 @@ export function WorkspaceToolsModal({
               tabId={activeTabId}
               onSelectEntry={onSelectEntry}
               onOpenEntry={onOpenEntry}
+              initialKeyword={initialKeyword}
+              onInitialKeywordConsumed={() => setInitialKeyword(null)}
             />
           )}
         </div>

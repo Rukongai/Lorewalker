@@ -12,9 +12,10 @@ interface AnalysisTabContentProps {
   graph: RecursionGraph
   onOpenEntry: (entryId: string) => void
   onSelectEntry: (entryId: string) => void
+  onNavigateToKeyword: (keyword: string) => void
 }
 
-export function AnalysisTabContent({ tabId, graph, onOpenEntry, onSelectEntry }: AnalysisTabContentProps) {
+export function AnalysisTabContent({ tabId, graph, onOpenEntry, onSelectEntry, onNavigateToKeyword }: AnalysisTabContentProps) {
   const [selectedFinding, setSelectedFinding] = useState<Finding | null>(null)
   const [deepAnalysisOpen, setDeepAnalysisOpen] = useState(false)
 
@@ -64,6 +65,7 @@ export function AnalysisTabContent({ tabId, graph, onOpenEntry, onSelectEntry }:
           graph={graph}
           onOpenEntry={onOpenEntry}
           onSelectEntry={onSelectEntry}
+          onNavigateToKeyword={onNavigateToKeyword}
         />
       </div>
 
