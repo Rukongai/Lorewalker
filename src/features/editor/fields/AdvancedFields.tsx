@@ -1,6 +1,4 @@
 import type { WorkingEntry } from '@/types'
-import { HelpTooltip } from '@/components/ui/HelpTooltip'
-import { Toggle } from '@/components/shared/Toggle'
 import { Field, inputClass } from '@/features/editor/primitives'
 
 interface AdvancedFieldsProps {
@@ -28,11 +26,6 @@ export function AdvancedFields({ entry, onChange }: AdvancedFieldsProps) {
           className={inputClass}
         />
       </Field>
-      <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-        <Toggle checked={entry.ignoreBudget} onChange={(val) => onChange({ ignoreBudget: val })} />
-        Ignore Budget
-        <HelpTooltip text="Entry bypasses the token budget limit, ensuring it's always inserted regardless of how much context is used. Use sparingly for critical lore." />
-      </label>
     </>
   )
 }

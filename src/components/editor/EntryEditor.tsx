@@ -20,6 +20,7 @@ import { MatchSourceFields } from '@/features/editor/fields/MatchSourceFields'
 import { CharFilterFields } from '@/features/editor/fields/CharFilterFields'
 import { TriggersFields } from '@/features/editor/fields/TriggersFields'
 import { AdvancedFields } from '@/features/editor/fields/AdvancedFields'
+import { BudgetFields } from '@/features/editor/fields/BudgetFields'
 
 function CategoryPane({
   categories,
@@ -355,6 +356,12 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
       )}
 
       {isSillyTavern && (
+        <FieldGroup label="Budget" stOnly defaultCollapsed>
+          <BudgetFields entry={entry} onChange={handleUpdate} />
+        </FieldGroup>
+      )}
+
+      {isSillyTavern && (
         <FieldGroup label="Advanced" stOnly defaultCollapsed>
           <AdvancedFields entry={entry} onChange={handleUpdate} />
         </FieldGroup>
@@ -414,6 +421,11 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
           key: 'Triggers',
           label: 'Triggers',
           content: <TriggersFields triggers={entry.triggers} onChange={(triggers) => handleUpdate({ triggers })} />,
+        },
+        {
+          key: 'Budget',
+          label: 'Budget',
+          content: <BudgetFields entry={entry} onChange={handleUpdate} />,
         },
         {
           key: 'Advanced',
