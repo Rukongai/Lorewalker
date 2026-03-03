@@ -115,6 +115,22 @@ export function SidebarPanel({ tab, onTabChange, onCollapse, onOpenEntry, onSele
     realStore?.getState().setSimulatorMessages(messages)
   }, [realStore])
 
+  const handleSimulateEntry = useCallback((entry: WorkingEntry) => {
+    if (!realStore) return
+    const state = realStore.getState()
+    const context: SimulationContext = {
+      messages: [{ role: 'user', content: entry.content }],
+      scanDepth: state.simulatorState.settings.defaultScanDepth,
+      tokenBudget: state.simulatorState.settings.defaultTokenBudget,
+      caseSensitive: state.simulatorState.settings.defaultCaseSensitive,
+      matchWholeWords: state.simulatorState.settings.defaultMatchWholeWords,
+      maxRecursionSteps: state.simulatorState.settings.defaultMaxRecursionSteps,
+      includeNames: state.simulatorState.settings.defaultIncludeNames,
+    }
+    const result = simulate(state.entries, context)
+    state.setSimulatorResult(result)
+  }, [realStore])
+
   const handleDeepAnalysisComplete = useCallback((newFindings: Finding[]) => {
     realStore?.getState().setLlmFindings(newFindings)
   }, [realStore])
@@ -251,11 +267,11 @@ export function SidebarPanel({ tab, onTabChange, onCollapse, onOpenEntry, onSele
               entries={entries}
               bookMeta={bookMeta}
               simulatorState={simulatorState}
-              graph={graph}
               entry={selectedEntry ?? undefined}
               onRunSimulation={handleRunSimulation}
               onUpdateSettings={handleUpdateSettings}
               onSetMessages={handleSetMessages}
+              onSimulateEntry={scope === 'entry' ? handleSimulateEntry : undefined}
               onEntrySelect={scope === 'lorebook' ? handleEntrySelect : navigate}
               onEntryOpen={scope === 'lorebook' ? onOpenEntry : navigate}
             />
@@ -271,8 +287,7 @@ export function SidebarPanel({ tab, onTabChange, onCollapse, onOpenEntry, onSele
             entries={entries}
             bookMeta={bookMeta}
             entry={selectedEntry ?? undefined}
-            activeFormat={activeFormat}
-            onUpdateEntry={handleUpdateEntry}
+            graph={graph}
             onEntrySelect={scope === 'lorebook' ? handleEntrySelect : navigate}
             onEntryOpen={scope === 'lorebook' ? onOpenEntry : navigate}
           />

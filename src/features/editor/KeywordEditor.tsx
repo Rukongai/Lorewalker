@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { KeywordTag } from './KeywordTag'
+import { KeywordTag } from '@/features/keywords/KeywordTag'
 
 interface KeywordEditorProps {
   value: string[]

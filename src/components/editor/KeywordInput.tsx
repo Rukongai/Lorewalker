@@ -1,1 +1,1 @@
-export { KeywordEditor as KeywordInput } from '@/features/keywords/KeywordEditor'
+export { KeywordEditor as KeywordInput } from '@/features/editor/KeywordEditor'

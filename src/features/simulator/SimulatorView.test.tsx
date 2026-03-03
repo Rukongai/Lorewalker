@@ -3,7 +3,6 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import type {
   WorkingEntry,
   BookMeta,
-  RecursionGraph,
   SimulatorState,
   SimulationSettings,
   ActivationResult,
@@ -126,16 +125,11 @@ function makeResult(overrides: Partial<ActivationResult> = {}): ActivationResult
   }
 }
 
-function makeGraph(): RecursionGraph {
-  return { edges: new Map(), reverseEdges: new Map(), edgeMeta: new Map() }
-}
-
 // ---- Tests ----
 
 const baseProps = {
   entries: [],
   bookMeta: makeBookMeta(),
-  graph: makeGraph(),
   onRunSimulation: vi.fn(),
   onUpdateSettings: vi.fn(),
   onSetMessages: vi.fn(),
@@ -225,7 +219,7 @@ describe('SimulatorView — entry scope', () => {
     expect(screen.getByText(/run a simulation to see this entry/i)).toBeInTheDocument()
   })
 
-  it('renders ReachAnalysis in entry scope', () => {
+  it('renders Simulate this entry button in entry scope', () => {
     const entry = makeEntry({ id: 'a' })
     render(
       <SimulatorView
@@ -236,8 +230,24 @@ describe('SimulatorView — entry scope', () => {
         simulatorState={makeSimulatorState()}
       />,
     )
-    // ReachAnalysis renders "no other entries" when no outgoing edges
-    expect(screen.getByText(/triggers no other entries/i)).toBeInTheDocument()
+    expect(screen.getByText(/simulate this entry/i)).toBeInTheDocument()
+  })
+
+  it('calls onSimulateEntry when Simulate this entry is clicked', () => {
+    const entry = makeEntry({ id: 'a', name: 'My Entry' })
+    const onSimulateEntry = vi.fn()
+    render(
+      <SimulatorView
+        {...baseProps}
+        scope="entry"
+        entry={entry}
+        entries={[entry]}
+        simulatorState={makeSimulatorState()}
+        onSimulateEntry={onSimulateEntry}
+      />,
+    )
+    fireEvent.click(screen.getByText(/simulate this entry/i))
+    expect(onSimulateEntry).toHaveBeenCalledWith(entry)
   })
 
   it('renders null when scope is entry but entry is undefined', () => {

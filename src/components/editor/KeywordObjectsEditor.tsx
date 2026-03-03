@@ -1,1 +1,1 @@
-export { KeywordObjectsEditor } from '@/features/keywords/KeywordObjectsEditor'
+export { KeywordObjectsEditor } from '@/features/editor/KeywordObjectsEditor'

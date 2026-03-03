@@ -18,6 +18,8 @@ import { AdvancedFields } from './fields/AdvancedFields'
 import { ConnectionsList } from '@/features/health'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
+import { KeywordEditor } from './KeywordEditor'
+import { KeywordObjectsEditor } from './KeywordObjectsEditor'
 
 const LazyRCEntryFields = lazy(
   () => import('./variants/rolecall/RCEntryFields').then(m => ({ default: m.RCEntryFields }))
@@ -136,6 +138,39 @@ export function EditorView({
             />
           </div>
         </div>
+
+        {/* Keywords */}
+        <FieldGroup label="Keywords">
+          <div className="flex flex-col gap-2">
+            <div>
+              <p className="text-[10px] text-ctp-subtext0 mb-1">Primary</p>
+              <KeywordEditor
+                value={entry.keys}
+                onChange={(keys) => onEntryChange({ keys })}
+                placeholder="Add primary keyword…"
+                variant="primary"
+              />
+            </div>
+            <div>
+              <p className="text-[10px] text-ctp-subtext0 mb-1">Secondary</p>
+              <KeywordEditor
+                value={entry.secondaryKeys}
+                onChange={(secondaryKeys) => onEntryChange({ secondaryKeys })}
+                placeholder="Add secondary keyword…"
+                variant="secondary"
+              />
+            </div>
+            {isRoleCall && (
+              <div>
+                <p className="text-[10px] text-ctp-subtext0 mb-1">Keyword Objects (RoleCall)</p>
+                <KeywordObjectsEditor
+                  keywords={entry.keywordObjects ?? []}
+                  onChange={(keywordObjects) => onEntryChange({ keywordObjects })}
+                />
+              </div>
+            )}
+          </div>
+        </FieldGroup>
 
         {/* Activation */}
         <FieldGroup label="Activation" rcOnly={isRoleCall}>

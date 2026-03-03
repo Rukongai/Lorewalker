@@ -79,7 +79,7 @@ function makeBookMeta(overrides: Partial<BookMeta> = {}): BookMeta {
 }
 
 describe('KeywordsView — lorebook scope', () => {
-  it('renders keyword filter input', () => {
+  it('renders keyword select dropdown', () => {
     render(
       <KeywordsView
         scope="lorebook"
@@ -87,7 +87,7 @@ describe('KeywordsView — lorebook scope', () => {
         bookMeta={makeBookMeta()}
       />
     )
-    expect(screen.getByPlaceholderText('Filter keywords…')).toBeInTheDocument()
+    expect(screen.getByRole('combobox')).toBeInTheDocument()
   })
 
   it('shows empty state when entries array is empty', () => {
@@ -106,42 +106,47 @@ describe('KeywordsView — entry scope', () => {
         scope="entry"
         entries={[entry]}
         entry={entry}
-        activeFormat="sillytavern"
-        onUpdateEntry={() => undefined}
       />
     )
     expect(screen.getByText(/primary keywords/i)).toBeInTheDocument()
   })
 
-  it('renders KeywordObjectsEditor for rolecall format', () => {
-    const entry = makeEntry({
-      keys: ['fire'],
-      keywordObjects: [{ keyword: 'fire', isRegex: false, probability: 100 }],
-    })
+  it('renders secondary keyword label', () => {
+    const entry = makeEntry({ keys: ['fire'], secondaryKeys: ['water'] })
     render(
       <KeywordsView
         scope="entry"
         entries={[entry]}
         entry={entry}
-        activeFormat="rolecall"
-        onUpdateEntry={() => undefined}
       />
     )
-    // KeywordObjectsEditor renders "Prob %" column header
-    expect(screen.getByText('Prob %')).toBeInTheDocument()
+    expect(screen.getByText(/secondary keywords/i)).toBeInTheDocument()
   })
 
-  it('does NOT render KeywordObjectsEditor for sillytavern format', () => {
-    const entry = makeEntry({ keys: ['fire'] })
+  it('renders read-only keyword chips (no editable input)', () => {
+    const entry = makeEntry({ keys: ['fire', 'dragon'] })
     render(
       <KeywordsView
         scope="entry"
         entries={[entry]}
         entry={entry}
-        activeFormat="sillytavern"
-        onUpdateEntry={() => undefined}
       />
     )
-    expect(screen.queryByText('Prob %')).not.toBeInTheDocument()
+    // Keyword chips should be visible as text
+    expect(screen.getByText('fire')).toBeInTheDocument()
+    expect(screen.getByText('dragon')).toBeInTheDocument()
+    // No editable text input for keywords
+    expect(screen.queryByPlaceholderText(/add primary keyword/i)).not.toBeInTheDocument()
+  })
+
+  it('renders null when entry is undefined in entry scope', () => {
+    const { container } = render(
+      <KeywordsView
+        scope="entry"
+        entries={[]}
+        entry={undefined}
+      />
+    )
+    expect(container.firstChild).toBeNull()
   })
 })

@@ -3,7 +3,6 @@ import { Play, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react'
 import type {
   WorkingEntry,
   BookMeta,
-  RecursionGraph,
   SimulatorState,
   SimulationSettings,
   SimMessage,
@@ -12,18 +11,17 @@ import { MessageComposer } from './MessageComposer'
 import { ActivationResultList } from './ActivationResultList'
 import { RecursionTraceView } from './RecursionTraceView'
 import { EntryActivationProfile } from './EntryActivationProfile'
-import { ReachAnalysis } from './ReachAnalysis'
 
 export interface SimulatorViewProps {
   scope: 'lorebook' | 'entry'
   entries: WorkingEntry[]
   bookMeta: BookMeta
   simulatorState: SimulatorState
-  graph: RecursionGraph
   entry?: WorkingEntry
   onRunSimulation: () => void
   onUpdateSettings: (patch: Partial<SimulationSettings>) => void
   onSetMessages: (messages: SimMessage[]) => void
+  onSimulateEntry?: (entry: WorkingEntry) => void
   onEntrySelect?: (entryId: string) => void
   onEntryOpen?: (entryId: string) => void
 }
@@ -33,11 +31,11 @@ export function SimulatorView({
   entries,
   bookMeta,
   simulatorState,
-  graph,
   entry,
   onRunSimulation,
   onUpdateSettings,
   onSetMessages,
+  onSimulateEntry,
   onEntrySelect,
   onEntryOpen,
 }: SimulatorViewProps) {
@@ -63,9 +61,10 @@ export function SimulatorView({
       entry={entry!}
       entries={entries}
       simulatorState={simulatorState}
-      graph={graph}
       bookMeta={bookMeta}
+      onSimulateEntry={onSimulateEntry}
       onEntrySelect={onEntrySelect}
+      onEntryOpen={onEntryOpen}
     />
   )
 }
@@ -210,18 +209,19 @@ interface EntryScopeViewProps {
   entry: WorkingEntry
   entries: WorkingEntry[]
   simulatorState: SimulatorState
-  graph: RecursionGraph
   bookMeta: BookMeta
+  onSimulateEntry?: (entry: WorkingEntry) => void
   onEntrySelect?: (entryId: string) => void
+  onEntryOpen?: (entryId: string) => void
 }
 
 function EntryScopeView({
   entry,
   entries,
   simulatorState,
-  graph,
-  bookMeta,
+  onSimulateEntry,
   onEntrySelect,
+  onEntryOpen,
 }: EntryScopeViewProps) {
   const { lastResult, conversationHistory } = simulatorState
 
@@ -237,17 +237,30 @@ function EntryScopeView({
         <EntryActivationProfile entry={entry} entries={entries} result={lastResult} />
       </section>
 
-      {/* Reach analysis */}
+      {/* Simulate this entry */}
       <section>
-        <SectionHeader>Reach analysis</SectionHeader>
-        <ReachAnalysis
-          entry={entry}
-          entries={entries}
-          graph={graph}
-          maxRecursionSteps={bookMeta.maxRecursionSteps}
-          onEntrySelect={onEntrySelect}
-        />
+        <button
+          onClick={() => onSimulateEntry?.(entry)}
+          className="flex items-center justify-center gap-2 w-full py-2 rounded bg-ctp-accent text-ctp-base text-sm font-semibold hover:opacity-90 transition-opacity"
+        >
+          <Play size={14} />
+          Simulate this entry
+        </button>
       </section>
+
+      {/* Results */}
+      {lastResult && (
+        <section>
+          <SectionHeader>Results</SectionHeader>
+          <ActivationResultList
+            result={lastResult}
+            entries={entries}
+            onSelectEntry={onEntrySelect ?? (() => {})}
+            onOpenEntry={onEntryOpen}
+            compact
+          />
+        </section>
+      )}
 
       {/* Activation history */}
       <section>

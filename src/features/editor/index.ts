@@ -1,3 +1,5 @@
+export { KeywordEditor } from './KeywordEditor'
+export { KeywordObjectsEditor } from './KeywordObjectsEditor'
 export { FieldGroup, Field, inputClass } from './primitives'
 export { ContentField } from './ContentField'
 export { CategoryAssign } from './CategoryAssign'

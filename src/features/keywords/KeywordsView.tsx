@@ -1,10 +1,9 @@
 import { useState, useMemo, useEffect } from 'react'
-import type { WorkingEntry, BookMeta, KeywordStat, LorebookFormat } from '@/types'
+import type { WorkingEntry, BookMeta, KeywordStat, RecursionGraph } from '@/types'
 import { buildKeywordInventory } from '@/services/keyword-analysis-service'
-import { KeywordTable } from './KeywordTable'
 import { KeywordContextCard } from './KeywordContextCard'
-import { KeywordEditor } from './KeywordEditor'
-import { KeywordObjectsEditor } from './KeywordObjectsEditor'
+import { KeywordTag } from './KeywordTag'
+import { ReachAnalysis } from './ReachAnalysis'
 
 interface KeywordsViewProps {
   scope: 'lorebook' | 'entry'
@@ -12,8 +11,7 @@ interface KeywordsViewProps {
   bookMeta?: BookMeta
   // Entry scope
   entry?: WorkingEntry
-  activeFormat?: LorebookFormat
-  onUpdateEntry?: (id: string, changes: Partial<WorkingEntry>) => void
+  graph?: RecursionGraph
   // Shared
   onEntrySelect?: (entryId: string) => void
   onEntryOpen?: (entryId: string) => void
@@ -30,7 +28,7 @@ const FALLBACK_BOOK_META: BookMeta = {
 }
 
 export function KeywordsView({
-  scope, entries, bookMeta, entry, activeFormat, onUpdateEntry,
+  scope, entries, bookMeta, entry, graph,
   onEntrySelect, initialKeyword, onInitialKeywordConsumed,
 }: KeywordsViewProps) {
   const [selected, setSelected] = useState<KeywordStat | null>(null)
@@ -44,39 +42,46 @@ export function KeywordsView({
   }, [initialKeyword]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (scope === 'entry') {
-    if (!entry || !onUpdateEntry) return null
+    if (!entry) return null
     return (
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 p-3">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1 mb-1">
             Primary Keywords
           </p>
-          <KeywordEditor
-            value={entry.keys}
-            onChange={(keys) => onUpdateEntry(entry.id, { keys })}
-            placeholder="Add primary keyword…"
-            variant="primary"
-          />
+          <div className="flex flex-wrap gap-1">
+            {entry.keys.length === 0
+              ? <span className="text-xs text-ctp-overlay0">No primary keywords</span>
+              : entry.keys.map((kw) => (
+                  <KeywordTag key={kw} keyword={kw} variant="primary" onRemove={() => {}} />
+                ))
+            }
+          </div>
         </div>
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1 mb-1">
             Secondary Keywords
           </p>
-          <KeywordEditor
-            value={entry.secondaryKeys}
-            onChange={(secondaryKeys) => onUpdateEntry(entry.id, { secondaryKeys })}
-            placeholder="Add secondary keyword…"
-            variant="secondary"
-          />
+          <div className="flex flex-wrap gap-1">
+            {entry.secondaryKeys.length === 0
+              ? <span className="text-xs text-ctp-overlay0">No secondary keywords</span>
+              : entry.secondaryKeys.map((kw) => (
+                  <KeywordTag key={kw} keyword={kw} variant="secondary" onRemove={() => {}} />
+                ))
+            }
+          </div>
         </div>
-        {activeFormat === 'rolecall' && (
+        {graph && (
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1 mb-1">
-              Keyword Objects (RoleCall)
+              Reach
             </p>
-            <KeywordObjectsEditor
-              keywords={entry.keywordObjects ?? []}
-              onChange={(keywordObjects) => onUpdateEntry(entry.id, { keywordObjects })}
+            <ReachAnalysis
+              entry={entry}
+              entries={entries}
+              graph={graph}
+              maxRecursionSteps={bookMeta?.maxRecursionSteps ?? 0}
+              onEntrySelect={onEntrySelect}
             />
           </div>
         )}
@@ -96,24 +101,36 @@ export function KeywordsView({
   const meta = bookMeta ?? FALLBACK_BOOK_META
 
   return (
-    <div className="flex h-full overflow-hidden">
-      <div className="w-80 shrink-0 border-r border-ctp-surface0 overflow-hidden flex flex-col">
-        <div className="px-3 pt-3 pb-1 shrink-0">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1">
-            Keywords <span className="text-ctp-overlay0">({stats.length})</span>
-          </p>
-        </div>
-        <KeywordTable stats={stats} selected={selected} onSelect={setSelected} />
+    <div className="flex flex-col gap-3 p-3">
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1 mb-1">
+          Keywords <span className="text-ctp-overlay0">({stats.length})</span>
+        </p>
+        <select
+          value={selected?.keyword ?? ''}
+          onChange={(e) => {
+            const match = stats.find((s) => s.keyword === e.target.value) ?? null
+            setSelected(match)
+          }}
+          className="w-full text-xs bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1 text-ctp-text focus:outline-none focus:border-ctp-accent"
+        >
+          <option value="">— Select a keyword —</option>
+          {stats.map((s) => (
+            <option key={`${s.keyword}-${s.isSecondary}`} value={s.keyword}>
+              {s.keyword} ({s.entryCount})
+            </option>
+          ))}
+        </select>
       </div>
-      <div className="flex-1 overflow-hidden">
+      {selected && (
         <KeywordContextCard
-          key={selected ? `${selected.keyword}-${selected.isSecondary ? 'sec' : 'pri'}` : 'empty'}
+          key={`${selected.keyword}-${selected.isSecondary ? 'sec' : 'pri'}`}
           stat={selected}
           entries={entries}
           bookMeta={meta}
           onSelectEntry={onEntrySelect ?? (() => undefined)}
         />
-      </div>
+      )}
     </div>
   )
 }
