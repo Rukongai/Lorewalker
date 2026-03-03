@@ -257,8 +257,16 @@ export function inflate(book: CCv3CharacterBook, defaults?: LorebookDefaults): I
     name: book.name ?? '',
     description: book.description ?? '',
     scanDepth: book.scan_depth ?? defaults?.scanDepth ?? 4,
-    tokenBudget: book.token_budget ?? 50000,
-    contextSize: 200000,
+    tokenBudget: (() => {
+      const defaultPercent = defaults?.contextBudgetPercent ?? 25
+      return book.token_budget ?? Math.round(200000 * defaultPercent / 100)
+    })(),
+    contextSize: (() => {
+      const defaultPercent = defaults?.contextBudgetPercent ?? 25
+      return book.token_budget != null
+        ? Math.round(book.token_budget / (defaultPercent / 100))
+        : 200000
+    })(),
     recursiveScan: book.recursive_scanning ?? defaults?.recursiveScan ?? false,
     caseSensitive: (stBookExt['case_sensitive'] as boolean | undefined) ?? defaults?.caseSensitive ?? false,
     matchWholeWords: (stBookExt['match_whole_words'] as boolean | undefined) ?? defaults?.matchWholeWords ?? false,
@@ -362,8 +370,16 @@ export function inflateFromRawST(raw: RawSTBook, defaults?: LorebookDefaults): I
     name: raw.name ?? '',
     description: raw.description ?? '',
     scanDepth: raw.scan_depth ?? defaults?.scanDepth ?? 4,
-    tokenBudget: raw.token_budget ?? 50000,
-    contextSize: 200000,
+    tokenBudget: (() => {
+      const defaultPercent = defaults?.contextBudgetPercent ?? 25
+      return raw.token_budget ?? Math.round(200000 * defaultPercent / 100)
+    })(),
+    contextSize: (() => {
+      const defaultPercent = defaults?.contextBudgetPercent ?? 25
+      return raw.token_budget != null
+        ? Math.round(raw.token_budget / (defaultPercent / 100))
+        : 200000
+    })(),
     recursiveScan: raw.recursive_scanning ?? defaults?.recursiveScan ?? false,
     caseSensitive: (stBookExt['case_sensitive'] as boolean | undefined) ?? defaults?.caseSensitive ?? false,
     matchWholeWords: (stBookExt['match_whole_words'] as boolean | undefined) ?? defaults?.matchWholeWords ?? false,
@@ -804,8 +820,16 @@ export function inflateFromRoleCall(raw: RawRoleCallBook, defaults?: LorebookDef
     name: lbRaw.name ?? '',
     description: lbRaw.description ?? '',
     scanDepth: settings.globalScanDepth ?? defaults?.scanDepth ?? 4,
-    tokenBudget: settings.tokenBudget ?? 50000,
-    contextSize: 200000,
+    tokenBudget: (() => {
+      const defaultPercent = defaults?.contextBudgetPercent ?? 25
+      return settings.tokenBudget ?? Math.round(200000 * defaultPercent / 100)
+    })(),
+    contextSize: (() => {
+      const defaultPercent = defaults?.contextBudgetPercent ?? 25
+      return settings.tokenBudget != null
+        ? Math.round(settings.tokenBudget / (defaultPercent / 100))
+        : 200000
+    })(),
     recursiveScan: settings.globalRecursion ?? defaults?.recursiveScan ?? false,
     caseSensitive: settings.globalCaseSensitive ?? defaults?.caseSensitive ?? false,
     matchWholeWords: settings.globalMatchWholeWords ?? defaults?.matchWholeWords ?? false,

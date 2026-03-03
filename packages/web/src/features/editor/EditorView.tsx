@@ -54,6 +54,7 @@ export interface EditorViewProps {
   entry?: WorkingEntry
   graph?: RecursionGraph
   onEntryChange?: (patch: Partial<WorkingEntry>) => void
+  onCategorize?: () => Promise<void>
   connections?: { incoming: ConnectionRow[]; outgoing: ConnectionRow[] }
   onNavigate?: (entryId: string) => void
 
@@ -69,6 +70,7 @@ export function EditorView({
   entry,
   graph,
   onEntryChange,
+  onCategorize,
   connections,
   onNavigate,
   bookMeta,
@@ -119,6 +121,7 @@ export function EditorView({
           <CategoryAssign
             userCategory={entry.userCategory}
             onSetCategory={(category) => onEntryChange({ userCategory: category })}
+            onCategorize={onCategorize}
           />
 
           {/* Content */}

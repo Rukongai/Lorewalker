@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { InsightsView } from '@/features/insights'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
@@ -13,6 +14,8 @@ import {
   GroupFields, ScanOverrideFields, MatchSourceFields, CharFilterFields,
   TriggersFields, AdvancedFields,
 } from '@/features/editor'
+import { categorizeEntry } from '@/services/categorize-service'
+import { llmService } from '@/services/llm/llm-service'
 import {
   buildConnectionRows, ConnectionsList, HealthScoreCard, FindingsList,
 } from '@/features/health'
@@ -72,8 +75,10 @@ export function EntryWorkspace({ entryId, onClose }: EntryWorkspaceProps) {
   const [backStack, setBackStack] = useState<string[]>([])
   const [forwardStack, setForwardStack] = useState<string[]>([])
   const [maxRecursions, setMaxRecursions] = useState(0)
+  const [mainTab, setMainTab] = useState<'edit' | 'insights'>('edit')
 
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
+  const llmProviderId = useWorkspaceStore((s) => s.activeLlmProviderId)
   const editorDefaults = useWorkspaceStore((s) => s.editorDefaults)
   const setEditorDefaults = useWorkspaceStore((s) => s.setEditorDefaults)
 
@@ -89,6 +94,7 @@ export function EntryWorkspace({ entryId, onClose }: EntryWorkspaceProps) {
   const entries = activeStore((s) => s.entries)
   const activeFormat = activeStore((s) => s.activeFormat)
   const storeHealthScore = activeStore((s) => s.healthScore)
+  const bookMeta = activeStore((s) => s.bookMeta)
 
   const isRoleCall = activeFormat === 'rolecall'
   const isSillyTavern = activeFormat !== 'rolecall' && activeFormat !== 'ccv3'
@@ -149,6 +155,13 @@ export function EntryWorkspace({ entryId, onClose }: EntryWorkspaceProps) {
     realStore.getState().updateEntry(currentEntryId, patch)
     if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
   }, [realStore, currentEntry, currentEntryId, activeTabId])
+
+  const handleCategorizeEntry = useCallback(async () => {
+    if (!realStore || !currentEntry || !llmProviderId) return
+    const category = await categorizeEntry(currentEntry, llmService, llmProviderId)
+    realStore.getState().updateEntry(currentEntryId, { userCategory: category })
+    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
+  }, [realStore, currentEntry, currentEntryId, llmProviderId, activeTabId])
 
   const handleCategorySelect = useCallback((key: string) => {
     setSelectedCategory(key)
@@ -249,6 +262,21 @@ export function EntryWorkspace({ entryId, onClose }: EntryWorkspaceProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-ctp-surface1 shrink-0">
           <div className="flex items-center gap-1">
+            {(['edit', 'insights'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setMainTab(t)}
+                className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                  mainTab === t
+                    ? 'bg-ctp-accent text-ctp-base'
+                    : 'text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0'
+                }`}
+              >
+                {t === 'edit' ? 'Edit' : 'Insights'}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1">
             <Tooltip
               text={backStack.length > 0
                 ? `Back: ${entryMap.get(backStack[backStack.length - 1]) ?? '...'}`
@@ -257,9 +285,9 @@ export function EntryWorkspace({ entryId, onClose }: EntryWorkspaceProps) {
               <button
                 onClick={goBack}
                 disabled={backStack.length === 0}
-                className="p-1 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
-                <ChevronLeft size={14} />
+                <ChevronLeft size={16} />
               </button>
             </Tooltip>
             <Tooltip
@@ -270,21 +298,21 @@ export function EntryWorkspace({ entryId, onClose }: EntryWorkspaceProps) {
               <button
                 onClick={goForward}
                 disabled={forwardStack.length === 0}
-                className="p-1 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
-                <ChevronRight size={14} />
+                <ChevronRight size={16} />
               </button>
             </Tooltip>
-            <span className="ml-2 text-sm font-medium text-ctp-text">Entry</span>
+            <div className="w-px h-4 bg-ctp-surface1 mx-0.5" />
+            <Tooltip text="Close (Esc)">
+              <button
+                onClick={onClose}
+                className="p-1.5 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </Tooltip>
           </div>
-          <Tooltip text="Close (Esc)">
-            <button
-              onClick={onClose}
-              className="p-1 rounded text-ctp-overlay1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
-            >
-              <X size={14} />
-            </button>
-          </Tooltip>
         </div>
 
         {/* Content */}
@@ -293,6 +321,20 @@ export function EntryWorkspace({ entryId, onClose }: EntryWorkspaceProps) {
             <p className="text-xs text-ctp-overlay1">Select an entry</p>
           </div>
         ) : (
+          <>
+          {mainTab === 'insights' && (
+            <InsightsView
+              scope="entry"
+              entryId={currentEntryId}
+              entry={currentEntry}
+              graph={graph}
+              entries={entries}
+              bookMeta={bookMeta}
+              onOpenEntry={navigate}
+            />
+          )}
+
+          {mainTab === 'edit' && (
           <div className="flex flex-col flex-1 overflow-hidden text-sm">
             {/* Top row — 40% of height */}
             <div style={{ flex: '40 1 0' }} className="flex overflow-hidden border-b border-ctp-surface1">
@@ -321,6 +363,7 @@ export function EntryWorkspace({ entryId, onClose }: EntryWorkspaceProps) {
                 <CategoryAssign
                   userCategory={currentEntry.userCategory}
                   onSetCategory={(category) => handleEntryChange({ userCategory: category })}
+                  onCategorize={llmProviderId ? handleCategorizeEntry : undefined}
                 />
                 <div className="flex flex-col gap-1">
                   <span className="text-[11px] text-ctp-subtext0 flex items-center">
@@ -432,6 +475,8 @@ export function EntryWorkspace({ entryId, onClose }: EntryWorkspaceProps) {
               </div>
             </div>
           </div>
+          )}
+          </>
         )}
       </div>
     </div>

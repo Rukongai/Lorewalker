@@ -34,7 +34,7 @@ This document is the source of truth for Lorewalker's design. Implementation age
 │  WorkspaceShell, TabBar, FilesPanel, EntryList, GraphCanvas,         │
 │  SidebarPanel, LorebookWorkspace, EntryWorkspace, StatusBar,         │
 │  SettingsDialog; feature modules: HealthView, SimulatorView,         │
-│  EditorView, KeywordsView, RulesView                                  │
+│  EditorView, KeywordsView, RulesView, InsightsView                   │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -42,8 +42,10 @@ This document is the source of truth for Lorewalker's design. Implementation age
 
 ## File Structure
 
+> **Monorepo note:** The codebase lives in `packages/web/src/` (React web app) and `packages/core/src/` (shared types, stores, storage abstraction — no React DOM). The paths below show the web package layout (`packages/web/src/`). Canonical types and stores are defined in `packages/core/src/`; `packages/web/src/types/` and `packages/web/src/stores/` re-export from there.
+
 ```
-src/
+packages/web/src/
 ├── assets/
 ├── components/
 │   ├── analysis/          — DeepAnalysisDialog
@@ -72,6 +74,8 @@ src/
 │   │                        HealthScoreCard, ConnectionsList, ChainDiagram, DeepAnalysisTrigger
 │   ├── keywords/          — KeywordsView (scope-aware), KeywordTable, KeywordTag,
 │   │                        KeywordContextCard, KeywordReachTable
+│   ├── insights/          — InsightsView (scope-aware: entry reach + simulate-this-entry |
+│   │                        lorebook categorize-all + simulator), EntrySimulation
 │   ├── rules/             — RulesView, RuleEditor, ConditionBuilder, VariablePicker,
 │   │                        TemplateField, RuleTestingPane
 │   └── simulator/         — SimulatorView (scope-aware), MessageComposer, ActivationResultList,
@@ -681,9 +685,9 @@ Root layout component. Manages panel arrangement, modal state, tab bar, and glob
 - `modalEntryId: string | null` — entry open in EntryWorkspace
 - `settingsOpen: boolean` — SettingsDialog visibility
 - `toolsModalOpen: boolean` — LorebookWorkspace visibility
-- `toolsModalTab: 'health' | 'simulator' | 'rules' | 'keywords'` — active lorebook workspace tab
+- `toolsModalTab: 'health' | 'rules' | 'insights'` — active lorebook workspace tab
 
-**Toolbar buttons:** Undo, Redo, Export, Open File, Save Snapshot, Settings, Health (BarChart2), Simulator (Zap), Rules (Scale)
+**Toolbar buttons:** Undo, Redo, Export, Open File, Save Snapshot, Settings, Open Lorebook Tool (BookOpen — opens LorebookWorkspace), Open Entry Tool (FileEdit — opens EntryWorkspace for selected entry; shows a transient hint if no entry is selected)
 
 ### TabBar (`src/components/workspace/TabBar.tsx`)
 Displays open document tabs with dirty indicator, close button.
@@ -740,7 +744,9 @@ Full-screen layout container for per-entry editing and analysis. **z-50.** Opene
 
 **Navigation:** browser-style back/forward history stack within the modal session.
 
-**Four tabs:** Edit (EditorView), Health (HealthView scope="entry"), Simulator (SimulatorView scope="entry"), Keywords (KeywordsView scope="entry").
+**Two tabs:**
+- **Edit** — entry fields (content, category, all field groups, format variants), connection health summary (ConnectionsList, HealthScoreCard, FindingsList for this entry), and reach indicator inline. CategoryAssign (individual LLM categorization) lives here.
+- **Insights** — InsightsView scope="entry": keyword reach table (reach % at depths 1/2/3/Max via graph edges) + simulate-this-entry (EntrySimulation, runs the lorebook simulator with this entry's content as the message).
 
 **Dimensions:** `90vw` × `90vh`, min-width `640px`.
 
@@ -780,6 +786,9 @@ Scope-aware simulator panel. `scope="lorebook"` renders the full message compose
 ### KeywordsView (`src/features/keywords/KeywordsView.tsx`)
 Scope-aware keyword panel. `scope="lorebook"` renders the full keyword inventory table with detail pane and usage stats. `scope="entry"` renders a per-entry keyword context card with activation results.
 
+### InsightsView (`src/features/insights/InsightsView.tsx`)
+Scope-aware insights panel. `scope="entry"` renders the keyword reach table (per-keyword reach % at depths 1/2/3/Max, sourced from RecursionGraph outgoing edges) and EntrySimulation (simulate-this-entry trigger + ActivationResultList results). `scope="lorebook"` renders a bulk categorize-all button (LLM via CategorizeService) plus the full lorebook simulator inline (MessageComposer, results, conversation history). CategoryAssign for individual entries lives in EditorView (Edit tab), not here.
+
 ### RulesView (`src/features/rules/RulesView.tsx`)
 Lorebook-scoped only. Renders the built-in rule list with enable/disable toggles, custom rules with CRUD, the rule editor (ConditionBuilder + VariablePicker), and the rule testing pane.
 
@@ -805,11 +814,10 @@ Large layout container for lorebook-wide analysis, simulation, rules, and keywor
 
 **Dimensions:** `95vw` × `90vh`
 
-**Four tabs:**
-1. **health** — `HealthView` scope="lorebook" (full finding list, health score, deep analysis trigger)
-2. **simulator** — `SimulatorView` scope="lorebook" (message composer, settings, results)
-3. **rules** — `RulesView` (built-in rule list with enable/disable toggles, custom rules with CRUD, rule editor)
-4. **keywords** — `KeywordsView` scope="lorebook" (keyword inventory table, detail pane, usage statistics)
+**Three tabs:**
+1. **health** — `HealthView` scope="lorebook" (full finding list grouped by rule, health score card, deep analysis trigger); three-column layout: rule list | violations for selected rule | finding detail + chain diagram
+2. **rules** — `RulesView` (built-in rule list with enable/disable toggles, custom rules with CRUD, rule editor)
+3. **insights** — `InsightsView` scope="lorebook": bulk categorize-all button (calls CategorizeService via LLM) in the top pane + full lorebook simulator (MessageComposer, engine settings, ActivationResultList, conversation history)
 
 **Escape handling:** bubble phase (standard `window.addEventListener('keydown', handler)` without capture flag). Escape closes LorebookWorkspace only when EntryWorkspace is not open (because EntryWorkspace at z-50 captures Escape first and calls `stopImmediatePropagation()`).
 

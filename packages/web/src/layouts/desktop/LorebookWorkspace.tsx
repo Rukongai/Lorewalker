@@ -1,27 +1,26 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Play, PlusCircle, RotateCcw, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { useDerivedState, EMPTY_STORE } from '@/hooks/useDerivedState'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { simulate, simulateConversation } from '@/services/simulator-service'
-import type { SimMessage, SimulationContext, Finding, RecursionGraph, ConversationStep, ActivationResult } from '@/types'
+import { categorizeAll } from '@/services/categorize-service'
+import { llmService } from '@/services/llm/llm-service'
+import type { SimMessage, SimulationContext, Finding, RecursionGraph } from '@/types'
 import { HealthScoreCard } from '@/features/health/HealthScoreCard'
 import { DeepAnalysisTrigger } from '@/features/health/DeepAnalysisTrigger'
 import { FindingsList } from '@/features/health/FindingsList'
 import { FindingDetail } from '@/features/health/FindingDetail'
-import { MessageComposer } from '@/features/simulator/MessageComposer'
-import { ActivationResultList } from '@/features/simulator/ActivationResultList'
 import { RulesView } from '@/features/rules'
-import { KeywordsView } from '@/features/keywords'
+import { InsightsView } from '@/features/insights'
 
-export type LorebookWorkspaceTab = 'health' | 'simulator' | 'rules' | 'keywords'
+export type LorebookWorkspaceTab = 'health' | 'rules' | 'insights'
 
 const TAB_LABELS: Record<LorebookWorkspaceTab, string> = {
   health: 'Health',
-  simulator: 'Simulator',
   rules: 'Rules',
-  keywords: 'Keywords',
+  insights: 'Insights',
 }
 
 const EMPTY_GRAPH: RecursionGraph = {
@@ -93,126 +92,6 @@ function ViolationList({ findings, ruleId, selectedFindingId, onSelectFinding }:
   )
 }
 
-// --- ConversationPane: left column in Simulator tab ---
-
-interface ConversationPaneProps {
-  messages: SimMessage[]
-  lastResult: ActivationResult | null
-  conversationHistory: ConversationStep[]
-  onRun: () => void
-  onSetMessages: (messages: SimMessage[]) => void
-  onAddToConversation: () => void
-  onClearSimulation: () => void
-  onClearHistory: () => void
-  selectedStepIndex: number | null
-  onSelectStep: (i: number | null) => void
-}
-
-function ConversationPane({
-  messages,
-  lastResult,
-  conversationHistory,
-  onRun,
-  onSetMessages,
-  onAddToConversation,
-  onClearSimulation,
-  onClearHistory,
-  selectedStepIndex,
-  onSelectStep,
-}: ConversationPaneProps) {
-  return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Engine badge */}
-      <div className="px-3 py-2 border-b border-ctp-surface0 shrink-0 flex items-center justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1">
-          Engine: SillyTavern
-        </span>
-      </div>
-
-      {/* Messages section */}
-      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1">Messages</p>
-        <MessageComposer messages={messages} onChange={onSetMessages} />
-      </div>
-
-      {/* Action buttons */}
-      <div className="px-3 py-2 border-t border-ctp-surface0 shrink-0 flex flex-col gap-2">
-        <button
-          onClick={onRun}
-          disabled={messages.length === 0}
-          className="flex items-center justify-center gap-1.5 py-1.5 text-xs bg-ctp-accent text-ctp-base rounded font-medium disabled:opacity-40 hover:opacity-90 transition-opacity w-full"
-        >
-          <Play size={11} />
-          Run Simulation
-        </button>
-
-        {lastResult !== null && (
-          <div className="flex gap-2">
-            <Tooltip text="Clear result">
-              <button
-                onClick={onClearSimulation}
-                className="flex-1 flex items-center justify-center gap-1 py-1 text-[10px] text-ctp-overlay1 hover:text-ctp-text border border-ctp-surface1 hover:border-ctp-surface2 rounded transition-colors"
-              >
-                <RotateCcw size={10} />
-                Reset
-              </button>
-            </Tooltip>
-            <Tooltip text="Append this result to conversation history">
-              <button
-                onClick={onAddToConversation}
-                className="flex-1 flex items-center justify-center gap-1 py-1 text-[10px] text-ctp-overlay1 hover:text-ctp-text border border-ctp-surface1 hover:border-ctp-surface2 rounded transition-colors"
-              >
-                <PlusCircle size={10} />
-                Add to Conversation
-              </button>
-            </Tooltip>
-          </div>
-        )}
-      </div>
-
-      {/* Conversation history */}
-      {conversationHistory.length > 0 && (
-        <div className="border-t border-ctp-surface0 shrink-0 max-h-[35%] flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-1.5 border-b border-ctp-surface0 shrink-0">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1">
-              History ({conversationHistory.length})
-            </p>
-            <button
-              onClick={() => { onClearHistory(); onSelectStep(null) }}
-              className="text-[10px] text-ctp-overlay1 hover:text-ctp-red transition-colors"
-            >
-              Clear
-            </button>
-          </div>
-          <div className="overflow-y-auto">
-            {conversationHistory.map((step, i) => (
-              <button
-                key={i}
-                onClick={() => onSelectStep(selectedStepIndex === i ? null : i)}
-                className={`w-full flex items-center gap-2 px-3 py-1.5 text-left border-b border-ctp-surface0 last:border-b-0 transition-colors text-xs ${
-                  selectedStepIndex === i
-                    ? 'bg-ctp-surface1 text-ctp-text'
-                    : 'text-ctp-subtext1 hover:bg-ctp-surface0'
-                }`}
-              >
-                <span className="text-[10px] text-ctp-overlay1 shrink-0 tabular-nums w-4">#{i + 1}</span>
-                <span className={`text-[10px] font-semibold shrink-0 ${
-                  step.message.role === 'user' ? 'text-ctp-blue' :
-                  step.message.role === 'assistant' ? 'text-ctp-green' : 'text-ctp-yellow'
-                }`}>{step.message.role}</span>
-                <span className="truncate text-[10px] text-ctp-subtext0">{step.message.content}</span>
-                <span className="text-[10px] text-ctp-overlay1 shrink-0 tabular-nums">
-                  {step.result.activatedEntries.length}↑
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 export interface LorebookWorkspaceProps {
   tab: LorebookWorkspaceTab
   onTabChange: (tab: LorebookWorkspaceTab) => void
@@ -230,6 +109,7 @@ export function LorebookWorkspace({
 }: LorebookWorkspaceProps) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const llmProviderId = useWorkspaceStore((s) => s.activeLlmProviderId)
+  const llmCategorization = useWorkspaceStore((s) => s.llmCategorization)
   const { graph, findings, healthScore } = useDerivedState(activeTabId)
 
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
@@ -240,13 +120,11 @@ export function LorebookWorkspace({
   const simulatorState = activeStore((s) => s.simulatorState)
   const llmFindings = activeStore((s) => s.llmFindings)
 
-  const [initialKeyword, setInitialKeyword] = useState<string | null>(null)
-
   // Health tab state
   const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null)
   const [selectedFinding, setSelectedFinding] = useState<Finding | null>(null)
 
-  // Simulator tab state
+  // Insights/Simulator tab state
   const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null)
 
   const handleRunSimulation = useCallback(() => {
@@ -273,6 +151,14 @@ export function LorebookWorkspace({
   const handleDeepAnalysisComplete = useCallback((newFindings: Finding[]) => {
     realStore?.getState().setLlmFindings(newFindings)
   }, [realStore])
+
+  const handleCategorizeAll = useCallback(async (onProgress: (done: number, total: number) => void) => {
+    if (!realStore || !llmProviderId) return
+    const currentEntries = realStore.getState().entries
+    const results = await categorizeAll(currentEntries, llmService, llmProviderId, onProgress, llmCategorization.skipManualOverrides)
+    realStore.getState().setCategoryBatch(results)
+    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
+  }, [realStore, llmProviderId, llmCategorization.skipManualOverrides, activeTabId])
 
   const handleEntrySelect = useCallback((entryId: string) => {
     onSelectEntry(entryId)
@@ -312,11 +198,6 @@ export function LorebookWorkspace({
   const allFindings = [...findings, ...llmFindings]
   const resolvedGraph = graph ?? EMPTY_GRAPH
 
-  const displayResult =
-    selectedStepIndex !== null
-      ? simulatorState.conversationHistory[selectedStepIndex]?.result ?? null
-      : simulatorState.lastResult
-
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/60"
@@ -330,7 +211,7 @@ export function LorebookWorkspace({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-2 border-b border-ctp-surface1 shrink-0">
           <div className="flex items-center gap-1">
-            {(['health', 'simulator', 'rules', 'keywords'] as LorebookWorkspaceTab[]).map((t) => (
+            {(['health', 'rules', 'insights'] as LorebookWorkspaceTab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => onTabChange(t)}
@@ -418,48 +299,29 @@ export function LorebookWorkspace({
             )
           )}
 
-          {tab === 'simulator' && (
-            <div className="flex h-full overflow-hidden">
-              {/* Left 40%: conversation pane */}
-              <div className="w-[40%] min-w-[300px] border-r border-ctp-surface0 flex flex-col overflow-hidden">
-                <ConversationPane
-                  messages={simulatorState.messages}
-                  lastResult={simulatorState.lastResult}
-                  conversationHistory={simulatorState.conversationHistory}
-                  onRun={handleRunSimulation}
-                  onSetMessages={handleSetMessages}
-                  onAddToConversation={handleAddToConversation}
-                  onClearSimulation={handleClearSimulation}
-                  onClearHistory={handleClearHistory}
-                  selectedStepIndex={selectedStepIndex}
-                  onSelectStep={setSelectedStepIndex}
-                />
-              </div>
-
-              {/* Right 60%: results */}
-              <div className="flex-1 overflow-hidden">
-                <ActivationResultList
-                  result={displayResult}
-                  entries={entries}
-                  onSelectEntry={handleEntrySelect}
-                  onOpenEntry={onOpenEntry}
-                />
-              </div>
-            </div>
-          )}
-
           {tab === 'rules' && (
             <RulesView tabId={activeTabId} onOpenEntry={onOpenEntry} />
           )}
-          {tab === 'keywords' && (
-            <KeywordsView
+
+          {tab === 'insights' && (
+            <InsightsView
               scope="lorebook"
               entries={entries}
-              bookMeta={bookMeta}
-              onEntrySelect={handleEntrySelect}
-              onEntryOpen={onOpenEntry}
-              initialKeyword={initialKeyword}
-              onInitialKeywordConsumed={() => setInitialKeyword(null)}
+              graph={resolvedGraph}
+              onCategorizeAll={llmProviderId ? handleCategorizeAll : undefined}
+              bookMeta={bookMeta ?? { name: '', description: '', scanDepth: 4, tokenBudget: 4096, contextSize: 200000, recursiveScan: false, caseSensitive: false, matchWholeWords: false, extensions: {}, minActivations: 0, maxDepth: 0, maxRecursionSteps: 0, insertionStrategy: 'evenly', includeNames: false, useGroupScoring: false, alertOnOverflow: false, budgetCap: 0 }}
+              messages={simulatorState.messages}
+              lastResult={simulatorState.lastResult}
+              conversationHistory={simulatorState.conversationHistory}
+              selectedStepIndex={selectedStepIndex}
+              onRun={handleRunSimulation}
+              onSetMessages={handleSetMessages}
+              onAddToConversation={handleAddToConversation}
+              onClearSimulation={handleClearSimulation}
+              onClearHistory={handleClearHistory}
+              onSelectStep={setSelectedStepIndex}
+              onOpenEntry={onOpenEntry}
+              onSelectEntry={handleEntrySelect}
             />
           )}
         </div>

@@ -5,6 +5,8 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { useDerivedState, EMPTY_STORE } from '@/hooks/useDerivedState'
 import { simulate } from '@/services/simulator-service'
+import { categorizeEntry } from '@/services/categorize-service'
+import { llmService } from '@/services/llm/llm-service'
 import type { SimMessage, SimulationSettings, SimulationContext, WorkingEntry, BookMeta, Finding, LorebookFormat } from '@/types'
 import { buildConnectionRows } from '@/features/health'
 import { EditorView } from '@/features/editor'
@@ -125,6 +127,13 @@ export function SidebarPanel({ tab, onTabChange, onCollapse, onOpenEntry, onSele
     state.setSimulatorResult(result)
   }, [realStore])
 
+  const handleCategorizeEntry = useCallback(async () => {
+    if (!realStore || !selectedEntry || !llmProviderId) return
+    const category = await categorizeEntry(selectedEntry, llmService, llmProviderId)
+    realStore.getState().updateEntry(selectedEntry.id, { userCategory: category })
+    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
+  }, [realStore, selectedEntry, llmProviderId, activeTabId])
+
   const handleDeepAnalysisComplete = useCallback((newFindings: Finding[]) => {
     realStore?.getState().setLlmFindings(newFindings)
   }, [realStore])
@@ -199,6 +208,7 @@ export function SidebarPanel({ tab, onTabChange, onCollapse, onOpenEntry, onSele
                   entry={selectedEntry ?? undefined}
                   graph={graph}
                   onEntryChange={handleEntryChange}
+                  onCategorize={llmProviderId ? handleCategorizeEntry : undefined}
                   connections={connections}
                   onNavigate={navigate}
                 />

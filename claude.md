@@ -83,7 +83,11 @@ This project uses specialized agents. See `AGENTS.md` for full definitions.
 
 - **Navigation delegation** — Components inside LorebookWorkspace use `onOpenEntry(entryId)` and `onSelectEntry(entryId)` callbacks from WorkspaceShell. They never import WorkspaceShell internals. See CONVENTIONS.md "Navigation Delegation".
 
-- **LorebookWorkspace** — Large overlay (95vw × 90vh, z-40) with four tabs: health (findings + score + chain diagram), simulator (conversation + results), rules (built-in toggles + custom rule CRUD + editor), keywords (inventory table + reach table). This is where complex lorebook-wide workflows live.
+- **LorebookWorkspace** — Large overlay (95vw × 90vh, z-40) with three tabs: health (findings grouped by rule + score card + deep analysis trigger), rules (built-in toggles + custom rule CRUD + editor), insights (bulk LLM categorize-all button + lorebook simulator). This is where complex lorebook-wide workflows live.
+
+- **EntryWorkspace** — Large overlay (90vw × 90vh, z-50) with two tabs: edit (entry fields + category + content + format variants + inline health summary/connections) and insights (keyword reach table + simulate-this-entry). Tab style uses the same pill-button pattern as LorebookWorkspace. If no entry is selected when the user clicks "Open Entry Tool", a transient hint appears instead of opening the workspace.
+
+- **Categorize button locations** — Bulk LLM categorization (all entries) lives in LorebookWorkspace's Insights tab top pane, shown only when an LLM provider is configured. Individual entry categorization lives in the Edit tab's `CategoryAssign` component (in the editor's Identity/Name section). These are two separate callsites to the same CategorizeService.
 
 - **Sidebar UX principle** — Edit is write; all other tabs are read-only analytical. The SidebarPanel has four tabs: Edit (entry fields + keyword editing), Health (findings, score, connections — read-only), Simulator (activation results — read-only), Keywords (keyword inventory + context — read-only). Keyword editing lives exclusively in the Edit tab via `KeywordEditor` inside `EditorView`. Never add mutation controls to Health, Simulator, or Keywords tabs.
 

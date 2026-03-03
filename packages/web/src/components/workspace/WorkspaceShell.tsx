@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { modKey } from '@/lib/platform'
 import { useStore } from 'zustand'
-import { Upload, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, BarChart2, Scale, Zap, Github, Newspaper } from 'lucide-react'
+import { Upload, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, BookOpen, FileEdit, Github, Newspaper } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { FilesPanel } from './FilesPanel'
 import { SaveSnapshotDialog } from './SaveSnapshotDialog'
@@ -44,6 +44,7 @@ export function WorkspaceShell() {
   const tabs = useWorkspaceStore((s) => s.tabs)
   const [isDragOver, setIsDragOver] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
+  const [noEntryHintVisible, setNoEntryHintVisible] = useState(false)
   const dragStateRef = useRef<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
   const COLLAPSED_WIDTH = 28
   const [isResizing, setIsResizing] = useState(false)
@@ -394,36 +395,32 @@ export function WorkspaceShell() {
 
           <div className="w-px h-4 bg-ctp-surface1 mx-0.5" />
 
-          {/* Analysis tools modal */}
-          <Tooltip text="Open Health panel" placement="below">
+          {/* Open Lorebook Tool */}
+          <Tooltip text="Open Lorebook Tool" placement="below">
             <button
-              onClick={() => { setToolsModalTab('health'); setToolsModalOpen(true) }}
+              onClick={() => setToolsModalOpen(true)}
               disabled={!activeTabId}
               className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
             >
-              <BarChart2 size={16} />
+              <BookOpen size={16} />
             </button>
           </Tooltip>
 
-          {/* Simulator tools modal */}
-          <Tooltip text="Open Simulator panel" placement="below">
+          {/* Open Entry Tool */}
+          <Tooltip text="Open Entry Tool" placement="below">
             <button
-              onClick={() => { setToolsModalTab('simulator'); setToolsModalOpen(true) }}
+              onClick={() => {
+                if (selectedEntryId) {
+                  setModalEntryId(selectedEntryId)
+                } else {
+                  setNoEntryHintVisible(true)
+                  setTimeout(() => setNoEntryHintVisible(false), 2000)
+                }
+              }}
               disabled={!activeTabId}
               className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
             >
-              <Zap size={16} />
-            </button>
-          </Tooltip>
-
-          {/* Rules tools modal */}
-          <Tooltip text="Open Rules panel" placement="below">
-            <button
-              onClick={() => { setToolsModalTab('rules'); setToolsModalOpen(true) }}
-              disabled={!activeTabId}
-              className="p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 disabled:opacity-40 transition-colors"
-            >
-              <Scale size={16} />
+              <FileEdit size={16} />
             </button>
           </Tooltip>
         </div>
@@ -661,6 +658,14 @@ export function WorkspaceShell() {
           setWhatsNewOpen(false)
         }}
       />
+
+      {noEntryHintVisible && (
+        <div className="fixed inset-0 z-30 flex items-center justify-center pointer-events-none">
+          <div className="bg-ctp-surface2 text-ctp-text text-sm px-4 py-2 rounded shadow-lg">
+            Select an entry first
+          </div>
+        </div>
+      )}
 
       <ToastStack toasts={toasts} />
     </div>

@@ -1,6 +1,6 @@
 export { KeywordTable } from './KeywordTable'
 export { KeywordTag } from './KeywordTag'
 export { KeywordContextCard } from './KeywordContextCard'
-export { KeywordReachTable } from './KeywordReachTable'
-export type { KeywordReachTableProps } from './KeywordReachTable'
+export { KeywordReachTable, LorebookKeywordReachTable } from './KeywordReachTable'
+export type { KeywordReachTableProps, LorebookKeywordReachTableProps } from './KeywordReachTable'
 export { KeywordsView } from './KeywordsView'
