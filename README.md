@@ -16,7 +16,7 @@ Lorewalker is a local-first lorebook editor, visualizer, and analysis tool for A
 
 ### Lorebook Editing
 
-- **Import / Export** — drag-and-drop or file picker; full SillyTavern lorebook JSON round-trip, including `.png` character cards and `.charx` files
+- **Import / Export** — drag-and-drop or file picker; full SillyTavern lorebook JSON round-trip, including `.png` character cards and `.charx` files; lorebook picker for character cards containing multiple lorebooks
 - **Full CCv3 entry editor** — all lorebook entry fields with live token counting; double-click any graph node to edit in a full-screen modal
 - **Multi-tab workspace** — open multiple lorebooks simultaneously, each with independent undo/redo (`Cmd/Ctrl+Z`, `Cmd/Ctrl+Shift+Z`)
 - **Lorebook metadata editor** — global scan depth, token budget, recursion settings, insertion strategy
@@ -36,10 +36,15 @@ Lorewalker is a local-first lorebook editor, visualizer, and analysis tool for A
 ### Health Analysis
 
 - **Real-time 0–100 health score** — recomputes as you edit, no manual trigger needed
-- **28+ deterministic rules** across structure, configuration, keywords, recursion, and budget categories
+- **32+ deterministic rules** across structure, configuration, keywords, recursion, and budget categories
 - **Error / warning / suggestion severities** — findings are clickable and navigate to the affected entry
 - **Custom rules** — visual condition builder for creating your own per-entry checks; per-document rule overrides
 - **LLM-powered deep analysis** *(rough draft)* — BYOK qualitative review via any OpenAI-compatible endpoint or Anthropic; content quality, keyword suggestions, scope checks
+
+### Keyword Analysis
+
+- **Keyword table** — full cross-lorebook view of all keywords in use
+- **Keyword detail pane** — per-keyword entry usage, overlap detection, and match statistics
 
 ### Activation Simulator
 
