@@ -3,7 +3,7 @@ import { immer } from 'zustand/middleware/immer'
 import { temporal } from 'zundo'
 import { generateId } from '@/lib/uuid'
 import { debounce } from '@/lib/debounce'
-import type { WorkingEntry, BookMeta, SimulatorState, SimulationSettings, Finding, HealthScore, SimMessage, ActivationResult, ConversationStep, CustomRule, DocumentRuleOverrides, CardPayload } from '@/types'
+import type { WorkingEntry, BookMeta, SimulatorState, SimulationSettings, Finding, HealthScore, SimMessage, ActivationResult, ConversationStep, CustomRule, DocumentRuleOverrides, CardPayload, LorebookFormat } from '@/types'
 
 // --- Selection state ---
 
@@ -55,10 +55,10 @@ export interface DocumentState {
   // UI state (excluded from undo)
   selection: SelectionState
   simulatorState: SimulatorState
-  editorFormatView: 'native' | 'sillytavern'
+  activeFormat: LorebookFormat
 
   setCardPayload(payload: CardPayload | null): void
-  setEditorFormatView(view: 'native' | 'sillytavern'): void
+  setActiveFormat(format: LorebookFormat): void
   setLlmFindings(findings: Finding[]): void
   setDocumentRuleOverride(ruleId: string, disabled: boolean): void
   addDocumentRule(rule: CustomRule): void
@@ -164,6 +164,7 @@ export interface DocumentStoreInit {
   simulatorState?: SimulatorState
   ruleOverrides?: DocumentRuleOverrides
   cardPayload?: CardPayload | null
+  initialFormat?: LorebookFormat
 }
 
 const DEFAULT_RULE_OVERRIDES: DocumentRuleOverrides = {
@@ -203,7 +204,7 @@ export function createDocumentStore(init: DocumentStoreInit) {
         ruleOverrides: init.ruleOverrides ?? DEFAULT_RULE_OVERRIDES,
         selection: { selectedEntryId: null, multiSelect: [] },
         simulatorState: init.simulatorState ?? DEFAULT_SIMULATOR_STATE,
-        editorFormatView: 'native',
+        activeFormat: init.initialFormat ?? 'unknown',
 
         // Temporal placeholders — zundo injects actual undo/redo
         undo() { /* provided by temporal */ },
@@ -493,10 +494,10 @@ export function createDocumentStore(init: DocumentStoreInit) {
           store.setState((state) => ({ ...state, llmFindings: findings }))
         },
 
-        // --- Editor format view (excluded from undo) ---
+        // --- Active format (excluded from undo) ---
 
-        setEditorFormatView(view) {
-          store.setState((state) => ({ ...state, editorFormatView: view }))
+        setActiveFormat(format) {
+          store.setState((state) => ({ ...state, activeFormat: format }))
         },
       })),
       {

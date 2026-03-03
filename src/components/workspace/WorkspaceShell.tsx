@@ -157,6 +157,7 @@ export function WorkspaceShell() {
       simulatorState: doc.simulatorState,
       ruleOverrides: doc.ruleOverrides,
       cardPayload: doc.cardPayload ?? null,
+      initialFormat: doc.activeFormat ?? doc.fileMeta.originalFormat,
     })
     useWorkspaceStore.getState().openTab(doc.tabId, doc.fileMeta.fileName, doc.fileMeta)
   }

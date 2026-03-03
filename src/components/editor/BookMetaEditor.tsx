@@ -5,7 +5,7 @@ import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
-import type { BookMeta } from '@/types'
+import type { BookMeta, LorebookFormat } from '@/types'
 
 function FieldGroup({ label, defaultCollapsed = false, children }: {
   label: string
@@ -42,11 +42,18 @@ function Field({ label, help, children }: { label: string; help?: string; childr
 const inputClass =
   'w-full bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1 text-xs text-ctp-subtext1 outline-none focus:border-ctp-accent transition-colors'
 
+const FORMAT_OPTIONS: { value: LorebookFormat; label: string }[] = [
+  { value: 'sillytavern', label: 'SillyTavern' },
+  { value: 'rolecall', label: 'RoleCall' },
+  { value: 'ccv3', label: 'CCv3' },
+]
+
 export function BookMetaEditor() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
   const bookMeta = activeStore((s) => s.bookMeta)
+  const activeFormat = activeStore((s) => s.activeFormat)
 
   const handleChange = useCallback(
     <K extends keyof BookMeta>(field: K, value: BookMeta[K]) => {
@@ -57,6 +64,11 @@ export function BookMetaEditor() {
     [realStore, activeTabId]
   )
 
+  const handleFormatChange = useCallback((format: LorebookFormat) => {
+    if (!realStore) return
+    realStore.getState().setActiveFormat(format)
+  }, [realStore])
+
   if (!activeTabId) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -65,8 +77,38 @@ export function BookMetaEditor() {
     )
   }
 
+  // Normalize display: treat sillytavern/agnai/risu/wyvern/unknown all as ST
+  const displayFormat: LorebookFormat =
+    activeFormat === 'rolecall' ? 'rolecall'
+    : activeFormat === 'ccv3' ? 'ccv3'
+    : 'sillytavern'
+
   return (
     <div className="flex-1 overflow-y-auto text-sm">
+      {/* Lorebook Format */}
+      <FieldGroup label="Lorebook Format">
+        <Field
+          label="Format"
+          help="Controls which platform-specific fields are shown. Does not change the export format."
+        >
+          <div className="flex rounded border border-ctp-surface1 overflow-hidden">
+            {FORMAT_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleFormatChange(opt.value)}
+                className={`flex-1 px-2 py-1 text-xs transition-colors ${
+                  displayFormat === opt.value
+                    ? 'bg-ctp-accent/30 text-ctp-accent font-medium'
+                    : 'bg-ctp-surface0 text-ctp-subtext0 hover:text-ctp-text hover:bg-ctp-surface1'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </Field>
+      </FieldGroup>
+
       {/* Book Info */}
       <FieldGroup label="Book Info">
         <Field label="Name" help="The display name of this lorebook. Used as a label in the editor only — not injected into the AI's context.">

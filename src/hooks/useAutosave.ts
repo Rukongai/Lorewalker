@@ -22,6 +22,7 @@ export function useAutosave(tabId: string | null): { isSaving: boolean } {
   const simulatorState = activeStore((s) => s.simulatorState)
   const ruleOverrides = activeStore((s) => s.ruleOverrides)
   const cardPayload = activeStore((s) => s.cardPayload)
+  const activeFormat = activeStore((s) => s.activeFormat)
 
   useEffect(() => {
     if (!tabId || !realStore) return
@@ -47,6 +48,7 @@ export function useAutosave(tabId: string | null): { isSaving: boolean } {
         simulatorState: state.simulatorState,
         ruleOverrides: state.ruleOverrides,
         cardPayload: state.cardPayload,
+        activeFormat: state.activeFormat,
         savedAt: new Date().toISOString(),
       }
 
@@ -65,7 +67,7 @@ export function useAutosave(tabId: string | null): { isSaving: boolean } {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, bookMeta, graphPositions, simulatorState, ruleOverrides, cardPayload, tabId])
+  }, [entries, bookMeta, graphPositions, simulatorState, ruleOverrides, cardPayload, activeFormat, tabId])
 
   return { isSaving }
 }

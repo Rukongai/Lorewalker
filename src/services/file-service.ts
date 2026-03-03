@@ -139,7 +139,7 @@ export async function importFile(
         spec: cardResult.spec,
       }
 
-      documentStoreRegistry.create(tabId, { entries, bookMeta, cardPayload })
+      documentStoreRegistry.create(tabId, { entries, bookMeta, cardPayload, initialFormat: 'ccv3' })
       useWorkspaceStore.getState().openTab(tabId, bookMeta.name || file.name, fileMeta)
       return tabId
     } else {
@@ -187,7 +187,7 @@ export async function importFile(
         sourceType: 'standalone',
       }
 
-      documentStoreRegistry.create(tabId, { entries, bookMeta })
+      documentStoreRegistry.create(tabId, { entries, bookMeta, initialFormat: originalFormat })
       useWorkspaceStore.getState().openTab(tabId, bookMeta.name || file.name, fileMeta)
       return tabId
     }

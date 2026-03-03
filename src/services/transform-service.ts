@@ -672,11 +672,16 @@ export function inflateFromRoleCall(raw: RawRoleCallBook, defaults?: LorebookDef
     const keywordObjs: RoleCallKeyword[] = []
     const conditionObjs: RoleCallCondition[] = []
     const keys: string[] = []
+    let hasWildcard = false
 
     for (const item of primaryItems) {
       if (typeof item === 'string') {
         const trimmed = item.trim()
-        if (trimmed !== '') keys.push(trimmed)
+        if (trimmed === '*') {
+          hasWildcard = true
+        } else if (trimmed !== '') {
+          keys.push(trimmed)
+        }
       } else if (isKeywordItem(item)) {
         keywordObjs.push({
           keyword: item.keyword,
@@ -684,7 +689,12 @@ export function inflateFromRoleCall(raw: RawRoleCallBook, defaults?: LorebookDef
           probability: item.probability,
         })
         const trimmed = item.keyword.trim()
-        if (trimmed !== '') keys.push(trimmed)
+        if (trimmed === '*') {
+          hasWildcard = true
+          // Preserve in keywordObjs for round-trip export but skip keys.push
+        } else if (trimmed !== '') {
+          keys.push(trimmed)
+        }
       } else if (isConditionItem(item)) {
         if (isKnownConditionType(item.type)) {
           conditionObjs.push({
@@ -718,7 +728,7 @@ export function inflateFromRoleCall(raw: RawRoleCallBook, defaults?: LorebookDef
       keys,
       secondaryKeys,
 
-      constant: e.constant ?? false,
+      constant: hasWildcard || (e.constant ?? false),
       selective: secondaryKeys.length > 0,
       selectiveLogic,
       enabled: e.enabled ?? true,

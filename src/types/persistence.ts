@@ -1,4 +1,4 @@
-import type { WorkingEntry, BookMeta } from './entry'
+import type { WorkingEntry, BookMeta, LorebookFormat } from './entry'
 import type { FileMeta, TabMeta, PanelLayout, ThemeId, CardPayload } from './ui'
 import type { SimulationSettings, SimulatorState } from './ui'
 import type { LLMProviderType, ProviderConfig } from './llm'
@@ -20,6 +20,7 @@ export interface PersistedDocument {
   simulatorState: SimulatorState;
   ruleOverrides: DocumentRuleOverrides;
   cardPayload: CardPayload | null;
+  activeFormat?: LorebookFormat;
   savedAt: string;  // ISO timestamp
 }
 

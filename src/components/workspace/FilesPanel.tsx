@@ -138,6 +138,7 @@ export function FilesPanel({ onRestoreDoc, snapshotSaveCount }: FilesPanelProps)
       graphPositions: positions,
       simulatorState: doc.simulatorState,
       cardPayload: doc.cardPayload ?? null,
+      initialFormat: doc.activeFormat ?? doc.fileMeta.originalFormat,
     })
     useWorkspaceStore.getState().openTab(doc.tabId, doc.fileMeta.fileName, doc.fileMeta)
     setOpenSnapshotIds((prev) => ({ ...prev, [doc.tabId]: snap.id }))

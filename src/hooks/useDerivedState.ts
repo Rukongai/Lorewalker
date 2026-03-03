@@ -70,7 +70,6 @@ export function useDerivedState(tabId: string | null): DerivedState {
   const prevBookMatchOptionsRef = useRef<KeywordMatchOptions>({ caseSensitive: false, matchWholeWords: false })
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const graphSettings = useWorkspaceStore((s) => s.graphSettings)
   const wsCustomRules = useWorkspaceStore((s) => s.customRules)
   const disabledBuiltinRuleIds = useWorkspaceStore((s) => s.disabledBuiltinRuleIds)
   const realStore = tabId ? documentStoreRegistry.get(tabId) : undefined
@@ -116,22 +115,22 @@ export function useDerivedState(tabId: string | null): DerivedState {
       const existing = storeState.graphPositions
       const missing = currentEntries.filter((e) => !existing.has(e.id))
       if (missing.length === 0) return
-      const allPositions = computeLayout(currentEntries, newGraph, existing, graphSettings)
-
-      // Build all new positions first, then write in a single setState call
-      // to avoid N separate undo steps and N re-renders.
-      const newPositions = new Map(existing)
-      for (const entry of missing) {
-        const pos = allPositions.get(entry.id)
-        if (pos) newPositions.set(entry.id, pos)
-      }
-      if (newPositions.size !== existing.size) {
-        // Use setState directly to bypass temporal (zundo) tracking —
-        // auto-layout position writes should not create undo steps.
-        realStore.setState((s) => ({ ...s, graphPositions: newPositions }))
-      }
+      void computeLayout(currentEntries, newGraph, existing).then((allPositions) => {
+        // Build all new positions first, then write in a single setState call
+        // to avoid N separate undo steps and N re-renders.
+        const newPositions = new Map(existing)
+        for (const entry of missing) {
+          const pos = allPositions.get(entry.id)
+          if (pos) newPositions.set(entry.id, pos)
+        }
+        if (newPositions.size !== existing.size) {
+          // Use setState directly to bypass temporal (zundo) tracking —
+          // auto-layout position writes should not create undo steps.
+          realStore.setState((s) => ({ ...s, graphPositions: newPositions }))
+        }
+      })
     },
-    [realStore, graphSettings],
+    [realStore],
   )
 
   const runAnalysis = useCallback(
