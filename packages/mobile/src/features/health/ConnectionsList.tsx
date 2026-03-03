@@ -1,0 +1,69 @@
+import { View, Text, ScrollView, StyleSheet } from 'react-native'
+
+export interface ConnectionRow {
+  id: string
+  name: string
+  keywords: string[]
+  blocked: boolean
+}
+
+interface ConnectionsListProps {
+  incoming: ConnectionRow[]
+  outgoing: ConnectionRow[]
+}
+
+function LinkEntry({ name, keywords, blocked }: ConnectionRow) {
+  return (
+    <View style={styles.linkEntry}>
+      <Text style={[styles.entryName, blocked && styles.blocked]} numberOfLines={1}>
+        {name}
+      </Text>
+      <View style={styles.keywords}>
+        {keywords.map((kw, i) => (
+          <Text key={i} style={styles.keywordChip}>{kw}</Text>
+        ))}
+        {blocked && <Text style={styles.blockedLabel}>blocked</Text>}
+      </View>
+    </View>
+  )
+}
+
+function Column({ title, rows }: { title: string; rows: ConnectionRow[] }) {
+  const visible = rows.filter((r) => !r.blocked)
+  return (
+    <View style={styles.column}>
+      <Text style={styles.colHeader}>{title} [{visible.length}/{rows.length}]</Text>
+      <ScrollView>
+        {visible.length === 0 ? (
+          <Text style={styles.empty}>None</Text>
+        ) : (
+          visible.map((row) => <LinkEntry key={row.id} {...row} />)
+        )}
+      </ScrollView>
+    </View>
+  )
+}
+
+export function ConnectionsList({ incoming, outgoing }: ConnectionsListProps) {
+  return (
+    <View style={styles.container}>
+      <Column title="Activates This" rows={incoming} />
+      <View style={styles.divider} />
+      <Column title="This Activates" rows={outgoing} />
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: { flexDirection: 'row', flex: 1 },
+  column: { flex: 1, padding: 10 },
+  colHeader: { fontSize: 10, fontWeight: '700', color: '#7f849c', letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' },
+  divider: { width: 1, backgroundColor: '#313244' },
+  linkEntry: { marginBottom: 10 },
+  entryName: { fontSize: 12, color: '#cdd6f4', marginBottom: 3 },
+  blocked: { textDecorationLine: 'line-through', color: '#585b70' },
+  keywords: { flexDirection: 'row', flexWrap: 'wrap', gap: 3 },
+  keywordChip: { fontSize: 10, paddingHorizontal: 5, paddingVertical: 2, backgroundColor: '#1e4a6e', color: '#89b4fa', borderRadius: 4 },
+  blockedLabel: { fontSize: 9, color: '#f9e2af' },
+  empty: { fontSize: 11, color: '#585b70', fontStyle: 'italic' },
+})
