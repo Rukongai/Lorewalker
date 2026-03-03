@@ -9,6 +9,7 @@ export interface PersistedWorkspace {
   activeTabId: string | null;
   theme: ThemeId;
   panelLayout: PanelLayout;
+  lastSeenChangelogDate?: string;
 }
 
 export interface PersistedDocument {

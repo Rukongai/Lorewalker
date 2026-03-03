@@ -1,10 +1,12 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { modKey } from '@/lib/platform'
 import { useStore } from 'zustand'
-import { Upload, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2, BarChart2, Scale, Zap, Github } from 'lucide-react'
+import { Upload, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2, BarChart2, Scale, Zap, Github, Newspaper } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { FilesPanel } from './FilesPanel'
 import { SaveSnapshotDialog } from './SaveSnapshotDialog'
+import { WhatsNewDialog } from './WhatsNewDialog'
+import { LATEST_CHANGELOG_DATE } from '@/changelog'
 import { WelcomeScreen } from './WelcomeScreen'
 import { StatusBar } from './StatusBar'
 import { LorebookPickerDialog } from './LorebookPickerDialog'
@@ -79,6 +81,11 @@ export function WorkspaceShell() {
     entries: WorkingEntry[]
     resolve: (value: boolean) => void
   } | null>(null)
+
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false)
+  const lastSeenChangelogDate = useWorkspaceStore((s) => s.lastSeenChangelogDate)
+  const setLastSeenChangelogDate = useWorkspaceStore((s) => s.setLastSeenChangelogDate)
+  const hasUnreadChangelog = lastSeenChangelogDate === null || lastSeenChangelogDate < LATEST_CHANGELOG_DATE
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toolsModalOpen, setToolsModalOpen] = useState(false)
@@ -358,6 +365,20 @@ export function WorkspaceShell() {
               <Github size={16} />
             </a>
           </Tooltip>
+
+          {/* What's New */}
+          <Tooltip text="What's New" placement="below">
+            <button
+              onClick={() => setWhatsNewOpen(true)}
+              className="relative p-1.5 rounded text-ctp-subtext1 hover:text-ctp-text hover:bg-ctp-surface0 transition-colors"
+            >
+              <Newspaper size={16} />
+              {hasUnreadChangelog && (
+                <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-ctp-peach" />
+              )}
+            </button>
+          </Tooltip>
+
           <div className="w-px h-4 bg-ctp-surface1 mx-0.5" />
           {/* Undo */}
           <Tooltip text={`Undo (${modKey}+Z)`} placement="below">
@@ -783,6 +804,15 @@ export function WorkspaceShell() {
           }}
         />
       )}
+
+      <WhatsNewDialog
+        open={whatsNewOpen}
+        lastSeenDate={lastSeenChangelogDate}
+        onClose={() => {
+          setLastSeenChangelogDate(LATEST_CHANGELOG_DATE)
+          setWhatsNewOpen(false)
+        }}
+      />
 
       <ToastStack toasts={toasts} />
     </div>

@@ -72,6 +72,7 @@ interface WorkspaceState {
   llmCategorization: LlmCategorizationSettings
   customRules: CustomRule[]
   disabledBuiltinRuleIds: string[]
+  lastSeenChangelogDate: string | null
 
   // Actions
   openTab(tabId: string, name: string, fileMeta: FileMeta): void
@@ -93,6 +94,7 @@ interface WorkspaceState {
   toggleBuiltinRule(ruleId: string, enabled: boolean): void
   setCustomRules(rules: CustomRule[]): void
   setDisabledBuiltinRuleIds(ids: string[]): void
+  setLastSeenChangelogDate(date: string | null): void
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -110,6 +112,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     llmCategorization: DEFAULT_LLM_CATEGORIZATION,
     customRules: [],
     disabledBuiltinRuleIds: [],
+    lastSeenChangelogDate: null,
 
     openTab(tabId, name, fileMeta) {
       set((state) => {
@@ -228,6 +231,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
     setDisabledBuiltinRuleIds(ids) {
       set((state) => { state.disabledBuiltinRuleIds = ids })
+    },
+
+    setLastSeenChangelogDate(date) {
+      set((state) => { state.lastSeenChangelogDate = date })
     },
   }))
 )
