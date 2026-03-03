@@ -333,7 +333,16 @@ export function FilesPanel({ onRestoreDoc, onFileOpened, snapshotSaveCount }: Fi
                       }
                     </button>
                   </Tooltip>
-                  <span className="truncate flex-1 text-ctp-text px-1">{doc.fileMeta.fileName}</span>
+                  <button
+                    className="truncate flex-1 text-left text-ctp-text px-1 hover:text-ctp-accent transition-colors"
+                    onClick={() => {
+                      onRestoreDoc(doc)
+                      setOpenSnapshotIds((prev) => { const next = { ...prev }; delete next[doc.tabId]; return next })
+                      onFileOpened()
+                    }}
+                  >
+                    {doc.fileMeta.fileName}
+                  </button>
                   <Tooltip text="Delete from history">
                     <button
                       className="ml-auto p-0.5 rounded text-ctp-overlay0 hover:text-ctp-red hover:bg-ctp-surface1 transition-colors"
