@@ -4,7 +4,7 @@ import { Tooltip } from '@/components/ui/Tooltip'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
-import type { WorkingEntry, SelectiveLogic, EntryPosition } from '@/types'
+import type { WorkingEntry, SelectiveLogic, EntryPosition, RoleCallPosition } from '@/types'
 import { estimateTokenCount } from '@/lib/token-estimate'
 import { getEntryIcon } from '@/lib/entry-type'
 import { ContentEditor } from './ContentEditor'
@@ -13,6 +13,9 @@ import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
 import { ActivationLinks } from './ActivationLinks'
 import { useCategoryMenu } from '@/components/entry-list/CategoryMenu'
+import { FormatViewToggle } from './FormatViewToggle'
+import { ConditionsViewer } from './ConditionsViewer'
+import { RoleCallPositionSelect } from './RoleCallPositionSelect'
 
 function FieldGroup({ label, stOnly, defaultCollapsed = false, labelSuffix, headerRight, children }: {
   label: string
@@ -229,6 +232,13 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
   const bookMatchWholeWords = activeStore((s) => s.bookMeta.matchWholeWords)
   const { graph } = useDerivedState(activeTabId ?? '')
 
+  const originalFormat = useWorkspaceStore((s) =>
+    s.tabs.find((t) => t.id === activeTabId)?.fileMeta.originalFormat ?? 'unknown'
+  )
+  const editorFormatView = activeStore((s) => s.editorFormatView)
+  const setEditorFormatView = activeStore((s) => s.setEditorFormatView)
+  const isRoleCall = originalFormat === 'rolecall'
+
   const categoryBehavior = useWorkspaceStore((s) => s.editorDefaults.categoryBehavior)
   const lastEditorCategory = useWorkspaceStore((s) => s.editorDefaults.lastEditorCategory)
   const editorDefaults = useWorkspaceStore((s) => s.editorDefaults)
@@ -299,6 +309,12 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
     if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
   }, [realStore, entryId, activeTabId])
 
+  const handleRoleCallPositionChange = useCallback((pos: RoleCallPosition) => {
+    if (!realStore) return
+    realStore.getState().updateEntry(entryId, { positionRoleCall: pos })
+    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
+  }, [realStore, entryId, activeTabId])
+
   const effectiveCategory = entry?.userCategory ?? 'generic'
   const categoryIcon = getEntryIcon(effectiveCategory)
 
@@ -332,6 +348,17 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
           placeholder="Entry name"
         />
       </Field>
+      {isRoleCall && (
+        <Field label="Notes" help="RoleCall comment field — a separate notes area distinct from the entry title.">
+          <input
+            type="text"
+            value={entry.rolecallComment ?? ''}
+            onChange={(e) => handleChange('rolecallComment', e.target.value || undefined)}
+            className={inputClass}
+            placeholder="Optional notes…"
+          />
+        </Field>
+      )}
       <div className="flex items-center gap-2 px-0.5">
         <span className="text-[11px] text-ctp-subtext0">Category</span>
         <Tooltip text="Click to change category">
@@ -378,6 +405,46 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
 
   const fieldGroups = (
     <>
+      {isRoleCall && (
+        <FormatViewToggle view={editorFormatView} onChange={setEditorFormatView} />
+      )}
+
+      {/* RoleCall Triggers — shown only in native view */}
+      {isRoleCall && editorFormatView === 'native' && (entry.keywordObjects?.length || entry.triggerConditions?.length) ? (
+        <FieldGroup label="RoleCall Triggers">
+          {entry.triggerMode && (
+            <div className="flex items-center gap-1.5 text-xs">
+              <span className="text-ctp-subtext0">Mode:</span>
+              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${entry.triggerMode === 'advanced' ? 'bg-ctp-mauve/20 text-ctp-mauve' : 'bg-ctp-surface1 text-ctp-subtext1'}`}>
+                {entry.triggerMode}
+              </span>
+            </div>
+          )}
+          {entry.keywordObjects && entry.keywordObjects.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] text-ctp-subtext0">Keywords ({entry.keywordObjects.length})</span>
+              <div className="flex flex-wrap gap-1">
+                {entry.keywordObjects.map((kw, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-ctp-sky/15 text-ctp-sky border border-ctp-sky/30"
+                    title={`regex: ${kw.isRegex}, probability: ${kw.probability}%`}
+                  >
+                    {kw.isRegex && <span className="font-mono opacity-60">/</span>}
+                    <span>{kw.keyword}</span>
+                    {kw.probability < 100 && <span className="opacity-60">{kw.probability}%</span>}
+                  </span>
+                ))}
+              </div>
+              <span className="text-[10px] text-ctp-overlay1">Read-only — edit keywords above to update</span>
+            </div>
+          )}
+          {entry.triggerConditions && entry.triggerConditions.length > 0 && (
+            <ConditionsViewer conditions={entry.triggerConditions} />
+          )}
+        </FieldGroup>
+      ) : null}
+
       {/* Activation */}
       <FieldGroup label="Activation">
         <Field
@@ -437,21 +504,28 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
       {/* Insertion */}
       <FieldGroup label="Insertion">
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Position" help="Where the entry's content is injected in the final prompt. 'Before/After Char Defs' frames the character card; '@ Depth' places content at a specific chat position; 'Author's Note' inserts into the AN block; 'Outlet' skips auto-injection and lets you place content manually via template macro.">
-            <select
-              value={entry.position}
-              onChange={(e) => handleChange('position', Number(e.target.value) as EntryPosition)}
-              className={inputClass}
-            >
-              <option value={0}>0 — Before Char Defs</option>
-              <option value={1}>1 — After Char Defs</option>
-              <option value={2}>2 — Before Examples</option>
-              <option value={3}>3 — After Examples</option>
-              <option value={4}>4 — @ Depth</option>
-              <option value={5}>5 — Top of AN</option>
-              <option value={6}>6 — Bottom of AN</option>
-              <option value={7}>7 — Outlet</option>
-            </select>
+          <Field label="Position" help={isRoleCall && editorFormatView === 'native' ? "RoleCall injection position. World/Character inject near character context; Scene injects near recent messages; @ Depth injects at an exact chat depth." : "Where the entry's content is injected in the final prompt."}>
+            {isRoleCall && editorFormatView === 'native' ? (
+              <RoleCallPositionSelect
+                value={entry.positionRoleCall ?? 'depth'}
+                onChange={handleRoleCallPositionChange}
+              />
+            ) : (
+              <select
+                value={entry.position}
+                onChange={(e) => handleChange('position', Number(e.target.value) as EntryPosition)}
+                className={inputClass}
+              >
+                <option value={0}>0 — Before Char Defs</option>
+                <option value={1}>1 — After Char Defs</option>
+                <option value={2}>2 — Before Examples</option>
+                <option value={3}>3 — After Examples</option>
+                <option value={4}>4 — @ Depth</option>
+                <option value={5}>5 — Top of AN</option>
+                <option value={6}>6 — Bottom of AN</option>
+                <option value={7}>7 — Outlet</option>
+              </select>
+            )}
           </Field>
           <Field label="Order" help="Priority when multiple entries activate simultaneously. Higher values place entries closer to the end of the prompt, giving them more influence.">
             <input
@@ -462,7 +536,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
             />
           </Field>
         </div>
-        {entry.position === 4 && (
+        {(isRoleCall && editorFormatView === 'native' ? entry.positionRoleCall === 'depth' : entry.position === 4) && (
           <div className="grid grid-cols-2 gap-2">
             <Field label="Role" help="Whether this entry is injected as a system, user, or assistant message.">
               <select
@@ -838,22 +912,32 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
       label: 'Insertion',
       content: (
         <>
+          {isRoleCall && (
+            <FormatViewToggle view={editorFormatView} onChange={setEditorFormatView} />
+          )}
           <div className="grid grid-cols-2 gap-2">
-            <Field label="Position" help="Where the entry's content is injected in the final prompt. 'Before/After Char Defs' frames the character card; '@ Depth' places content at a specific chat position; 'Author's Note' inserts into the AN block; 'Outlet' skips auto-injection and lets you place content manually via template macro.">
-              <select
-                value={entry.position}
-                onChange={(e) => handleChange('position', Number(e.target.value) as EntryPosition)}
-                className={inputClass}
-              >
-                <option value={0}>0 — Before Char Defs</option>
-                <option value={1}>1 — After Char Defs</option>
-                <option value={2}>2 — Before Examples</option>
-                <option value={3}>3 — After Examples</option>
-                <option value={4}>4 — @ Depth</option>
-                <option value={5}>5 — Top of AN</option>
-                <option value={6}>6 — Bottom of AN</option>
-                <option value={7}>7 — Outlet</option>
-              </select>
+            <Field label="Position" help={isRoleCall && editorFormatView === 'native' ? "RoleCall injection position." : "Where the entry's content is injected in the final prompt."}>
+              {isRoleCall && editorFormatView === 'native' ? (
+                <RoleCallPositionSelect
+                  value={entry.positionRoleCall ?? 'depth'}
+                  onChange={handleRoleCallPositionChange}
+                />
+              ) : (
+                <select
+                  value={entry.position}
+                  onChange={(e) => handleChange('position', Number(e.target.value) as EntryPosition)}
+                  className={inputClass}
+                >
+                  <option value={0}>0 — Before Char Defs</option>
+                  <option value={1}>1 — After Char Defs</option>
+                  <option value={2}>2 — Before Examples</option>
+                  <option value={3}>3 — After Examples</option>
+                  <option value={4}>4 — @ Depth</option>
+                  <option value={5}>5 — Top of AN</option>
+                  <option value={6}>6 — Bottom of AN</option>
+                  <option value={7}>7 — Outlet</option>
+                </select>
+              )}
             </Field>
             <Field label="Order" help="Priority when multiple entries activate simultaneously. Higher values place entries closer to the end of the prompt, giving them more influence.">
               <input
@@ -864,7 +948,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
               />
             </Field>
           </div>
-          {entry.position === 4 && (
+          {(isRoleCall && editorFormatView === 'native' ? entry.positionRoleCall === 'depth' : entry.position === 4) && (
             <div className="grid grid-cols-2 gap-2">
               <Field label="Role" help="Whether this entry is injected as a system, user, or assistant message.">
                 <select
@@ -1206,7 +1290,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
         </>
       ),
     },
-  ], [entry, strategy, handleChange, handleSecondaryKeysChange, handleStrategyChange, handleTriggerToggle])
+  ], [entry, strategy, handleChange, handleSecondaryKeysChange, handleStrategyChange, handleTriggerToggle, isRoleCall, editorFormatView, setEditorFormatView, handleRoleCallPositionChange])
 
   if (layout === 'quadrant') {
     return (

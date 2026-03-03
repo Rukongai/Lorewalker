@@ -10,8 +10,8 @@ import { parseLorebook, parseCard } from '@character-foundry/character-foundry/l
 import { exportToPng, exportToCharx } from '@character-foundry/character-foundry/exporter'
 import type { ExportAsset } from '@character-foundry/character-foundry/exporter'
 import { generateId } from '@/lib/uuid'
-import { inflate, inflateFromRawST, deflate } from './transform-service'
-import type { RawSTBook } from './transform-service'
+import { inflate, inflateFromRawST, inflateFromRoleCall, deflate, deflateToRoleCall } from './transform-service'
+import type { RawSTBook, RawRoleCallBook } from './transform-service'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import type { FileMeta, LorebookFormat, CardPayload, WorkingEntry } from '@/types'
@@ -63,8 +63,16 @@ async function readFileBuffer(file: File): Promise<Uint8Array> {
  * Detect human-readable format name from character-foundry LorebookFormat.
  */
 function resolveFormat(fmt: string): LorebookFormat {
-  const valid: LorebookFormat[] = ['ccv3', 'sillytavern', 'agnai', 'risu', 'wyvern', 'unknown']
+  const valid: LorebookFormat[] = ['ccv3', 'sillytavern', 'agnai', 'risu', 'wyvern', 'rolecall', 'unknown']
   return valid.includes(fmt as LorebookFormat) ? (fmt as LorebookFormat) : 'unknown'
+}
+
+/**
+ * Returns true if the parsed JSON looks like a RoleCall lorebook.
+ * Detection: top-level 'schemaVersion' field + 'lorebook' wrapper object.
+ */
+function isRoleCallFormat(json: Record<string, unknown>): boolean {
+  return typeof json['schemaVersion'] === 'string' && typeof json['lorebook'] === 'object' && json['lorebook'] !== null
 }
 
 /**
@@ -143,7 +151,13 @@ export async function importFile(
 
       const { lorebookDefaults } = useWorkspaceStore.getState()
 
-      if (rawJson.entries !== null && typeof rawJson.entries === 'object' && !Array.isArray(rawJson.entries)) {
+      if (isRoleCallFormat(rawJson)) {
+        // RoleCall format: top-level schemaVersion + lorebook wrapper
+        const rcResult = inflateFromRoleCall(rawJson as RawRoleCallBook, lorebookDefaults)
+        entries = rcResult.entries
+        bookMeta = rcResult.bookMeta
+        originalFormat = 'rolecall'
+      } else if (rawJson.entries !== null && typeof rawJson.entries === 'object' && !Array.isArray(rawJson.entries)) {
         // SillyTavern format: entries is a keyed object, not an array
         const stResult = inflateFromRawST(rawJson as RawSTBook, lorebookDefaults)
         entries = stResult.entries
@@ -197,6 +211,31 @@ export function exportFile(tabId: string, fileName?: string): void {
   if (!store) throw new FileExportError(`No document found for tab: ${tabId}`)
 
   const { entries, bookMeta } = store.getState()
+
+  // If this was originally a RoleCall file, export back to RoleCall format
+  if (bookMeta.extensions['rolecall']) {
+    let rcBook
+    try {
+      rcBook = deflateToRoleCall(entries, bookMeta)
+    } catch (err) {
+      throw new FileExportError('Failed to deflate entries for RoleCall export', err)
+    }
+
+    const json = JSON.stringify(rcBook, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName ?? `${bookMeta.name || 'lorebook'}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+
+    useWorkspaceStore.getState().markDirty(tabId, false)
+    return
+  }
 
   let book
   try {

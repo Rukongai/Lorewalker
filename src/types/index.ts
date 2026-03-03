@@ -5,6 +5,10 @@ export type {
   EntryPosition,
   LorebookFormat,
   CharacterFilter,
+  RoleCallPosition,
+  RoleCallKeyword,
+  RoleCallConditionType,
+  RoleCallCondition,
 } from './entry'
 
 export type {

@@ -55,8 +55,10 @@ export interface DocumentState {
   // UI state (excluded from undo)
   selection: SelectionState
   simulatorState: SimulatorState
+  editorFormatView: 'native' | 'sillytavern'
 
   setCardPayload(payload: CardPayload | null): void
+  setEditorFormatView(view: 'native' | 'sillytavern'): void
   setLlmFindings(findings: Finding[]): void
   setDocumentRuleOverride(ruleId: string, disabled: boolean): void
   addDocumentRule(rule: CustomRule): void
@@ -201,6 +203,7 @@ export function createDocumentStore(init: DocumentStoreInit) {
         ruleOverrides: init.ruleOverrides ?? DEFAULT_RULE_OVERRIDES,
         selection: { selectedEntryId: null, multiSelect: [] },
         simulatorState: init.simulatorState ?? DEFAULT_SIMULATOR_STATE,
+        editorFormatView: 'native',
 
         // Temporal placeholders — zundo injects actual undo/redo
         undo() { /* provided by temporal */ },
@@ -488,6 +491,12 @@ export function createDocumentStore(init: DocumentStoreInit) {
 
         setLlmFindings(findings) {
           store.setState((state) => ({ ...state, llmFindings: findings }))
+        },
+
+        // --- Editor format view (excluded from undo) ---
+
+        setEditorFormatView(view) {
+          store.setState((state) => ({ ...state, editorFormatView: view }))
         },
       })),
       {

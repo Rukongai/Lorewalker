@@ -20,7 +20,31 @@ export type LorebookFormat =
   | 'agnai'
   | 'risu'
   | 'wyvern'
+  | 'rolecall'
   | 'unknown';
+
+export type RoleCallPosition = 'world' | 'character' | 'scene' | 'depth';
+
+export interface RoleCallKeyword {
+  keyword: string;
+  isRegex: boolean;
+  probability: number;  // per-keyword probability (0-100)
+}
+
+export type RoleCallConditionType =
+  | 'emotion'
+  | 'messageCount'
+  | 'randomChance'
+  | 'isGroupChat'
+  | 'generationType'
+  | 'swipeCount'
+  | 'lorebookActive'
+  | 'recency';
+
+export interface RoleCallCondition {
+  type: RoleCallConditionType;
+  value: string | boolean | number;
+}
 
 export interface CharacterFilter {
   isExclude: boolean;
@@ -99,6 +123,13 @@ export interface WorkingEntry {
 
   // === Lorewalker-specific ===
   userCategory?: string;          // Manual or LLM-assigned category override (stored in extensions.lorewalker.userCategory)
+
+  // === RoleCall-specific ===
+  triggerMode?: 'simple' | 'advanced';           // RoleCall trigger mode
+  keywordObjects?: RoleCallKeyword[];            // RoleCall per-keyword objects (advanced mode, preserved for simulation)
+  triggerConditions?: RoleCallCondition[];       // RoleCall condition triggers (read-only, for future RoleCallEngine)
+  positionRoleCall?: RoleCallPosition;           // RoleCall injection position (native)
+  rolecallComment?: string;                      // RoleCall comment/notes field (distinct from title/name)
 
   // === Passthrough ===
   extensions: Record<string, unknown>;  // Preserves unknown platform-specific extensions for round-trip fidelity

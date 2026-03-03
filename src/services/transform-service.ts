@@ -15,6 +15,10 @@ import type {
   EntryPosition,
   CharacterFilter,
   LorebookDefaults,
+  RoleCallPosition,
+  RoleCallKeyword,
+  RoleCallCondition,
+  RoleCallConditionType,
 } from '@/types'
 
 // Lorewalker-specific fields stored in extensions.lorewalker
@@ -513,4 +517,433 @@ function buildPassthrough(
     }
   }
   return result
+}
+
+// ─── RoleCall Format ──────────────────────────────────────────────────────────
+
+/** A keyword trigger object in RoleCall advanced mode */
+interface RawRoleCallKeywordItem {
+  isRegex: boolean
+  keyword: string
+  probability: number
+}
+
+/** A condition trigger object in RoleCall advanced mode */
+interface RawRoleCallConditionItem {
+  type: string
+  value: unknown
+}
+
+type RawRoleCallPrimaryItem = RawRoleCallKeywordItem | RawRoleCallConditionItem | string
+
+interface RawRoleCallEntry {
+  id?: string
+  title?: string
+  content?: string
+  comment?: string | null
+  enabled?: boolean
+  constant?: boolean
+  triggers?: {
+    mode?: string
+    primary?: RawRoleCallPrimaryItem[]
+    secondary?: string[]
+    selectiveLogic?: string
+  }
+  matching?: {
+    caseSensitive?: boolean | null
+    matchWholeWords?: boolean | null
+    scanDepth?: number | null
+  }
+  injection?: {
+    position?: string
+    depth?: number
+    role?: string
+  }
+  priority?: {
+    sortOrder?: number
+    priority?: number
+  }
+  timing?: {
+    sticky?: number
+    cooldown?: number
+    delay?: number
+  }
+  grouping?: {
+    groupName?: string | null
+    groupWeight?: number
+  }
+  probability?: number
+  advanced?: {
+    useMemo?: boolean
+    excludeRecursion?: boolean
+    preventRecursion?: boolean
+    delayUntilRecursion?: number
+    ignoreBudget?: boolean
+  }
+  characterFilter?: { isExclude: boolean; names: string[]; tags: string[] } | null
+  scanSources?: {
+    characterDescription?: boolean
+    characterPersonality?: boolean
+    userPersona?: boolean
+    scenario?: boolean
+  }
+}
+
+export interface RawRoleCallBook {
+  schemaVersion?: string
+  exportDate?: string
+  lorebook?: {
+    name?: string
+    description?: string
+    settings?: {
+      lorebookType?: string
+      globalCaseSensitive?: boolean
+      globalMatchWholeWords?: boolean
+      globalScanDepth?: number
+      globalRecursion?: boolean
+      tokenBudget?: number
+    }
+    metadata?: {
+      genre?: string | null
+      fandom?: string | null
+      tags?: string[]
+    }
+    entries?: RawRoleCallEntry[]
+  }
+}
+
+function normalizeRoleCallSelectiveLogic(logic: string | null | undefined): SelectiveLogic {
+  if (logic === 'and_any') return 0
+  if (logic === 'and_all') return 1
+  if (logic === 'not_any') return 2
+  if (logic === 'not_all') return 3
+  return 0
+}
+
+function normalizeRoleCallPosition(pos: string | null | undefined): EntryPosition {
+  if (pos === 'world') return 1      // After Char Defs (global lore injected early)
+  if (pos === 'character') return 1  // After Char Defs (near character definitions)
+  if (pos === 'scene') return 4      // @ Depth (near recent messages)
+  if (pos === 'depth') return 4      // @ Depth (exact depth + role)
+  return 1
+}
+
+function normalizeRoleCallRole(role: string | null | undefined): number {
+  if (role === 'system') return 0
+  if (role === 'user') return 1
+  if (role === 'assistant') return 2
+  return 0
+}
+
+function isKeywordItem(item: RawRoleCallPrimaryItem): item is RawRoleCallKeywordItem {
+  return typeof item === 'object' && item !== null && 'keyword' in item
+}
+
+function isConditionItem(item: RawRoleCallPrimaryItem): item is RawRoleCallConditionItem {
+  return typeof item === 'object' && item !== null && 'type' in item && !('keyword' in item)
+}
+
+const KNOWN_CONDITION_TYPES = new Set<string>([
+  'emotion', 'messageCount', 'randomChance', 'isGroupChat',
+  'generationType', 'swipeCount', 'lorebookActive', 'recency',
+])
+
+function isKnownConditionType(t: string): t is RoleCallConditionType {
+  return KNOWN_CONDITION_TYPES.has(t)
+}
+
+/**
+ * inflateFromRoleCall: RawRoleCallBook → InflateResult
+ *
+ * Parses a RoleCall lorebook JSON, preserving RoleCall-native fields for
+ * round-trip fidelity and future RoleCallEngine simulation.
+ */
+export function inflateFromRoleCall(raw: RawRoleCallBook, defaults?: LorebookDefaults): InflateResult {
+  const lbRaw = raw.lorebook ?? {}
+  const rawEntries = lbRaw.entries ?? []
+
+  const entries: WorkingEntry[] = rawEntries.map((e, index) => {
+    const content = e.content ?? ''
+    const tokenCount = safeCountTokens(content)
+
+    const primaryItems = e.triggers?.primary ?? []
+
+    // Separate keyword items from condition items from plain strings
+    const keywordObjs: RoleCallKeyword[] = []
+    const conditionObjs: RoleCallCondition[] = []
+    const keys: string[] = []
+
+    for (const item of primaryItems) {
+      if (typeof item === 'string') {
+        const trimmed = item.trim()
+        if (trimmed !== '') keys.push(trimmed)
+      } else if (isKeywordItem(item)) {
+        keywordObjs.push({
+          keyword: item.keyword,
+          isRegex: item.isRegex,
+          probability: item.probability,
+        })
+        const trimmed = item.keyword.trim()
+        if (trimmed !== '') keys.push(trimmed)
+      } else if (isConditionItem(item)) {
+        if (isKnownConditionType(item.type)) {
+          conditionObjs.push({
+            type: item.type,
+            value: item.value as string | boolean | number,
+          })
+        }
+      }
+    }
+
+    const secondaryKeys = (e.triggers?.secondary ?? []).filter((k) => k.trim() !== '')
+    const triggerMode = (e.triggers?.mode === 'advanced' ? 'advanced' : 'simple') as 'simple' | 'advanced'
+    const selectiveLogic = normalizeRoleCallSelectiveLogic(e.triggers?.selectiveLogic)
+
+    const positionStr = e.injection?.position
+    const positionRoleCall = (
+      positionStr === 'world' || positionStr === 'character' ||
+      positionStr === 'scene' || positionStr === 'depth'
+        ? positionStr
+        : 'depth'
+    ) as RoleCallPosition
+
+    const entryPriority = e.priority?.priority ?? 100
+
+    const entry: WorkingEntry = {
+      id: generateId(),
+      uid: index,
+
+      name: e.title ?? '',
+      content,
+      keys,
+      secondaryKeys,
+
+      constant: e.constant ?? false,
+      selective: secondaryKeys.length > 0,
+      selectiveLogic,
+      enabled: e.enabled ?? true,
+
+      position: normalizeRoleCallPosition(positionStr),
+      order: e.priority?.sortOrder ?? 0,
+      depth: e.injection?.depth ?? 4,
+
+      delay: e.timing?.delay ?? 0,
+      cooldown: e.timing?.cooldown ?? 0,
+      sticky: e.timing?.sticky ?? 0,
+      probability: e.probability ?? 100,
+
+      preventRecursion: e.advanced?.preventRecursion ?? false,
+      excludeRecursion: e.advanced?.excludeRecursion ?? false,
+      ignoreBudget: e.advanced?.ignoreBudget ?? false,
+
+      group: e.grouping?.groupName ?? '',
+      groupOverride: false,
+      groupWeight: e.grouping?.groupWeight ?? 100,
+      useGroupScoring: null,
+
+      scanDepth: e.matching?.scanDepth ?? null,
+      caseSensitive: e.matching?.caseSensitive ?? null,
+      matchWholeWords: e.matching?.matchWholeWords ?? null,
+
+      matchPersonaDescription: e.scanSources?.userPersona ?? false,
+      matchCharacterDescription: e.scanSources?.characterDescription ?? false,
+      matchCharacterPersonality: e.scanSources?.characterPersonality ?? false,
+      matchCharacterDepthPrompt: false,
+      matchScenario: e.scanSources?.scenario ?? false,
+      matchCreatorNotes: false,
+
+      role: normalizeRoleCallRole(e.injection?.role),
+      automationId: '',
+      outletName: '',
+      vectorized: false,
+      useProbability: true,
+      addMemo: e.advanced?.useMemo ?? false,
+      displayIndex: null,
+      delayUntilRecursion: e.advanced?.delayUntilRecursion ?? 0,
+      triggers: [],
+      characterFilter: e.characterFilter ?? { isExclude: false, names: [], tags: [] },
+
+      tokenCount,
+
+      // RoleCall-specific fields
+      triggerMode,
+      ...(keywordObjs.length > 0 ? { keywordObjects: keywordObjs } : {}),
+      ...(conditionObjs.length > 0 ? { triggerConditions: conditionObjs } : {}),
+      positionRoleCall,
+      ...(e.comment != null ? { rolecallComment: e.comment } : {}),
+
+      extensions: {
+        rolecall: {
+          id: e.id,
+          ...(entryPriority !== 100 ? { priority: entryPriority } : {}),
+        },
+      },
+    }
+
+    return entry
+  })
+
+  const settings = lbRaw.settings ?? {}
+  const metadata = lbRaw.metadata ?? {}
+
+  const bookMeta: BookMeta = {
+    name: lbRaw.name ?? '',
+    description: lbRaw.description ?? '',
+    scanDepth: settings.globalScanDepth ?? defaults?.scanDepth ?? 4,
+    tokenBudget: settings.tokenBudget ?? 50000,
+    contextSize: 200000,
+    recursiveScan: settings.globalRecursion ?? defaults?.recursiveScan ?? false,
+    caseSensitive: settings.globalCaseSensitive ?? defaults?.caseSensitive ?? false,
+    matchWholeWords: settings.globalMatchWholeWords ?? defaults?.matchWholeWords ?? false,
+    minActivations: defaults?.minActivations ?? 0,
+    maxDepth: defaults?.maxDepth ?? 0,
+    maxRecursionSteps: defaults?.maxRecursionSteps ?? 0,
+    insertionStrategy: defaults?.insertionStrategy ?? 'evenly',
+    includeNames: defaults?.includeNames ?? false,
+    useGroupScoring: defaults?.useGroupScoring ?? false,
+    alertOnOverflow: defaults?.alertOnOverflow ?? false,
+    budgetCap: defaults?.budgetCap ?? 0,
+    extensions: {
+      rolecall: {
+        schemaVersion: raw.schemaVersion,
+        lorebookType: settings.lorebookType,
+        metadata: {
+          genre: metadata.genre,
+          fandom: metadata.fandom,
+          tags: metadata.tags ?? [],
+        },
+      },
+    },
+  }
+
+  return { entries, bookMeta }
+}
+
+/**
+ * deflateToRoleCall: WorkingEntry[] + BookMeta → RawRoleCallBook
+ *
+ * Reconstructs RoleCall JSON from working entries. Preserves RoleCall-native
+ * fields (positionRoleCall, keywordObjects, triggerConditions, etc.) for
+ * round-trip fidelity.
+ */
+export function deflateToRoleCall(entries: WorkingEntry[], bookMeta: BookMeta): RawRoleCallBook {
+  const rcBookExt = (bookMeta.extensions['rolecall'] ?? {}) as Record<string, unknown>
+  const rcMetadata = (rcBookExt['metadata'] ?? {}) as Record<string, unknown>
+
+  const rawEntries: RawRoleCallEntry[] = entries.map((entry) => {
+    const rcEntryExt = (entry.extensions['rolecall'] ?? {}) as Record<string, unknown>
+
+    // Reconstruct primary array from keywordObjects or keys
+    let primary: RawRoleCallPrimaryItem[]
+    if (entry.triggerMode === 'advanced' && entry.keywordObjects && entry.keywordObjects.length > 0) {
+      // Preserve structured keyword objects
+      primary = entry.keywordObjects.map((kw) => ({
+        isRegex: kw.isRegex,
+        keyword: kw.keyword,
+        probability: kw.probability,
+      }))
+      // Append condition objects
+      if (entry.triggerConditions) {
+        for (const cond of entry.triggerConditions) {
+          primary.push({ type: cond.type, value: cond.value })
+        }
+      }
+    } else {
+      // Simple mode or no structured objects: use plain strings
+      primary = entry.keys
+    }
+
+    const roleStr = entry.role === 1 ? 'user' : entry.role === 2 ? 'assistant' : 'system'
+
+    const positionStr: string = entry.positionRoleCall ?? (() => {
+      // Fall back: map numeric position back to RoleCall string
+      if (entry.position === 4) return 'depth'
+      return 'world'
+    })()
+
+    const selectiveLogicStr: string = (() => {
+      if (entry.selectiveLogic === 1) return 'and_all'
+      if (entry.selectiveLogic === 2) return 'not_any'
+      if (entry.selectiveLogic === 3) return 'not_all'
+      return 'and_any'
+    })()
+
+    return {
+      id: (rcEntryExt['id'] as string | undefined) ?? entry.id,
+      title: entry.name,
+      content: entry.content,
+      comment: entry.rolecallComment ?? null,
+      enabled: entry.enabled,
+      constant: entry.constant,
+      triggers: {
+        mode: entry.triggerMode ?? 'simple',
+        primary,
+        secondary: entry.secondaryKeys,
+        selectiveLogic: selectiveLogicStr,
+      },
+      matching: {
+        caseSensitive: entry.caseSensitive,
+        matchWholeWords: entry.matchWholeWords,
+        scanDepth: entry.scanDepth,
+      },
+      injection: {
+        position: positionStr,
+        depth: entry.depth,
+        role: roleStr,
+      },
+      priority: {
+        sortOrder: entry.order,
+        priority: (rcEntryExt['priority'] as number | undefined) ?? 100,
+      },
+      timing: {
+        sticky: entry.sticky ?? 0,
+        cooldown: entry.cooldown ?? 0,
+        delay: entry.delay ?? 0,
+      },
+      grouping: {
+        groupName: entry.group || null,
+        groupWeight: entry.groupWeight,
+      },
+      probability: entry.probability,
+      advanced: {
+        useMemo: entry.addMemo,
+        excludeRecursion: entry.excludeRecursion,
+        preventRecursion: entry.preventRecursion,
+        delayUntilRecursion: entry.delayUntilRecursion,
+        ignoreBudget: entry.ignoreBudget,
+      },
+      characterFilter: (entry.characterFilter.names.length > 0 || entry.characterFilter.tags.length > 0)
+        ? entry.characterFilter
+        : null,
+      scanSources: {
+        characterDescription: entry.matchCharacterDescription,
+        characterPersonality: entry.matchCharacterPersonality,
+        userPersona: entry.matchPersonaDescription,
+        scenario: entry.matchScenario,
+      },
+    }
+  })
+
+  return {
+    schemaVersion: (rcBookExt['schemaVersion'] as string | undefined) ?? '1.0.0',
+    exportDate: new Date().toISOString(),
+    lorebook: {
+      name: bookMeta.name,
+      description: bookMeta.description,
+      settings: {
+        lorebookType: (rcBookExt['lorebookType'] as string | undefined) ?? 'world',
+        globalCaseSensitive: bookMeta.caseSensitive,
+        globalMatchWholeWords: bookMeta.matchWholeWords,
+        globalScanDepth: bookMeta.scanDepth,
+        globalRecursion: bookMeta.recursiveScan,
+        tokenBudget: bookMeta.tokenBudget,
+      },
+      metadata: {
+        genre: (rcMetadata['genre'] as string | null | undefined) ?? null,
+        fandom: (rcMetadata['fandom'] as string | null | undefined) ?? null,
+        tags: (rcMetadata['tags'] as string[] | undefined) ?? [],
+      },
+      entries: rawEntries,
+    },
+  }
 }
