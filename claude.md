@@ -24,6 +24,8 @@ When you resume after a context reset, re-read `ARCHITECTURE.md`, check recent g
 
 **Commit as checkpoints.** Commit after each meaningful unit of work with descriptive messages following the convention in `CONVENTIONS.md` (`<scope>: <description>`). Commits are your recovery mechanism when context resets.
 
+**Don't pause for reviews.** If you spawn a reviewer agent or do a self-check, absorb the feedback and keep working. Fix issues inline. Never stop to present review results and wait for approval — that's wasted time. The user will review the final output.
+
 **Summarize progress.** After completing a task, briefly state what was done and what comes next. This aids context management and keeps work visible.
 
 ## Agent Usage
