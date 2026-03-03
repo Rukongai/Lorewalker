@@ -8,6 +8,7 @@ import { llmService } from '@/services/llm/llm-service'
 import { categorizeAll } from '@/services/categorize-service'
 import { FindingItem } from './FindingItem'
 import { DeepAnalysisDialog } from './DeepAnalysisDialog'
+import { HealthScoreCard } from '@/features/health/HealthScoreCard'
 import type { Finding, FindingSeverity, RuleCategory, RecursionGraph } from '@/types'
 
 interface AnalysisPanelProps {
@@ -16,18 +17,6 @@ interface AnalysisPanelProps {
 }
 
 type Filter = FindingSeverity | 'all'
-
-function scoreColor(score: number): string {
-  if (score < 60) return 'text-ctp-red'
-  if (score < 80) return 'text-ctp-yellow'
-  return 'text-ctp-green'
-}
-
-function scoreBarColor(score: number): string {
-  if (score < 60) return 'bg-ctp-red'
-  if (score < 80) return 'bg-ctp-yellow'
-  return 'bg-ctp-green'
-}
 
 const CATEGORIES: RuleCategory[] = ['structure', 'config', 'keywords', 'recursion', 'budget', 'content']
 
@@ -138,31 +127,11 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
     <div className="flex flex-col h-full overflow-hidden">
       {/* Score section */}
       <div className="p-3 border-b border-ctp-surface0 shrink-0 space-y-2">
-        <div className="flex items-baseline gap-2">
-          <span className={`text-2xl font-bold tabular-nums ${scoreColor(healthScore.overall)}`}>
-            {healthScore.overall}
-          </span>
-          <span className="text-xs text-ctp-overlay1 flex-1">{healthScore.summary}</span>
-        </div>
-
-        {/* Per-category bars */}
-        <div className="space-y-1">
-          {CATEGORIES.map((cat) => {
-            const catScore = healthScore.categories[cat]
-            return (
-              <div key={cat} className="flex items-center gap-2">
-                <span className="text-[10px] text-ctp-overlay1 w-16 shrink-0 capitalize">{cat}</span>
-                <div className="flex-1 h-1 rounded bg-ctp-surface1 overflow-hidden">
-                  <div
-                    className={`h-full rounded transition-all ${scoreBarColor(catScore.score)}`}
-                    style={{ width: `${catScore.score}%` }}
-                  />
-                </div>
-                <span className="text-[10px] text-ctp-overlay1 w-6 text-right tabular-nums">{catScore.score}</span>
-              </div>
-            )
-          })}
-        </div>
+        <HealthScoreCard
+          score={healthScore.overall}
+          summary={healthScore.summary}
+          categories={healthScore.categories}
+        />
 
         {/* Deep Analysis button */}
         <div className="pt-1 flex items-center justify-between">

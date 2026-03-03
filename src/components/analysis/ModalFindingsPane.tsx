@@ -3,25 +3,13 @@ import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { computeHealthScore } from '@/services/analysis/analysis-service'
 import { defaultRubric } from '@/services/analysis/default-rubric'
 import { FindingItem } from './FindingItem'
+import { HealthScoreCard } from '@/features/health/HealthScoreCard'
 
 interface ModalFindingsPaneProps {
   tabId: string | null
   entryId: string
 }
 
-function healthColor(score: number): string {
-  if (score >= 80) return 'text-ctp-green'
-  if (score >= 60) return 'text-ctp-yellow'
-  if (score >= 40) return 'text-ctp-peach'
-  return 'text-ctp-red'
-}
-
-function healthBarColor(score: number): string {
-  if (score >= 80) return 'bg-ctp-green'
-  if (score >= 60) return 'bg-ctp-yellow'
-  if (score >= 40) return 'bg-ctp-peach'
-  return 'bg-ctp-red'
-}
 
 interface ModalFindingsPaneHeaderProps {
   tabId: string | null
@@ -37,27 +25,16 @@ export function ModalFindingsPaneHeader({ tabId, entryId }: ModalFindingsPaneHea
   const entryFindings = findings.filter((f) => f.entryIds.includes(entryId))
   const entryScore = computeHealthScore(entryFindings, defaultRubric).overall
 
-  function scoreChip(label: string, score: number) {
-    return (
-      <div className="px-3 py-2">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-[10px] text-ctp-overlay1 uppercase tracking-wider">{label}</span>
-          <span className={`text-sm font-bold ${healthColor(score)}`}>{score}</span>
-        </div>
-        <div className="h-1.5 bg-ctp-surface1 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all ${healthBarColor(score)}`}
-            style={{ width: `${score}%` }}
-          />
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="grid grid-cols-2 divide-x divide-ctp-surface1">
-      {scoreChip('Overall Health', overallScore)}
-      {scoreChip('Entry Health', entryScore)}
+      <div className="px-3 py-2">
+        <p className="text-[10px] text-ctp-overlay1 uppercase tracking-wider mb-1">Overall Health</p>
+        <HealthScoreCard score={overallScore} />
+      </div>
+      <div className="px-3 py-2">
+        <p className="text-[10px] text-ctp-overlay1 uppercase tracking-wider mb-1">Entry Health</p>
+        <HealthScoreCard score={entryScore} />
+      </div>
     </div>
   )
 }

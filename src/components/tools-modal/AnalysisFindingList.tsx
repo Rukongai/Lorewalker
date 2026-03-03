@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { HealthScoreCard } from '@/features/health/HealthScoreCard'
 import type { Finding, FindingSeverity, HealthScore, RuleCategory } from '@/types'
 
 interface AnalysisFindingListProps {
@@ -18,11 +19,6 @@ const CATEGORIES: RuleCategory[] = ['structure', 'config', 'keywords', 'recursio
 
 const SEVERITY_ORDER: Record<FindingSeverity, number> = { error: 0, warning: 1, suggestion: 2 }
 
-function scoreColor(score: number): string {
-  if (score < 60) return 'text-ctp-red'
-  if (score < 80) return 'text-ctp-yellow'
-  return 'text-ctp-green'
-}
 
 function SeverityIcon({ severity }: { severity: FindingSeverity }) {
   if (severity === 'error') return <span className="text-ctp-red shrink-0">●</span>
@@ -94,11 +90,8 @@ export function AnalysisFindingList({
     <div className="flex flex-col h-full overflow-hidden">
       {/* Health score header */}
       <div className="p-4 border-b border-ctp-surface0 shrink-0">
-        <div className="flex items-baseline gap-3 mb-1">
-          <span className={`text-4xl font-bold tabular-nums ${scoreColor(healthScore.overall)}`}>
-            {healthScore.overall}
-          </span>
-          <span className="text-sm text-ctp-subtext0 flex-1 leading-snug">{healthScore.summary}</span>
+        <div className="mb-3">
+          <HealthScoreCard score={healthScore.overall} summary={healthScore.summary} size="lg" />
         </div>
 
         <Tooltip text={hasLlmProvider ? 'Run AI-powered analysis' : 'Add a provider in Settings → Providers to enable'}>
