@@ -3,8 +3,8 @@ import type { KeywordStat } from '@/types'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { buildKeywordInventory } from '@/services/keyword-analysis-service'
-import { KeywordTable } from './KeywordTable'
-import { KeywordDetailPane } from './KeywordDetailPane'
+import { KeywordTable } from '@/features/keywords/KeywordTable'
+import { KeywordContextCard as KeywordDetailPane } from '@/features/keywords/KeywordContextCard'
 
 interface KeywordsTabContentProps {
   tabId: string | null
