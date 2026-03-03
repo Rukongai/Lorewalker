@@ -109,7 +109,7 @@ This document is the source of truth for Lorewalker's design. Implementation age
   - findDeadLinks(): names mentioned in content that don't match any entry's keys
   - getAncestors(entryId): all entries that can reach this entry
   - getDescendants(entryId): all entries reachable from this entry
-- Auto-layout: compute node positions using dagre for directed graph layout
+- Auto-layout: compute node positions using ELK (Eclipse Layout Kernel via `elkjs`) for directed graph layout
 
 **Dependencies:** None (pure computation, receives data as arguments)
 
@@ -288,6 +288,38 @@ lorewalker-db/
 
 ---
 
+### CategorizeService
+
+**Owns:** LLM-powered entry categorization.
+
+**Does not own:** Category storage (that's DocumentStore.setEntryCategory), LLM calls (delegates to LLMService).
+
+**File:** `src/services/categorize-service.ts`
+
+**Public API:**
+- `categorizeEntry(entry: WorkingEntry, llmService: LLMService, providerId: string): Promise<string>` — returns one of 8 fixed category labels
+
+**Eight fixed categories:** Character, Location, Event, Item, Concept, Rule, Faction, Other
+
+**Controlled by:** `WorkspaceStore.llmCategorization` — enabled flag, provider selection, skip-manual-overrides flag.
+
+---
+
+### KeywordAnalysisService
+
+**Owns:** Keyword inventory analysis across all entries.
+
+**Does not own:** Entry editing, graph computation.
+
+**File:** `src/services/keyword-analysis-service.ts`
+
+**Public API:**
+- `buildKeywordInventory(entries: WorkingEntry[]): KeywordStat[]` — returns per-keyword usage statistics across the lorebook
+
+**Used by:** `KeywordsTabContent` in WorkspaceToolsModal.
+
+---
+
 ## State Architecture
 
 ### WorkspaceStore (Zustand)
@@ -309,6 +341,7 @@ interface WorkspaceState {
   llmCategorization: LlmCategorizationSettings;
   customRules: CustomRule[];
   disabledBuiltinRuleIds: string[];
+  lastSeenChangelogDate: string | null;  // ISO date — tracks WhatsNewDialog visibility
 
   // Actions — see TYPES.md WorkspaceState for full list
 }
@@ -332,6 +365,8 @@ interface DocumentState {
   ruleOverrides: DocumentRuleOverrides;
   selection: SelectionState;
   simulatorState: SimulatorState;
+  cardPayload: CardPayload | null;        // Full card context when imported from a character card
+  activeFormat: LorebookFormat;           // Format at time of import/load
 
   // Actions — see TYPES.md DocumentState for full list
 }
