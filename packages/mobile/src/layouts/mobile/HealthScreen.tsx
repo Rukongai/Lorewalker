@@ -1,14 +1,5 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { LorebookHealthView } from '../../features/health'
 
 export function HealthScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Health — coming soon</Text>
-    </View>
-  )
+  return <LorebookHealthView />
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1e1e2e' },
-  text: { color: '#cdd6f4', fontSize: 16 },
-})
