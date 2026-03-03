@@ -839,12 +839,27 @@ interface EntryNodeData {
 
 ## Persistence Types
 
+### CardPayload
+
+Embedded card data when a lorebook was imported from inside a character card. Stored in `DocumentStore` and persisted so the full card context is available on recovery.
+
+```typescript
+// Imported from @character-foundry/character-foundry/loader
+interface CardPayload {
+  card: CCv3Data;
+  assets: ExtractedAsset[];
+  containerFormat: ContainerFormat;
+  spec: Spec;
+}
+```
+
 ```typescript
 interface PersistedWorkspace {
   tabs: TabMeta[];
   activeTabId: string | null;
   theme: ThemeId;
   panelLayout: PanelLayout;
+  lastSeenChangelogDate?: string;  // ISO date — tracks which changelog version the user has seen
 }
 
 interface PersistedDocument {
@@ -855,6 +870,8 @@ interface PersistedDocument {
   fileMeta: FileMeta;
   simulatorState: SimulatorState;
   ruleOverrides: DocumentRuleOverrides;
+  cardPayload: CardPayload | null;   // Full card context when imported from a character card
+  activeFormat?: LorebookFormat;     // Format at time of save (enables correct re-export)
   savedAt: string;  // ISO timestamp
 }
 
