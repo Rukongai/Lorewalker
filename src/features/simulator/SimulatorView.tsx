@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Play, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react'
+import { Toggle } from '@/components/shared/Toggle'
 import type {
   WorkingEntry,
   BookMeta,
@@ -335,12 +336,7 @@ function CheckField({
   return (
     <div className="flex items-center justify-between gap-2">
       <label className="text-xs text-ctp-subtext0">{label}</label>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="rounded border-ctp-surface1 accent-ctp-accent"
-      />
+      <Toggle checked={checked} onChange={onChange} aria-label={label} />
     </div>
   )
 }

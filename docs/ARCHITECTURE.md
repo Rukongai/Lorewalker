@@ -31,9 +31,10 @@ This document is the source of truth for Lorewalker's design. Implementation age
 │  IndexedDB: autosave, session recovery, preferences, API keys        │
 ├──────────────────────────────────────────────────────────────────────┤
 │                         UI Layer                                       │
-│  WorkspaceShell > TabBar, FilesPanel, EntryList, GraphCanvas,        │
-│  EntryEditor, AnalysisPanel, SimulatorPanel, InspectorPanel,         │
-│  StatusBar, LorebookWorkspace, EntryWorkspace, SettingsDialog        │
+│  WorkspaceShell, TabBar, FilesPanel, EntryList, GraphCanvas,         │
+│  SidebarPanel, LorebookWorkspace, EntryWorkspace, StatusBar,         │
+│  SettingsDialog; feature modules: HealthView, SimulatorView,         │
+│  EditorView, KeywordsView, RulesView                                  │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -58,7 +59,9 @@ src/
 │                            ExportButton, LorebookPickerDialog, SaveSnapshotDialog,
 │                            WhatsNewDialog, KeywordNameDialog
 ├── features/
-│   ├── editor/            — EditorView (scope-aware: entry fields | BookMeta)
+│   ├── editor/            — EditorView (scope-aware: entry fields | BookMeta),
+│   │   │                    CategoryAssign, ContentField, KeywordEditor, KeywordObjectsEditor,
+│   │   │                    primitives
 │   │   ├── fields/        — ActivationFields, PriorityFields, TimedEffectFields, RecursionFields,
 │   │   │                    GroupFields, ScanOverrideFields, MatchSourceFields, CharFilterFields,
 │   │   │                    BudgetFields, AdvancedFields, TriggersFields
@@ -68,13 +71,13 @@ src/
 │   ├── health/            — HealthView (scope-aware), FindingsList, FindingItem, FindingDetail,
 │   │                        HealthScoreCard, ConnectionsList, ChainDiagram, DeepAnalysisTrigger
 │   ├── keywords/          — KeywordsView (scope-aware), KeywordTable, KeywordTag,
-│   │                        KeywordContextCard, KeywordEditor, KeywordObjectsEditor
+│   │                        KeywordContextCard, KeywordReachTable
 │   ├── rules/             — RulesView, RuleEditor, ConditionBuilder, VariablePicker,
 │   │                        TemplateField, RuleTestingPane
 │   └── simulator/         — SimulatorView (scope-aware), MessageComposer, ActivationResultList,
-│                            RecursionTraceView, EntryActivationProfile, ReachAnalysis
+│                            RecursionTraceView, EntryActivationProfile
 ├── layouts/
-│   └── desktop/           — WorkspaceShell, SidebarPanel, LorebookWorkspace, EntryWorkspace
+│   └── desktop/           — SidebarPanel, LorebookWorkspace, EntryWorkspace
 ├── hooks/
 │   ├── useDerivedState.ts     — debounced graph + analysis recomputation, exports EMPTY_STORE
 │   ├── useAutosave.ts         — 2s debounced autosave to IndexedDB
@@ -568,7 +571,7 @@ User clicks "Deep Analysis"
     → LLMService.complete(providerId, request)
     → Rule parses response into Finding[]
   → DocumentStore.setLlmFindings(findings) — stored separately, not cleared on next edit
-  → AnalysisPanel displays combined deterministic + LLM findings
+  → HealthView displays combined deterministic + LLM findings
 ```
 
 ### Snapshot Flow
@@ -779,6 +782,21 @@ Scope-aware keyword panel. `scope="lorebook"` renders the full keyword inventory
 
 ### RulesView (`src/features/rules/RulesView.tsx`)
 Lorebook-scoped only. Renders the built-in rule list with enable/disable toggles, custom rules with CRUD, the rule editor (ConditionBuilder + VariablePicker), and the rule testing pane.
+
+---
+
+## Sidebar UX Principle
+
+**Edit is write. All other tabs are read-only analytical.**
+
+The SidebarPanel has four tabs: Edit, Health, Simulator, Keywords.
+
+- **Edit** — the only tab that mutates entry data or BookMeta. Keyword editing (add/remove keys) lives here via `KeywordEditor` embedded in `EditorView`. At lorebook scope it renders BookMeta fields; at entry scope it renders all entry fields.
+- **Health** — read-only. Displays findings, health score, connections. Never mutates entries.
+- **Simulator** — read-only. Runs activation simulation, shows results. Never mutates entries.
+- **Keywords** — read-only. Analytical view of the lorebook's keyword inventory (lorebook scope) or a keyword reach/context view (entry scope). Does not provide keyword editing controls.
+
+This principle prevents scope confusion: users who want to change something go to Edit; all other tabs are safe to browse without side effects.
 
 ---
 

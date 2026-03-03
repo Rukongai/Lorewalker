@@ -1,0 +1,26 @@
+{
+  "name": "@lorewalker/core",
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types/index.ts",
+    "./stores/workspace-store": "./src/stores/workspace-store.ts",
+    "./stores/document-store": "./src/stores/document-store.ts",
+    "./stores/document-store-registry": "./src/stores/document-store-registry.ts",
+    "./storage": "./src/storage/index.ts",
+    "./lib/uuid": "./src/lib/uuid.ts",
+    "./lib/debounce": "./src/lib/debounce.ts"
+  },
+  "dependencies": {
+    "@character-foundry/character-foundry": "^0.5.0",
+    "immer": "^11.1.4",
+    "uuid": "^13.0.0",
+    "zundo": "^2.3.0",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@types/uuid": "^10.0.0",
+    "typescript": "~5.9.3"
+  }
+}

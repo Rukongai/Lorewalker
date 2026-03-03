@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { llmService } from '@/services/llm/llm-service'
 import { OpenAICompatibleProvider } from '@/services/llm/providers/openai-compatible'
 import { AnthropicProvider } from '@/services/llm/providers/anthropic'
-import { saveProviders } from '@/services/persistence-service'
+import { storageAdapter } from '@/lib/storage'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { generateId } from '@/lib/uuid'
 import type { LLMProvider, LLMProviderType, PersistedProvider } from '@/types'
@@ -57,7 +57,7 @@ function persistProviders(providers: LLMProvider[]) {
     config: { apiBase: p.config.apiBase, model: p.config.model, maxTokens: p.config.maxTokens, temperature: p.config.temperature },
     apiKey: p.config.apiKey,
   }))
-  saveProviders(persisted).catch((err) => console.error('Failed to save providers:', err))
+  storageAdapter.saveProviders(persisted).catch((err) => console.error('Failed to save providers:', err))
 }
 
 interface ProviderRowProps {

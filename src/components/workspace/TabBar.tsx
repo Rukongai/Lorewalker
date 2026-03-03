@@ -2,7 +2,7 @@ import { X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
-import { deleteDocument } from '@/services/persistence-service'
+import { storageAdapter } from '@/lib/storage'
 
 export function TabBar() {
   const tabs = useWorkspaceStore((s) => s.tabs)
@@ -21,7 +21,7 @@ export function TabBar() {
     }
     documentStoreRegistry.delete(tabId)
     closeTab(tabId)
-    await deleteDocument(tabId)
+    await storageAdapter.deleteDocument(tabId)
   }
 
   if (tabs.length === 0) {

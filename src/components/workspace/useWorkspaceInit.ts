@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { SidebarPanelTab } from '@/layouts/desktop/SidebarPanel'
-import { loadWorkspace, loadPreferences, cleanupStaleDocuments, loadProviders } from '@/services/persistence-service'
+import { storageAdapter } from '@/lib/storage'
 import { llmService } from '@/services/llm/llm-service'
 import { OpenAICompatibleProvider } from '@/services/llm/providers/openai-compatible'
 import { AnthropicProvider } from '@/services/llm/providers/anthropic'
@@ -28,7 +28,7 @@ export function useWorkspaceInit() {
     async function init() {
       // Bootstrap LLMService from IndexedDB
       try {
-        const persistedProviders = await loadProviders()
+        const persistedProviders = await storageAdapter.loadProviders()
         for (const p of persistedProviders) {
           const config = { ...p.config, apiKey: p.apiKey }
           const provider = p.type === 'anthropic'
@@ -46,8 +46,8 @@ export function useWorkspaceInit() {
         // Non-fatal — app works without LLM
       }
 
-      const prefs = await loadPreferences() ?? DEFAULT_PREFERENCES
-      const workspace = await loadWorkspace()
+      const prefs = await storageAdapter.loadPreferences() ?? DEFAULT_PREFERENCES
+      const workspace = await storageAdapter.loadWorkspace()
       if (workspace) {
         useWorkspaceStore.getState().setTheme(workspace.theme)
         setLeftWidth(workspace.panelLayout.leftPanelWidth)
@@ -59,7 +59,7 @@ export function useWorkspaceInit() {
         setRightPanelTab(validTabs.includes(storedTab as RightPanelTab) ? (storedTab as RightPanelTab) : 'edit')
         setLeftPanelTab(workspace.panelLayout.leftPanelTab ?? 'entries')
       }
-      await cleanupStaleDocuments(prefs.recoveryRetentionDays)
+      await storageAdapter.cleanupStaleDocuments(prefs.recoveryRetentionDays)
     }
     init().catch((err) => {
       console.error('[WorkspaceShell] init failed:', err)

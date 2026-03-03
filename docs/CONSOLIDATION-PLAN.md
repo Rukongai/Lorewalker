@@ -50,23 +50,28 @@ src/
 │   │   ├── MessageComposer.tsx         — message input (single + conversation)
 │   │   ├── ActivationResultList.tsx    — activated/skipped entries with details
 │   │   ├── RecursionTraceView.tsx      — step-by-step recursion display
-│   │   ├── EntryActivationProfile.tsx  — entry-scope: will this entry activate?
-│   │   └── ReachAnalysis.tsx           — entry-scope: what does this entry trigger at N steps?
+│   │   └── EntryActivationProfile.tsx  — entry-scope: will this entry activate?
 │   │
 │   ├── keywords/
 │   │   ├── index.ts
-│   │   ├── KeywordsView.tsx            — scope-aware root: lorebook | entry
+│   │   ├── KeywordsView.tsx            — scope-aware root: lorebook | entry (read-only)
 │   │   ├── KeywordTable.tsx            — sortable/searchable keyword inventory
 │   │   ├── KeywordTag.tsx              — individual keyword with context indicators
-│   │   ├── KeywordContextCard.tsx      — per-keyword overlap/usage summary
-│   │   ├── KeywordEditor.tsx           — tag-style keyword input (primary + secondary)
-│   │   └── KeywordObjectsEditor.tsx    — RoleCall per-keyword config (advanced mode)
+│   │   └── KeywordContextCard.tsx      — per-keyword overlap/usage summary
+│   │
+│   ├── insights/
+│   │   ├── index.ts
+│   │   ├── InsightsView.tsx            — scope-aware root: entry (now) | lorebook (future)
+│   │   ├── KeywordReachTable.tsx       — per-keyword reach % at depths 1/2/3/Max
+│   │   └── EntrySimulation.tsx         — simulate-this-entry trigger + results display
 │   │
 │   ├── editor/
 │   │   ├── index.ts
 │   │   ├── EditorView.tsx              — scope-aware root: lorebook (BookMeta) | entry (fields)
 │   │   ├── CategoryAssign.tsx          — LLM categorization button + manual override
 │   │   ├── ContentField.tsx            — textarea with keyword highlighting
+│   │   ├── KeywordEditor.tsx           — tag-style keyword input (primary + secondary)
+│   │   ├── KeywordObjectsEditor.tsx    — RoleCall per-keyword config (advanced mode)
 │   │   ├── fields/
 │   │   │   ├── ActivationFields.tsx    — constant, selective, selectiveLogic, enabled, probability
 │   │   │   ├── PriorityFields.tsx      — position, order, depth, role
@@ -182,10 +187,11 @@ interface HealthViewProps {
 - Multi-message conversation replay
 
 **Entry scope renders:**
+- "Simulate this entry" button — runs a simulation using this entry's content as the prompt, shows full results with the same quality as lorebook scope (badges, colors, keyword match indicators, token counts)
 - EntryActivationProfile: will this entry activate for the current sim state? why/why not?
-- Trigger analysis: what keywords/conditions activate this entry
-- ReachAnalysis: what entries does this entry trigger at 1/2/N steps (bounded by BookMeta.maxRecursionSteps)
 - Activation history across conversation steps
+
+**Design note:** Entry-scope simulator answers "what happens when this entry fires?" with a real simulation, not abstract reach analysis. ReachAnalysis (keyword reach at N steps) lives in `features/keywords/` — reach is a keyword concept, not a simulation concept.
 
 **Data contract:**
 ```typescript
@@ -213,27 +219,35 @@ interface SimulatorViewProps {
 **Replaces:** KeywordInput, KeywordsTabContent, KeywordTable (old location), KeywordDetailPane, KeywordObjectsEditor
 
 **Lorebook scope renders:**
+- Compact keyword dropdown (not two-panel master-detail — that layout belongs in Lorebook Workspace)
+- Selected keyword shows entries that use it + simulate button
+- Overlap/duplicate detection highlights
+
+**Entry scope renders (read-only analytical):**
+- This entry's keywords listed with lorebook context (uniqueness, overlap, gaps)
+- Keyword reach at 1/2/3 steps of recursion (bounded by BookMeta.maxRecursionSteps): at step 1 these keywords reach entries X, Y; at step 2 Z, W; etc.
+- Per-keyword overlap indicators
+
+**Lorebook Workspace scope renders (full space):**
 - KeywordTable (full inventory, sortable, searchable)
 - KeywordContextCard per keyword (which entries use it, overlap, occurrence count)
 - Overlap/duplicate detection highlights
 
-**Entry scope renders:**
-- KeywordEditor (tag-style input for primary + secondary keys)
-- This entry's keywords with lorebook context (uniqueness, overlap, gaps)
-- KeywordObjectsEditor (RoleCall advanced mode, conditional on activeFormat)
+**Design note:** Entry-scope Keywords is purely analytical — "understand what your keywords do." Keyword editing (primary/secondary tags, RoleCall keyword objects) lives in `features/editor/` under the Edit tab. Sidebar tabs are read views (Health, Simulator, Keywords). The Edit tab is the write view.
 
 **Data contract:**
 ```typescript
 interface KeywordsViewProps {
-  scope: 'lorebook' | 'entry';
+  scope: 'lorebook' | 'entry' | 'lorebook-workspace';
   entries: WorkingEntry[];
+  graph: RecursionGraph;
+  bookMeta: BookMeta;
   // Entry scope
   entry?: WorkingEntry;
-  activeFormat?: LorebookFormat;
-  onUpdateEntry?: (id: string, changes: Partial<WorkingEntry>) => void;
   // Shared
   onEntrySelect?: (entryId: string) => void;
   onEntryOpen?: (entryId: string) => void;
+  onSimulateKeyword?: (keyword: string) => void;
 }
 ```
 
@@ -248,8 +262,10 @@ interface KeywordsViewProps {
 - Shared field groups (Activation, Priority, TimedEffects, Recursion, Budget, Group, ScanOverrides, MatchSources, Advanced)
 - Format variant fields loaded by `activeFormat`
 - CategoryAssign (LLM categorization)
-- Composes KeywordEditor from `features/keywords/` at entry scope
+- Keyword editing (KeywordEditor for primary/secondary tags, KeywordObjectsEditor for RoleCall advanced mode)
 - Composes ConnectionsList from `features/health/` at entry scope
+
+**Design note:** Keyword editing lives in Editor, not Keywords. The sidebar pattern is: Edit tab is the write view, all other tabs (Health, Simulator, Keywords) are read/analytical views.
 
 **Lorebook scope renders:**
 - BookMeta editor: shared settings + format variant BookMeta fields
@@ -276,9 +292,24 @@ const VariantEntryFields = useMemo(() => {
 
 ---
 
-### `features/insights/` (future — design for, don't build)
+### `features/insights/`
 
-LLM-powered lorebook interpretation, recommendations, metrics dashboard. Consumes same derived data as other modules. Slots in as a new feature directory + registration in layout containers. No structural changes needed.
+Entry-scope impact analysis and lorebook-scope intelligence dashboard.
+
+**Entry scope renders (build now — used in EntryWorkspace Insights tab):**
+- Keyword reach table: for each keyword in this entry's outgoing edges (keywords in content that match other entries' keys), show reach % at depths 1, 2, 3, and Max. Max = the depth where activation % stops changing. If Max is reached after 1–2 steps, omit the corresponding columns with a dash.
+- Simulate-this-entry: button to run a simulation using this entry's content as the prompt, showing full results (badges, colors, keyword matches, token counts) — same quality as lorebook-scope Simulator.
+- Future: LLM-specific insights (content quality, keyword effectiveness, structural role, comparison to similar entries)
+
+**Lorebook scope renders (future — design for, don't build yet):**
+- LLM assessment of overall lorebook quality with explanations
+- Actionable recommendations prioritized by impact
+- Metrics dashboard: entry reach at N steps, token efficiency, coverage gaps, activation probability distribution
+- Impact analysis: "if you fix these 3 issues, your Health score improves by X"
+
+**Data source for keyword reach:** RecursionGraph outgoing edges, NOT the entry's assigned primary/secondary keys. The reach table shows "if keyword X fires, how far does the cascade go?" — a structural property of the lorebook.
+
+**Relationship to Simulator module:** Entry-scope Insights contains a simulation trigger and results display, but it does NOT depend on Simulator having been run. The keyword reach table is always computed from the graph (Approach 1). The simulate-this-entry feature is self-contained within Insights — it calls SimulatorService directly.
 
 Persistent metadata stored in `extensions.lorewalker.insights` per entry.
 
@@ -312,6 +343,14 @@ Evaluate building Lorewalker-native format I/O to replace `@character-foundry/ch
 
 ---
 
+## Sidebar UX Principle
+
+Sidebar tabs follow a read/write split. The **Edit** tab is the only write view — it's where you change entry fields, keywords, content, settings. All other tabs (**Health**, **Simulator**, **Keywords**) are read/analytical views — they show you information about the entry or lorebook but don't modify anything.
+
+This means: keyword editing is in Edit, not Keywords. Simulation trigger is in Simulator, not Edit. Health findings are in Health, not Edit. Each tab has a clear purpose.
+
+---
+
 ## Dependency Rules
 
 ```
@@ -319,13 +358,17 @@ features/health/       → types/, services/, stores/
 features/simulator/    → types/, services/, stores/
 features/keywords/     → types/, services/, stores/
 features/editor/       → types/, services/, stores/
-                         + features/keywords/ (entry-scope keyword editing)
                          + features/health/   (entry-scope ConnectionsList)
 features/rules/        → types/, services/, stores/
+features/insights/     → types/, services/, stores/
 
 layouts/desktop/       → features/*, stores/
 layouts/mobile/        → features/*, stores/  (future)
 ```
+
+Keyword editing components (KeywordEditor, KeywordObjectsEditor) live in `features/editor/`, not `features/keywords/`. Keywords module is read-only.
+
+Insights does NOT depend on Simulator module. It calls SimulatorService directly for the entry simulation feature.
 
 No other cross-feature imports without updating this list.
 
@@ -508,11 +551,10 @@ This phase has more interdependencies — work in 2 larger streams rather than 4
 1. **Create `layouts/desktop/SidebarPanel.tsx`** — the right panel that renders feature modules with implicit scope:
    - Determines scope from selection state (entry selected → entry, none → lorebook)
    - Tabs: Edit, Health, Simulator, Keywords
-   - Each tab renders the corresponding `*View` at the inferred scope
-   - "Edit" tab: EditorView at entry scope (entry fields) or lorebook scope (BookMeta)
-   - "Health" tab: HealthView at inferred scope
-   - "Simulator" tab: SimulatorView at inferred scope
-   - "Keywords" tab: KeywordsView at inferred scope
+   - "Edit" tab (write view): EditorView at entry scope (entry fields + keyword editing) or lorebook scope (BookMeta)
+   - "Health" tab (read view): HealthView at inferred scope
+   - "Simulator" tab (read view): SimulatorView at inferred scope — entry scope includes "simulate with this entry's content" trigger
+   - "Keywords" tab (read view): KeywordsView at inferred scope — lorebook scope is compact dropdown, entry scope is keyword reach analysis
 
 2. **Refactor WorkspaceShell:**
    - Move to `layouts/desktop/WorkspaceShell.tsx`
@@ -538,13 +580,12 @@ This phase has more interdependencies — work in 2 larger streams rather than 4
 
 2. **Create `layouts/desktop/EntryWorkspace.tsx`** — replaces EntryEditorModal:
    - z-50, 90vw × 90vh (same dimensions)
-   - Renders feature modules at entry scope, organized as sections or tabs:
-     - Edit section: EditorView at entry scope
-     - Health section: HealthView at entry scope
-     - Simulator section: SimulatorView at entry scope
-     - Keywords section: KeywordsView at entry scope
+   - Two tabs:
+     - **Edit** — EditorView at entry scope (all entry fields, keyword editing, format variants)
+     - **Insights** — entry-scope Insights: keyword reach table, simulate-this-entry results, future LLM analysis
    - Back/forward navigation stack preserved
    - Escape handling (capture + stopImmediatePropagation) preserved
+   - Health findings are NOT in the modal — they're on the sidebar Health tab
 
 3. **Remove old components:**
    - Delete: WorkspaceToolsModal, AnalysisTabContent, AnalysisFindingList, AnalysisDetailPane, SimulatorTabContent, SimulatorConversationPane, SimulatorResultsPane, AnalysisPanel, InspectorPanel, ModalFindingsPane, SimulatorPanel, FindingItem, ActivationResults, RecursionTrace, ActivationLinks, EntryEditor, EntryEditorModal, BookMetaEditor, ContentEditor, KeywordInput, RCActivationSection, RoleCallPositionSelect
@@ -574,12 +615,12 @@ This phase has more interdependencies — work in 2 larger streams rather than 4
 
 **Goal:** Extract shared business logic into `packages/core`, set up React Native + Expo project, build mobile navigation shell and initial feature screens.
 
-This phase is planned but not detailed here. It depends on Phase 3 completion and will be planned as a separate execution document.
+**See `docs/PHASE4-PLAN.md` for the full execution plan** including monorepo structure, storage abstraction, mobile navigation, feature scope, four sequential streams, and key decisions.
 
 **High-level structure:**
 ```
 packages/
-  core/          — types/, services/, stores/, hooks/ (non-React-DOM hooks)
+  core/          — types/, services/, stores/ (no React DOM, no React Native)
   web/           — Vite app, layouts/desktop/, features/ (web component implementations)
   mobile/        — Expo app, layouts/mobile/, features/ (React Native implementations)
 ```

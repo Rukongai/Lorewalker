@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { EMPTY_STORE } from './useDerivedState'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { saveDocument } from '@/services/persistence-service'
+import { storageAdapter } from '@/lib/storage'
 import type { PersistedDocument } from '@/types'
 
 const AUTOSAVE_DELAY_MS = 2000
@@ -54,7 +54,7 @@ export function useAutosave(tabId: string | null): { isSaving: boolean } {
 
       setIsSaving(true)
       try {
-        await saveDocument(doc)
+        await storageAdapter.saveDocument(doc)
         useWorkspaceStore.getState().markDirty(tabId, false)
       } catch (err) {
         // Autosave failures are non-fatal — don't surface to user, but log for debugging

@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      '@lorewalker/core': resolve(__dirname, 'packages/core/src'),
     },
   },
   build: {

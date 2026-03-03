@@ -69,12 +69,6 @@ export function SidebarPanel({ tab, onTabChange, onCollapse, onOpenEntry, onSele
     if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
   }, [realStore, selectedEntry, activeTabId])
 
-  const handleUpdateEntry = useCallback((id: string, changes: Partial<WorkingEntry>) => {
-    if (!realStore) return
-    realStore.getState().updateEntry(id, changes)
-    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
-  }, [realStore, activeTabId])
-
   const handleBookMetaChange = useCallback(<K extends keyof BookMeta>(field: K, value: BookMeta[K]) => {
     realStore?.getState().updateBookMeta({ [field]: value } as Partial<BookMeta>)
     if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
@@ -260,7 +254,7 @@ export function SidebarPanel({ tab, onTabChange, onCollapse, onOpenEntry, onSele
 
       {/* Tab: Simulator */}
       {tab === 'simulator' && (
-        <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="flex flex-col flex-1 overflow-y-auto">
           <ErrorBoundary label="Simulator">
             <SimulatorView
               scope={scope}

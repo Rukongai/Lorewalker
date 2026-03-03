@@ -238,7 +238,6 @@ export function LorebookWorkspace({
   const entries = activeStore((s) => s.entries)
   const bookMeta = activeStore((s) => s.bookMeta)
   const simulatorState = activeStore((s) => s.simulatorState)
-  const activeFormat = activeStore((s) => s.activeFormat)
   const llmFindings = activeStore((s) => s.llmFindings)
 
   const [initialKeyword, setInitialKeyword] = useState<string | null>(null)
@@ -457,7 +456,6 @@ export function LorebookWorkspace({
               scope="lorebook"
               entries={entries}
               bookMeta={bookMeta}
-              activeFormat={activeFormat}
               onEntrySelect={handleEntrySelect}
               onEntryOpen={onOpenEntry}
               initialKeyword={initialKeyword}

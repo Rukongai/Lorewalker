@@ -3,7 +3,7 @@ import type { WorkingEntry, BookMeta, KeywordStat, RecursionGraph } from '@/type
 import { buildKeywordInventory } from '@/services/keyword-analysis-service'
 import { KeywordContextCard } from './KeywordContextCard'
 import { KeywordTag } from './KeywordTag'
-import { ReachAnalysis } from './ReachAnalysis'
+import { KeywordReachTable } from './KeywordReachTable'
 
 interface KeywordsViewProps {
   scope: 'lorebook' | 'entry'
@@ -76,12 +76,10 @@ export function KeywordsView({
             <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1 mb-1">
               Reach
             </p>
-            <ReachAnalysis
-              entry={entry}
-              entries={entries}
+            <KeywordReachTable
+              entryId={entry.id}
               graph={graph}
-              maxRecursionSteps={bookMeta?.maxRecursionSteps ?? 0}
-              onEntrySelect={onEntrySelect}
+              entries={entries}
             />
           </div>
         )}
@@ -117,7 +115,7 @@ export function KeywordsView({
           <option value="">— Select a keyword —</option>
           {stats.map((s) => (
             <option key={`${s.keyword}-${s.isSecondary}`} value={s.keyword}>
-              {s.keyword} ({s.entryCount})
+              {s.keyword} ({s.entryIds.length})
             </option>
           ))}
         </select>

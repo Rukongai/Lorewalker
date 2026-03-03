@@ -3,7 +3,7 @@ import { ChevronDown, ChevronRight, Trash2, RotateCcw } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
-import { listDocuments, deleteDocument, listSnapshots, deleteSnapshot, saveSnapshot } from '@/services/persistence-service'
+import { storageAdapter } from '@/lib/storage'
 import { generateId } from '@/lib/uuid'
 import type { PersistedDocument, PersistedSnapshot, TabMeta } from '@/types'
 
@@ -36,7 +36,7 @@ export function FilesPanel({ onRestoreDoc, onFileOpened, snapshotSaveCount }: Fi
 
   const refreshHistory = useCallback(async () => {
     try {
-      const allDocs = await listDocuments()
+      const allDocs = await storageAdapter.listDocuments()
       setHistoryDocs(allDocs)
     } catch {
       // Non-fatal
@@ -58,7 +58,7 @@ export function FilesPanel({ onRestoreDoc, onFileOpened, snapshotSaveCount }: Fi
     }
     Promise.all(
       expandedIds.map((tabId) =>
-        listSnapshots(tabId)
+        storageAdapter.listSnapshots(tabId)
           .then((snaps) => ({ tabId, snaps }))
           .catch(() => ({ tabId, snaps: [] as PersistedSnapshot[] }))
       )
@@ -82,7 +82,7 @@ export function FilesPanel({ onRestoreDoc, onFileOpened, snapshotSaveCount }: Fi
     const name = doc?.fileMeta.fileName ?? 'this file'
     if (!window.confirm(`Delete "${name}" from history? This cannot be undone.`)) return
     try {
-      await deleteDocument(tabId)
+      await storageAdapter.deleteDocument(tabId)
       setHistoryDocs((prev) => prev.filter((d) => d.tabId !== tabId))
       setExpandedTabIds((prev) => {
         const next = new Set(prev)
@@ -108,7 +108,7 @@ export function FilesPanel({ onRestoreDoc, onFileOpened, snapshotSaveCount }: Fi
         next.add(tabId)
         // Load snapshots if not already loaded
         if (!snapshots[tabId]) {
-          listSnapshots(tabId).then((snaps) => {
+          storageAdapter.listSnapshots(tabId).then((snaps) => {
             setSnapshots((s) => ({ ...s, [tabId]: snaps }))
           }).catch(() => {
             setSnapshots((s) => ({ ...s, [tabId]: [] }))
@@ -124,7 +124,7 @@ export function FilesPanel({ onRestoreDoc, onFileOpened, snapshotSaveCount }: Fi
     const name = snap?.name ?? 'this snapshot'
     if (!window.confirm(`Delete snapshot "${name}"? This cannot be undone.`)) return
     try {
-      await deleteSnapshot(tabId, snapshotId)
+      await storageAdapter.deleteSnapshot(tabId, snapshotId)
       setSnapshots((prev) => ({
         ...prev,
         [tabId]: (prev[tabId] ?? []).filter((s) => s.id !== snapshotId),
@@ -148,8 +148,8 @@ export function FilesPanel({ onRestoreDoc, onFileOpened, snapshotSaveCount }: Fi
       entries: state.entries,
       bookMeta: state.bookMeta,
     }
-    await saveSnapshot(autoSnap)
-    const snaps = await listSnapshots(tabId).catch(() => [] as PersistedSnapshot[])
+    await storageAdapter.saveSnapshot(autoSnap)
+    const snaps = await storageAdapter.listSnapshots(tabId).catch(() => [] as PersistedSnapshot[])
     setSnapshots((prev) => ({ ...prev, [tabId]: snaps }))
   }
 
@@ -187,8 +187,8 @@ export function FilesPanel({ onRestoreDoc, onFileOpened, snapshotSaveCount }: Fi
         entries: doc.entries,
         bookMeta: doc.bookMeta,
       }
-      await saveSnapshot(autoSnap).catch(() => {})
-      const snaps = await listSnapshots(doc.tabId).catch(() => [] as PersistedSnapshot[])
+      await storageAdapter.saveSnapshot(autoSnap).catch(() => {})
+      const snaps = await storageAdapter.listSnapshots(doc.tabId).catch(() => [] as PersistedSnapshot[])
       setSnapshots((prev) => ({ ...prev, [doc.tabId]: snaps }))
     }
     const positions = new Map(Object.entries(doc.graphPositions))

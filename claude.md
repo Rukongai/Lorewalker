@@ -75,21 +75,23 @@ This project uses specialized agents. See `AGENTS.md` for full definitions.
 
 - **Custom Rules System** — Users build rules visually via ConditionBuilder, which produces a `SerializedEvaluation` JSON tree. The `evaluation-engine.ts` resolves variable paths (e.g., `entry.keys.length`) against WorkingEntry fields at runtime. Custom rules are workspace-scoped with per-document overrides for disabling.
 
-- **RoleCall format** — Two format families: standard (sillytavern/ccv3/agnai/risu/wyvern) and `rolecall`. `DocumentStore.activeFormat` determines which editor panels render. When `activeFormat === 'rolecall'`, EntryEditor swaps keyword/activation panels for RoleCall-specific variants.
+- **RoleCall format** — Two format families: standard (sillytavern/ccv3/agnai/risu/wyvern) and `rolecall`. `DocumentStore.activeFormat` determines which editor panels render. When `activeFormat === 'rolecall'`, EditorView loads RoleCall-specific variant fields from `features/editor/variants/rolecall/`.
 
 ## UI Patterns
 
-- **Modal layering** — z-9999 for portal tooltips (never clipped), z-50 for EntryEditorModal and SettingsDialog (capture Escape + stopImmediatePropagation), z-40 for WorkspaceToolsModal (bubble Escape, blocked by z-50). New modals must follow this hierarchy. See ARCHITECTURE.md "Modal Layering Pattern".
+- **Modal layering** — z-9999 for portal tooltips (never clipped), z-50 for EntryWorkspace and SettingsDialog (capture Escape + stopImmediatePropagation), z-40 for LorebookWorkspace (bubble Escape, blocked by z-50). New modals must follow this hierarchy. See ARCHITECTURE.md "Modal Layering Pattern".
 
-- **Navigation delegation** — Components inside WorkspaceToolsModal use `onOpenEntry(entryId)` and `onSelectEntry(entryId)` callbacks from WorkspaceShell. They never import WorkspaceShell internals. See CONVENTIONS.md "Navigation Delegation".
+- **Navigation delegation** — Components inside LorebookWorkspace use `onOpenEntry(entryId)` and `onSelectEntry(entryId)` callbacks from WorkspaceShell. They never import WorkspaceShell internals. See CONVENTIONS.md "Navigation Delegation".
 
-- **WorkspaceToolsModal** — Large overlay (95vw × 90vh, z-40) with four tabs: analysis (findings + chain diagram), simulator (conversation + results), rules (built-in toggles + custom rule CRUD + editor), keywords (inventory table + detail pane). This is where complex analysis and simulation workflows live — the right-side panels are for quick access only.
+- **LorebookWorkspace** — Large overlay (95vw × 90vh, z-40) with four tabs: health (findings + score + chain diagram), simulator (conversation + results), rules (built-in toggles + custom rule CRUD + editor), keywords (inventory table + reach table). This is where complex lorebook-wide workflows live.
+
+- **Sidebar UX principle** — Edit is write; all other tabs are read-only analytical. The SidebarPanel has four tabs: Edit (entry fields + keyword editing), Health (findings, score, connections — read-only), Simulator (activation results — read-only), Keywords (keyword inventory + context — read-only). Keyword editing lives exclusively in the Edit tab via `KeywordEditor` inside `EditorView`. Never add mutation controls to Health, Simulator, or Keywords tabs.
 
 - **Theme system** — 14 themes defined as CSS variable blocks in `globals.css`. ThemeId set as class on `<html>`. Color tokens use `--ctp-*` (palette), `--edge-*` (graph edges), `--node-*` (graph nodes). Light themes (`catppuccin-latte`, `nord-aurora`, `rose-pine-dawn`, `tokyo-night-day`) set React Flow `colorMode: 'light'`. Never use Tailwind `dark:` variant — use CSS variables.
 
 - **Graph edge editing** — Users can drag-to-create edges (EdgeConnectDialog picks which keyword to add to source content) and delete edges (removes keyword mention). Helpers in `src/lib/edge-edit.ts`.
 
-- **Shared utilities** — `getTypeBadge()` in `entry-badge.ts` for entry type badges (used in EntryListItem, EntryNode, EntryEditorModal), `modKey` in `platform.ts` for platform-aware shortcut labels, `severityColor()` for finding severity styling, `cn()` for Tailwind class merging. See CONVENTIONS.md "Shared Utility Patterns" before reimplementing any of these.
+- **Shared utilities** — `getTypeBadge()` in `entry-badge.ts` for entry type badges (used in EntryListItem, EntryNode, EntryWorkspace), `modKey` in `platform.ts` for platform-aware shortcut labels, `severityColor()` for finding severity styling, `cn()` for Tailwind class merging. See CONVENTIONS.md "Shared Utility Patterns" before reimplementing any of these.
 
 ## Service Inventory (Quick Reference)
 

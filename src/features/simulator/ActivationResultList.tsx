@@ -272,22 +272,26 @@ function CompactEntryRow({
         if (onOpenEntry) onOpenEntry(ae.entryId)
         else onSelectEntry(ae.entryId)
       }}
-      className="flex items-center justify-between gap-2 text-left hover:bg-ctp-surface0 rounded px-1 py-0.5 transition-colors"
+      className="flex flex-col gap-0.5 w-full text-left hover:bg-ctp-surface0 rounded px-1 py-0.5 transition-colors"
     >
-      <div className="flex items-center gap-1.5 min-w-0">
-        <span className={`text-[9px] px-1.5 py-px rounded font-medium whitespace-nowrap ${ACTIVATED_BY_BADGE[ae.activatedBy]}`}>
-          {ae.activatedBy}
-        </span>
-        <span className="text-xs text-ctp-text truncate">{entryName(entries, ae.entryId)}</span>
-      </div>
-      <div className="flex items-center gap-1 shrink-0">
-        {ae.matchedKeywords.map((kw, i) => (
-          <span key={i} className="text-[9px] bg-ctp-surface1 text-ctp-subtext0 rounded px-1 py-px">
-            {kw}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className={`text-[9px] px-1.5 py-px rounded font-medium whitespace-nowrap ${ACTIVATED_BY_BADGE[ae.activatedBy]}`}>
+            {ae.activatedBy}
           </span>
-        ))}
-        <span className="text-[9px] text-ctp-overlay1 tabular-nums">{ae.tokenCost}t</span>
+          <span className="text-xs text-ctp-text truncate">{entryName(entries, ae.entryId)}</span>
+        </div>
+        <span className="text-[9px] text-ctp-overlay1 tabular-nums shrink-0">{ae.tokenCost}t</span>
       </div>
+      {ae.matchedKeywords.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {ae.matchedKeywords.map((kw, i) => (
+            <span key={i} className="text-[9px] bg-ctp-surface1 text-ctp-subtext0 rounded px-1 py-px">
+              {kw}
+            </span>
+          ))}
+        </div>
+      )}
     </button>
   )
 }
@@ -310,25 +314,29 @@ function FullEntryRow({
         else onOpenEntry?.(ae.entryId)
       }}
       title="Click to open in editor · Cmd/Ctrl+click to select in list"
-      className="flex items-center justify-between gap-2 text-left hover:bg-ctp-surface0 rounded px-2 py-1.5 transition-colors"
+      className="flex flex-col gap-1 w-full text-left hover:bg-ctp-surface0 rounded px-2 py-1.5 transition-colors"
     >
-      <div className="flex items-center gap-2 min-w-0">
-        <span className={`text-[9px] px-1.5 py-px rounded font-medium whitespace-nowrap ${ACTIVATED_BY_BADGE[ae.activatedBy]}`}>
-          {ae.activatedBy}
-        </span>
-        <span className="text-sm text-ctp-text truncate">{entryName(entries, ae.entryId)}</span>
-      </div>
-      <div className="flex items-center gap-1 shrink-0">
-        {ae.matchedKeywords.slice(0, 3).map((kw, i) => (
-          <span key={i} className="text-[9px] bg-ctp-surface1 text-ctp-subtext0 rounded px-1 py-px">
-            {kw}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={`text-[9px] px-1.5 py-px rounded font-medium whitespace-nowrap ${ACTIVATED_BY_BADGE[ae.activatedBy]}`}>
+            {ae.activatedBy}
           </span>
-        ))}
-        {ae.matchedKeywords.length > 3 && (
-          <span className="text-[9px] text-ctp-overlay1">+{ae.matchedKeywords.length - 3}</span>
-        )}
-        <span className="text-[10px] text-ctp-overlay1 tabular-nums ml-1">{ae.tokenCost}t</span>
+          <span className="text-sm text-ctp-text truncate">{entryName(entries, ae.entryId)}</span>
+        </div>
+        <span className="text-[10px] text-ctp-overlay1 tabular-nums shrink-0">{ae.tokenCost}t</span>
       </div>
+      {ae.matchedKeywords.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {ae.matchedKeywords.slice(0, 3).map((kw, i) => (
+            <span key={i} className="text-[9px] bg-ctp-surface1 text-ctp-subtext0 rounded px-1 py-px">
+              {kw}
+            </span>
+          ))}
+          {ae.matchedKeywords.length > 3 && (
+            <span className="text-[9px] text-ctp-overlay1">+{ae.matchedKeywords.length - 3}</span>
+          )}
+        </div>
+      )}
     </button>
   )
 }

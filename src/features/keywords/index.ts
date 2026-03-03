@@ -1,6 +1,6 @@
 export { KeywordTable } from './KeywordTable'
 export { KeywordTag } from './KeywordTag'
 export { KeywordContextCard } from './KeywordContextCard'
-export { ReachAnalysis } from './ReachAnalysis'
-export type { ReachAnalysisProps } from './ReachAnalysis'
+export { KeywordReachTable } from './KeywordReachTable'
+export type { KeywordReachTableProps } from './KeywordReachTable'
 export { KeywordsView } from './KeywordsView'

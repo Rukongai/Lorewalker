@@ -22,7 +22,7 @@ import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
 import { useAutosave } from '@/hooks/useAutosave'
 import { useWorkspacePersistence } from '@/hooks/useWorkspacePersistence'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
-import { saveSnapshot } from '@/services/persistence-service'
+import { storageAdapter } from '@/lib/storage'
 const GraphCanvas = lazy(() => import('@/components/graph/GraphCanvas').then(m => ({ default: m.GraphCanvas })))
 const SettingsDialog = lazy(() => import('@/components/settings/SettingsDialog').then(m => ({ default: m.SettingsDialog })))
 const EntryWorkspace = lazy(() => import('@/layouts/desktop/EntryWorkspace').then(m => ({ default: m.EntryWorkspace })))
@@ -615,7 +615,7 @@ export function WorkspaceShell() {
             entries: state.entries,
             bookMeta: state.bookMeta,
           }
-          await saveSnapshot(snapshot)
+          await storageAdapter.saveSnapshot(snapshot)
           setSnapshotSaveCount((c) => c + 1)
           setShowSnapshotDialog(false)
         }}

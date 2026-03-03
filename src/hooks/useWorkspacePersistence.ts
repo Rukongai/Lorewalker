@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { saveWorkspace, loadCustomRules, saveCustomRules, loadWorkspace } from '@/services/persistence-service'
+import { storageAdapter } from '@/lib/storage'
 import type { PanelLayout } from '@/types'
 
 const DEBOUNCE_MS = 500
@@ -24,13 +24,13 @@ export function useWorkspacePersistence(panelLayout: PanelLayout): void {
   useEffect(() => {
     if (initialLoadDone.current) return
     initialLoadDone.current = true
-    loadCustomRules().then(({ rules, disabledBuiltinIds }) => {
+    storageAdapter.loadCustomRules().then(({ rules, disabledBuiltinIds }) => {
       setCustomRules(rules)
       setDisabledBuiltinRuleIds(disabledBuiltinIds)
     }).catch(() => {
       // Non-fatal: start with empty rules
     })
-    loadWorkspace().then((workspace) => {
+    storageAdapter.loadWorkspace().then((workspace) => {
       if (workspace?.lastSeenChangelogDate !== undefined) {
         setLastSeenChangelogDate(workspace.lastSeenChangelogDate)
       }
@@ -45,7 +45,7 @@ export function useWorkspacePersistence(panelLayout: PanelLayout): void {
 
     debounceRef.current = setTimeout(async () => {
       try {
-        await saveWorkspace({ tabs, activeTabId, theme, panelLayout, lastSeenChangelogDate: lastSeenChangelogDate ?? undefined })
+        await storageAdapter.saveWorkspace({ tabs, activeTabId, theme, panelLayout, lastSeenChangelogDate: lastSeenChangelogDate ?? undefined })
       } catch {
         // Workspace persistence failures are non-fatal
       }
@@ -64,7 +64,7 @@ export function useWorkspacePersistence(panelLayout: PanelLayout): void {
 
     rulesDebounceRef.current = setTimeout(async () => {
       try {
-        await saveCustomRules(customRules, disabledBuiltinRuleIds)
+        await storageAdapter.saveCustomRules(customRules, disabledBuiltinRuleIds)
       } catch {
         // Custom rules persistence failures are non-fatal
       }
