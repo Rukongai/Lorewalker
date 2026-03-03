@@ -60,6 +60,8 @@ export type {
   TokenUsage,
 } from './llm'
 
+export type { KeywordStat } from './keywords'
+
 export type {
   PersistedWorkspace,
   PersistedDocument,

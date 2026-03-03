@@ -6,13 +6,15 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 import { AnalysisTabContent } from './AnalysisTabContent'
 import { SimulatorTabContent } from './SimulatorTabContent'
 import { RulesTabContent } from './RulesTabContent'
+import { KeywordsTabContent } from '@/components/keywords/KeywordsTabContent'
 
-export type ToolsTab = 'analysis' | 'simulator' | 'rules'
+export type ToolsTab = 'analysis' | 'simulator' | 'rules' | 'keywords'
 
 const TAB_LABELS: Record<ToolsTab, string> = {
   analysis: 'Analysis',
   simulator: 'Simulator',
   rules: 'Rules',
+  keywords: 'Keywords',
 }
 
 interface WorkspaceToolsModalProps {
@@ -58,7 +60,7 @@ export function WorkspaceToolsModal({
         <div className="flex items-center justify-between px-4 py-2 border-b border-ctp-surface1 shrink-0">
           {/* Tab bar */}
           <div className="flex items-center gap-1">
-            {(['analysis', 'simulator', 'rules'] as ToolsTab[]).map((t) => (
+            {(['analysis', 'simulator', 'rules', 'keywords'] as ToolsTab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => onTabChange(t)}
@@ -103,6 +105,13 @@ export function WorkspaceToolsModal({
           )}
           {tab === 'rules' && (
             <RulesTabContent tabId={activeTabId} />
+          )}
+          {tab === 'keywords' && (
+            <KeywordsTabContent
+              tabId={activeTabId}
+              onSelectEntry={onSelectEntry}
+              onOpenEntry={onOpenEntry}
+            />
           )}
         </div>
       </div>
