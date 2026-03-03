@@ -169,8 +169,8 @@ describe('HealthView — entry scope', () => {
     // Score computed from entryFindings — 1 error in structure → below 100
     // HealthScoreCard renders score as a <span>, find all standalone numeric text nodes
     const numElements = screen.getAllByText(/^\d+$/)
-    const scores = numElements.map(el => Number(el.textContent))
-    expect(scores.some(n => n > 0 && n < 100)).toBe(true)
+    const scores = numElements.map((el: HTMLElement) => Number(el.textContent))
+    expect(scores.some((n: number) => n > 0 && n < 100)).toBe(true)
   })
 
   it('renders FindingsList filtered to entry findings only', () => {
