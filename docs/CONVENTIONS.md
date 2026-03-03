@@ -88,42 +88,16 @@ lorewalker/
 │   │   │   ├── GraphAddButton.tsx
 │   │   │   └── EdgeConnectDialog.tsx
 │   │   │
-│   │   ├── editor/                       # Entry form editor
+│   │   ├── editor/                       # Entry form editor (sidebar, inline)
 │   │   │   ├── EntryEditor.tsx
-│   │   │   ├── EntryEditorModal.tsx      # Modal variant (z-50)
-│   │   │   ├── BookMetaEditor.tsx        # Book-level metadata form
-│   │   │   ├── ActivationLinks.tsx       # Inline incoming/outgoing edge display
-│   │   │   ├── ContentEditor.tsx
-│   │   │   └── KeywordInput.tsx
+│   │   │   └── BookMetaEditor.tsx        # Book-level metadata form
 │   │   │
-│   │   ├── analysis/                     # Analysis panel and findings
+│   │   ├── analysis/                     # Thin-wrapper components (legacy)
 │   │   │   ├── AnalysisPanel.tsx
-│   │   │   ├── FindingItem.tsx
-│   │   │   ├── InspectorPanel.tsx
-│   │   │   ├── DeepAnalysisDialog.tsx
-│   │   │   └── ModalFindingsPane.tsx
+│   │   │   └── InspectorPanel.tsx
 │   │   │
-│   │   ├── simulator/                    # Simulator panel
-│   │   │   ├── SimulatorPanel.tsx
-│   │   │   ├── MessageInput.tsx
-│   │   │   ├── ActivationResults.tsx
-│   │   │   └── RecursionTrace.tsx
-│   │   │
-│   │   ├── tools-modal/                  # WorkspaceToolsModal (z-40) and sub-components
-│   │   │   ├── WorkspaceToolsModal.tsx
-│   │   │   ├── AnalysisTabContent.tsx
-│   │   │   ├── AnalysisFindingList.tsx
-│   │   │   ├── AnalysisDetailPane.tsx
-│   │   │   ├── ChainDiagram.tsx
-│   │   │   ├── SimulatorTabContent.tsx
-│   │   │   ├── SimulatorConversationPane.tsx
-│   │   │   ├── SimulatorResultsPane.tsx
-│   │   │   ├── RulesTabContent.tsx
-│   │   │   ├── RuleEditorModal.tsx
-│   │   │   ├── RuleTestingPane.tsx
-│   │   │   ├── ConditionBuilder.tsx
-│   │   │   ├── VariablePicker.tsx
-│   │   │   └── TemplateField.tsx
+│   │   ├── simulator/                    # Thin-wrapper components (legacy)
+│   │   │   └── SimulatorPanel.tsx
 │   │   │
 │   │   ├── settings/                     # Settings dialog and sub-panels
 │   │   │   ├── SettingsDialog.tsx        # z-50
@@ -139,6 +113,19 @@ lorewalker/
 │   │   └── ui/                           # Low-level UI components
 │   │       ├── Tooltip.tsx               # Portal-based, z-9999
 │   │       └── HelpTooltip.tsx
+│   │
+│   ├── layouts/
+│   │   └── desktop/                      # Full-page layout components
+│   │       ├── SidebarPanel.tsx          # Right sidebar (4 tabs, scope-inferred)
+│   │       ├── LorebookWorkspace.tsx     # Lorebook-scope overlay (z-40)
+│   │       └── EntryWorkspace.tsx        # Entry-scope overlay (z-50)
+│   │
+│   ├── features/                         # Feature modules (domain views)
+│   │   ├── editor/                       # EditorView + field components
+│   │   ├── health/                       # HealthView + findings components
+│   │   ├── simulator/                    # SimulatorView + activation components
+│   │   ├── keywords/                     # KeywordsView + keyword components
+│   │   └── rules/                        # RulesView + condition builder
 │   │
 │   ├── hooks/                            # Custom React hooks
 │   │   ├── useDerivedState.ts            # Graph recomputation + EMPTY_STORE export
@@ -362,14 +349,14 @@ z-index hierarchy for modals and overlays:
 
 ```
 z-9999  Tooltip portal               — portal-rendered, never clipped
-z-50    EntryEditorModal             — entry editor modal, capture Escape
+z-50    EntryWorkspace               — entry editor overlay, capture Escape + stopImmediatePropagation()
 z-50    SettingsDialog               — settings modal, standard close
-z-40    WorkspaceToolsModal          — tools overlay, bubble Escape
+z-40    LorebookWorkspace            — lorebook tools overlay, bubble Escape
 ```
 
 **Rules:**
-- New modals that should close before EntryEditorModal → z-40, bubble Escape
-- New modals that should take priority over WorkspaceToolsModal → z-50, capture Escape + `stopImmediatePropagation()`
+- New modals that should close before EntryWorkspace → z-40, bubble Escape
+- New modals that should take priority over LorebookWorkspace → z-50, capture Escape + `stopImmediatePropagation()`
 - Elements that must never be z-clipped (tooltips) → portal at z-9999
 
 **Never use inline `style={{ zIndex: ... }}`** for modal layering. Use Tailwind z-classes (`z-40`, `z-50`, `z-[9999]`).
@@ -378,12 +365,12 @@ z-40    WorkspaceToolsModal          — tools overlay, bubble Escape
 
 ## Navigation Delegation
 
-Components inside WorkspaceToolsModal that want to navigate to an entry must use the callbacks provided by WorkspaceShell — never import or reach into WorkspaceShell internals.
+Components inside LorebookWorkspace that want to navigate to an entry must use the callbacks provided by WorkspaceShell — never import or reach into WorkspaceShell internals.
 
 | Callback | When to use |
 |----------|-------------|
-| `onOpenEntry(entryId)` | User wants to open the full entry editor (opens EntryEditorModal on top of WorkspaceToolsModal) |
-| `onSelectEntry(entryId)` | User wants to jump to the entry in the sidebar (closes WorkspaceToolsModal, sets selection) |
+| `onOpenEntry(entryId)` | User wants to open the full entry editor (opens EntryWorkspace on top of LorebookWorkspace) |
+| `onSelectEntry(entryId)` | User wants to jump to the entry in the sidebar (closes LorebookWorkspace, sets selection) |
 
 ---
 
@@ -433,7 +420,7 @@ Prefer these shared utilities over reimplementing inline:
 
 | Utility | Location | Use for |
 |---------|----------|---------|
-| `getTypeBadge(entry)` | `src/lib/entry-badge.ts` | Entry type badge label + color. Used in EntryListItem, EntryNode, EntryEditorModal. Never reimplement badge logic inline. |
+| `getTypeBadge(entry)` | `src/lib/entry-badge.ts` | Entry type badge label + color. Used in EntryListItem, EntryNode, EntryWorkspace. Never reimplement badge logic inline. |
 | `modKey` | `src/lib/platform.ts` | Platform-aware modifier key label ('Cmd' on Mac, 'Ctrl' elsewhere). Use for tooltip labels on keyboard shortcuts. |
 | `describeStateChange(prev, next)` | `src/lib/undo-describe.ts` | Human-readable undo/redo action labels for ToastStack. |
 | `severityColor(severity)` | `src/lib/severity-color.ts` | Maps `FindingSeverity` → CSS color variable. |

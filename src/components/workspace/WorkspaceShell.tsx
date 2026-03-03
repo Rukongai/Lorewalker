@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { modKey } from '@/lib/platform'
 import { useStore } from 'zustand'
-import { Upload, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, Maximize2, BarChart2, Scale, Zap, Github, Newspaper } from 'lucide-react'
+import { Upload, BookmarkPlus, Undo2, Redo2, Settings, ChevronLeft, ChevronRight, BarChart2, Scale, Zap, Github, Newspaper } from 'lucide-react'
 import { TabBar } from './TabBar'
 import { FilesPanel } from './FilesPanel'
 import { SaveSnapshotDialog } from './SaveSnapshotDialog'
@@ -14,7 +14,6 @@ import type { LorebookMeta } from './LorebookPickerDialog'
 import { KeywordNameDialog } from './KeywordNameDialog'
 import type { WorkingEntry } from '@/types'
 import { EntryList } from '@/components/entry-list/EntryList'
-const EntryEditor = lazy(() => import('@/components/editor/EntryEditor').then(m => ({ default: m.EntryEditor })))
 import { importFile, exportFileAs } from '@/services/file-service'
 import { ExportButton } from './ExportButton'
 import { useWorkspaceStore } from '@/stores/workspace-store'
@@ -32,20 +31,17 @@ const SettingsDialog = lazy(() => import('@/components/settings/SettingsDialog')
 const EntryWorkspace = lazy(() => import('@/layouts/desktop/EntryWorkspace').then(m => ({ default: m.EntryWorkspace })))
 const LorebookWorkspace = lazy(() => import('@/layouts/desktop/LorebookWorkspace').then(m => ({ default: m.LorebookWorkspace })))
 import type { LorebookWorkspaceTab } from '@/layouts/desktop/LorebookWorkspace'
-import { BookMetaEditor } from '@/components/editor/BookMetaEditor'
-import { Toggle } from '@/components/shared/Toggle'
+import { SidebarPanel } from '@/layouts/desktop/SidebarPanel'
+import type { SidebarPanelTab } from '@/layouts/desktop/SidebarPanel'
 import { ToastStack } from '@/components/shared/ToastStack'
 import type { UndoToast } from '@/components/shared/ToastStack'
 import { describeStateChange } from '@/lib/undo-describe'
-import { AnalysisPanel } from '@/components/analysis/AnalysisPanel'
-import { InspectorPanel } from '@/components/analysis/InspectorPanel'
-import { SimulatorPanel } from '@/components/simulator/SimulatorPanel'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import type { PersistedDocument, PersistedSnapshot } from '@/types'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { generateId } from '@/lib/uuid'
 
-type RightPanelTab = 'lorebook' | 'entry' | 'analysis' | 'inspector' | 'simulator'
+type RightPanelTab = SidebarPanelTab
 type LeftPanelTab = 'files' | 'entries'
 
 const DEFAULT_PREFERENCES = { autosaveIntervalMs: 2000, recoveryRetentionDays: 7, simulationDefaults: { defaultScanDepth: 4, defaultTokenBudget: 50000, defaultCaseSensitive: false, defaultMatchWholeWords: false, defaultMaxRecursionSteps: 0, defaultIncludeNames: false } }
@@ -90,7 +86,7 @@ export function WorkspaceShell() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toolsModalOpen, setToolsModalOpen] = useState(false)
   const [toolsModalTab, setToolsModalTab] = useState<LorebookWorkspaceTab>('health')
-  const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('entry')
+  const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('edit')
   const [toasts, setToasts] = useState<UndoToast[]>([])
 
   // Autosave the active document to IndexedDB
@@ -102,7 +98,7 @@ export function WorkspaceShell() {
     rightPanelWidth: rightWidth,
     leftCollapsed,
     rightCollapsed,
-    rightPanelTab: rightPanelTab as 'lorebook' | 'entry' | 'analysis' | 'inspector' | 'simulator',
+    rightPanelTab,
     leftPanelTab: leftPanelTab as 'files' | 'entries',
   }), [leftWidth, rightWidth, leftCollapsed, rightCollapsed, rightPanelTab, leftPanelTab])
   useWorkspacePersistence(panelLayout)
@@ -138,7 +134,9 @@ export function WorkspaceShell() {
         setRightWidth(workspace.panelLayout.rightPanelWidth)
         setLeftCollapsed(workspace.panelLayout.leftCollapsed)
         setRightCollapsed(workspace.panelLayout.rightCollapsed)
-        setRightPanelTab(workspace.panelLayout.rightPanelTab as RightPanelTab)
+        const storedTab = workspace.panelLayout.rightPanelTab
+        const validTabs: RightPanelTab[] = ['edit', 'health', 'simulator', 'keywords']
+        setRightPanelTab(validTabs.includes(storedTab as RightPanelTab) ? (storedTab as RightPanelTab) : 'edit')
         setLeftPanelTab(workspace.panelLayout.leftPanelTab ?? 'entries')
       }
       await cleanupStaleDocuments(prefs.recoveryRetentionDays)
@@ -169,7 +167,7 @@ export function WorkspaceShell() {
     useWorkspaceStore.getState().openTab(doc.tabId, doc.fileMeta.fileName, doc.fileMeta)
   }
 
-  const { graph } = useDerivedState(activeTabId)
+  useDerivedState(activeTabId)
 
   // Always call the store hook unconditionally (Rules of Hooks).
   // EMPTY_STORE is a stable fallback used when no document is open.
@@ -177,11 +175,6 @@ export function WorkspaceShell() {
   const activeStore = realStore ?? EMPTY_STORE
   const cardPayload = activeStore((s) => s.cardPayload)
   const selectedEntryId = activeStore((s) => s.selection.selectedEntryId)
-  const selectedEntry = activeStore((s) => {
-    const id = s.selection.selectedEntryId
-    if (!id) return null
-    return s.entries.find((e) => e.id === id) ?? null
-  })
   // Reactively subscribe to temporal state using useStore (temporal is a vanilla Zustand store)
   const temporalStore = realStore?.temporal ?? EMPTY_STORE.temporal
   const canUndo = useStore(temporalStore, s => s.pastStates.length > 0)
@@ -250,12 +243,6 @@ export function WorkspaceShell() {
       setImportError(err instanceof Error ? err.message : 'Export failed')
     }
   }, [activeTabId, activeTab])
-
-  function handleToggleEnabled() {
-    if (!realStore || !selectedEntry) return
-    realStore.getState().updateEntry(selectedEntry.id, { enabled: !selectedEntry.enabled })
-    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
-  }
 
   const addToast = useCallback((message: string, type: 'undo' | 'redo') => {
     const id = generateId()
@@ -616,111 +603,13 @@ export function WorkspaceShell() {
               </button>
             </Tooltip>
           ) : (
-            <>
-              {/* Panel header with tabs */}
-              <div className="border-b border-ctp-surface0 shrink-0 flex flex-wrap items-center px-1">
-                <div className="flex flex-wrap flex-1">
-                  {(['lorebook', 'entry', 'analysis', 'inspector', 'simulator'] as RightPanelTab[]).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setRightPanelTab(tab)}
-                      className={`px-2.5 py-2 text-[10px] font-medium uppercase tracking-wider transition-colors border-b-2 ${
-                        rightPanelTab === tab
-                          ? 'text-ctp-accent border-ctp-accent'
-                          : 'text-ctp-overlay1 border-transparent hover:text-ctp-subtext1'
-                      }`}
-                    >
-                      {tab === 'lorebook' ? 'Lorebook'
-                        : tab === 'entry' ? 'Entry'
-                        : tab === 'analysis' ? 'Analysis'
-                        : tab === 'inspector' ? 'Inspection'
-                        : 'Simulator'}
-                    </button>
-                  ))}
-                </div>
-                <Tooltip text="Collapse panel">
-                  <button
-                    onClick={() => setRightCollapsed(true)}
-                    className="p-1 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
-                  >
-                    <ChevronRight size={14} />
-                  </button>
-                </Tooltip>
-              </div>
-
-              {/* Tab: Lorebook */}
-              {rightPanelTab === 'lorebook' && (
-                <div className="flex flex-col flex-1 overflow-y-auto">
-                  {activeTabId ? (
-                    <BookMetaEditor />
-                  ) : (
-                    <div className="flex-1 flex items-center justify-center">
-                      <p className="text-xs text-ctp-overlay1">No file open</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Tab: Entry */}
-              {rightPanelTab === 'entry' && (
-                <div className="flex flex-col flex-1 overflow-hidden">
-                  {activeTabId && selectedEntry && (
-                    <div className="flex items-center border-b border-ctp-surface0 shrink-0 px-3 py-1.5 gap-2">
-                      <span className="flex-1 text-xs font-medium text-ctp-subtext0 truncate">
-                        {selectedEntry.name || 'Untitled'}
-                      </span>
-                      <Toggle
-                        checked={selectedEntry.enabled}
-                        onChange={handleToggleEnabled}
-                        aria-label={selectedEntry.enabled ? 'Disable entry' : 'Enable entry'}
-                      />
-                      <Tooltip text="Open in full editor">
-                        <button
-                          onClick={() => setModalEntryId(selectedEntryId!)}
-                          className="p-1 rounded text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
-                        >
-                          <Maximize2 size={12} />
-                        </button>
-                      </Tooltip>
-                    </div>
-                  )}
-                  {selectedEntryId ? (
-                    <Suspense fallback={null}>
-                      <ErrorBoundary label="Editor">
-                        <EntryEditor entryId={selectedEntryId} />
-                      </ErrorBoundary>
-                    </Suspense>
-                  ) : activeTabId ? (
-                    <div className="flex-1 flex items-center justify-center">
-                      <p className="text-xs text-ctp-overlay1">Select an entry to edit</p>
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex items-center justify-center">
-                      <p className="text-xs text-ctp-overlay1">No file open</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Tab: Analysis */}
-              {rightPanelTab === 'analysis' && (
-                <ErrorBoundary label="Analysis">
-                  <AnalysisPanel tabId={activeTabId} graph={graph} />
-                </ErrorBoundary>
-              )}
-
-              {/* Tab: Inspector */}
-              {rightPanelTab === 'inspector' && (
-                <InspectorPanel tabId={activeTabId} graph={graph} />
-              )}
-
-              {/* Tab: Simulator */}
-              {rightPanelTab === 'simulator' && (
-                <ErrorBoundary label="Simulator">
-                  <SimulatorPanel tabId={activeTabId} />
-                </ErrorBoundary>
-              )}
-            </>
+            <SidebarPanel
+              tab={rightPanelTab}
+              onTabChange={setRightPanelTab}
+              onCollapse={() => setRightCollapsed(true)}
+              onOpenEntry={(id) => setModalEntryId(id)}
+              onSelectEntry={(id) => realStore?.getState().selectEntry(id)}
+            />
           )}
         </aside>
       </div>

@@ -50,7 +50,7 @@ export interface PanelLayout {
   rightPanelWidth: number;
   leftCollapsed: boolean;
   rightCollapsed: boolean;
-  rightPanelTab: 'lorebook' | 'entry' | 'analysis' | 'inspector' | 'simulator';
+  rightPanelTab: string;
   leftPanelTab: 'files' | 'entries';
 }
 

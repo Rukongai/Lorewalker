@@ -753,14 +753,14 @@ Activation panel shown in the EntryEditor when `activeFormat === 'rolecall'`. Re
 - `ConditionsEditor` — Edit `triggerConditions: RoleCallCondition[]` (emotion, messageCount, randomChance, etc.)
 - `ConditionsViewer` — Read-only display of conditions for collapsed/preview state
 
-### AnalysisPanel (`src/components/analysis/AnalysisPanel.tsx`)
-Right panel "Analysis" tab. Health score (overall grade), finding count by severity, expandable finding list. Filter by severity, category. "Deep Analysis" button triggers LLM rules.
+### SidebarPanel (`src/layouts/desktop/SidebarPanel.tsx`)
+Right sidebar with 4 tabs: Edit, Health, Simulator, Keywords. Infers scope from `selectedEntryId`: entry scope when an entry is selected, lorebook scope otherwise. Each tab renders the corresponding `*View` feature module. Manages all entry and book-meta mutations internally via store hooks.
 
-### FindingItem (`src/components/analysis/FindingItem.tsx`)
-Clickable finding row — selects affected entry in list + graph.
+### AnalysisPanel (`src/components/analysis/AnalysisPanel.tsx`)
+Legacy thin-wrapper (kept for compatibility). Superseded by HealthView inside SidebarPanel.
 
 ### InspectorPanel (`src/components/analysis/InspectorPanel.tsx`)
-Right panel "Inspector" tab. Per-entry findings, incoming/outgoing edges, token count for the selected entry.
+Legacy thin-wrapper (kept for compatibility). Superseded by HealthView entry-scope inside SidebarPanel.
 
 ### DeepAnalysisDialog (`src/components/analysis/DeepAnalysisDialog.tsx`)
 Modal for confirming LLM deep analysis. Shows token estimate, provider selection, and runs the analysis.
@@ -887,11 +887,12 @@ This pattern prevents layout components from importing WorkspaceShell internals.
 | 17 | Graph display preferences (connectionVisibility, showBlockedEdges, edgeStyle) in WorkspaceStore | These are presentation choices, not content. Belongs in workspace-level prefs, not per-document state. | Phase 2 |
 | 18 | Panel layout (widths, collapse state) persisted to IndexedDB via PersistenceService | Cosmetic UI state — not in Zustand. Stored as PersistedWorkspace.panelLayout. Restored on mount in WorkspaceShell. | Phase 5 |
 | 19 | EMPTY_STORE for unconditional hook calls | React's Rules of Hooks prohibit conditional hook calls. A stable fallback store lets components subscribe unconditionally even when no tab is active. | Phase 2 |
-| 20 | WorkspaceToolsModal as a z-40 overlay (not a sidebar panel) | Analysis and simulator tools need enough screen space to be genuinely useful. The right panel is too narrow for multi-pane tool UX. Modal overlay allows 95vw × 90vh surface. | Phase 7b |
+| 20 | LorebookWorkspace as a z-40 overlay (not a sidebar panel) | Analysis and simulator tools need enough screen space to be genuinely useful. The right panel is too narrow for multi-pane tool UX. Modal overlay allows 95vw × 90vh surface. (Note: previously WorkspaceToolsModal — replaced in Phase 3 Stream B / Phase 3 Completion) | Phase 7b |
 | 21 | Custom rules stored workspace-wide + per-document overrides | Workspace rules are reusable across lorebooks. Per-document overrides allow disabling rules that don't apply to a specific file. | Phase 7b |
 | 22 | SerializedEvaluation as a JSON tree (not a string expression) | Enables round-trip persistence, visual editing in ConditionBuilder, and structured evaluation without dynamic code execution. | Phase 7b |
-| 23 | getTypeBadge in entry-badge.ts as shared utility | Badge label and color are rendered in EntryListItem, EntryNode, and EntryEditorModal. A single source prevents divergence. | Phase 7b |
+| 23 | getTypeBadge in entry-badge.ts as shared utility | Badge label and color are rendered in EntryListItem, EntryNode, and EntryWorkspace. A single source prevents divergence. | Phase 7b |
 | 24 | Portal-based Tooltip at z-9999 | Toolbar buttons inside fixed panels were clipping standard Tooltip z-indexes. Portal renders into document root, always visible. | Phase 7b |
 | 25 | Escape capture + stopImmediatePropagation for EntryWorkspace (z-50) | When both LorebookWorkspace and EntryWorkspace are open, Escape should close only EntryWorkspace. Capture phase fires before LorebookWorkspace's bubble handler and stopImmediatePropagation prevents it from also closing the lorebook workspace. | Phase 7b |
 | 26 | src/layouts/desktop/ for layout containers | Feature modules (features/*) are portable and scope-aware. Layout containers (layouts/desktop/) read from stores and wire features together. Separation prevents feature modules from being coupled to the shell's navigation model. | Phase 3 Stream B |
 | 27 | Replace WorkspaceToolsModal/EntryEditorModal with LorebookWorkspace/EntryWorkspace | Old modals delegated to ad-hoc component wrappers. New layout containers compose the feature *View modules directly, making each tab independently testable and eliminating 18 redundant wrapper files. | Phase 3 Stream B |
+| 28 | SidebarPanel with implicit scope inference | The old right panel had 5 tabs ('lorebook', 'entry', 'analysis', 'inspector', 'simulator') backed by thin wrappers. SidebarPanel infers scope from selectedEntryId and uses the same *View feature modules as the overlay workspaces, consolidating to 4 unified tabs. | Phase 3 Completion |
