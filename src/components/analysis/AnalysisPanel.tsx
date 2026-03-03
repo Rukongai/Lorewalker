@@ -5,9 +5,9 @@ import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { llmService } from '@/services/llm/llm-service'
 import { categorizeAll } from '@/services/categorize-service'
-import { DeepAnalysisDialog } from './DeepAnalysisDialog'
 import { HealthScoreCard } from '@/features/health/HealthScoreCard'
 import { FindingsList } from '@/features/health/FindingsList'
+import { DeepAnalysisTrigger } from '@/features/health/DeepAnalysisTrigger'
 import type { Finding, RecursionGraph } from '@/types'
 
 interface AnalysisPanelProps {
@@ -24,7 +24,6 @@ function AiBadge() {
 }
 
 export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
-  const [deepAnalysisOpen, setDeepAnalysisOpen] = useState(false)
   const [categorizing, setCategorizing] = useState(false)
   const [categorizeProgress, setCategorizeProgress] = useState<{ done: number; total: number } | null>(null)
   const [categorizeError, setCategorizeError] = useState<string | null>(null)
@@ -95,15 +94,12 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
 
         {/* Deep Analysis button */}
         <div className="pt-1 flex items-center justify-between">
-          <Tooltip text={activeLlmProviderId ? 'Run AI-powered analysis' : 'Add a provider in Settings → Providers to enable'}>
-            <button
-              onClick={() => setDeepAnalysisOpen(true)}
-              disabled={!activeLlmProviderId}
-              className="px-2 py-1 rounded text-[10px] bg-ctp-accent text-ctp-base font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
-            >
-              Deep Analysis
-            </button>
-          </Tooltip>
+          <DeepAnalysisTrigger
+            hasLlmProvider={!!activeLlmProviderId}
+            providerId={activeLlmProviderId ?? undefined}
+            context={{ entries, bookMeta, graph }}
+            onComplete={handleDeepAnalysisComplete}
+          />
           {llmFindings.length > 0 && (
             <span className="text-[10px] text-ctp-overlay1 flex items-center gap-1">
               <AiBadge /> {llmFindings.length} AI finding{llmFindings.length !== 1 ? 's' : ''}
@@ -152,14 +148,6 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
         />
       </div>
 
-      {deepAnalysisOpen && activeLlmProviderId && (
-        <DeepAnalysisDialog
-          providerId={activeLlmProviderId}
-          context={{ entries, bookMeta, graph }}
-          onComplete={handleDeepAnalysisComplete}
-          onClose={() => setDeepAnalysisOpen(false)}
-        />
-      )}
     </div>
   )
 }

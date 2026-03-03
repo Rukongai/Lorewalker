@@ -1,15 +1,17 @@
-import { Tooltip } from '@/components/ui/Tooltip'
 import { HealthScoreCard } from '@/features/health/HealthScoreCard'
 import { FindingsList } from '@/features/health/FindingsList'
-import type { Finding, HealthScore } from '@/types'
+import { DeepAnalysisTrigger } from '@/features/health/DeepAnalysisTrigger'
+import type { AnalysisContext, Finding, HealthScore } from '@/types'
 
 interface AnalysisFindingListProps {
   findings: Finding[]
   healthScore: HealthScore
   selectedRuleId: string | null
   hasLlmProvider: boolean
+  providerId?: string
+  context: AnalysisContext
   onSelectRule: (ruleId: string) => void
-  onDeepAnalysis: () => void
+  onComplete: (findings: Finding[]) => void
 }
 
 export function AnalysisFindingList({
@@ -17,8 +19,10 @@ export function AnalysisFindingList({
   healthScore,
   selectedRuleId,
   hasLlmProvider,
+  providerId,
+  context,
   onSelectRule,
-  onDeepAnalysis,
+  onComplete,
 }: AnalysisFindingListProps) {
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -28,15 +32,12 @@ export function AnalysisFindingList({
           <HealthScoreCard score={healthScore.overall} summary={healthScore.summary} size="lg" />
         </div>
 
-        <Tooltip text={hasLlmProvider ? 'Run AI-powered analysis' : 'Add a provider in Settings → Providers to enable'}>
-          <button
-            onClick={onDeepAnalysis}
-            disabled={!hasLlmProvider}
-            className="mt-2 px-3 py-1 rounded text-xs bg-ctp-accent text-ctp-base font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
-          >
-            Deep Analysis
-          </button>
-        </Tooltip>
+        <DeepAnalysisTrigger
+          hasLlmProvider={hasLlmProvider}
+          providerId={providerId}
+          context={context}
+          onComplete={onComplete}
+        />
       </div>
 
       {/* Category accordion with rule items */}

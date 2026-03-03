@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { useWorkspaceStore } from '@/stores/workspace-store'
-import { DeepAnalysisDialog } from '@/components/analysis/DeepAnalysisDialog'
 import { AnalysisFindingList } from './AnalysisFindingList'
 import { AnalysisViolationList } from './AnalysisViolationList'
 import { AnalysisDetailPane } from './AnalysisDetailPane'
@@ -19,7 +18,6 @@ interface AnalysisTabContentProps {
 export function AnalysisTabContent({ tabId, graph, onOpenEntry, onSelectEntry, onNavigateToKeyword }: AnalysisTabContentProps) {
   const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null)
   const [selectedFinding, setSelectedFinding] = useState<Finding | null>(null)
-  const [deepAnalysisOpen, setDeepAnalysisOpen] = useState(false)
 
   const activeLlmProviderId = useWorkspaceStore((s) => s.activeLlmProviderId)
 
@@ -54,11 +52,13 @@ export function AnalysisTabContent({ tabId, graph, onOpenEntry, onSelectEntry, o
           healthScore={healthScore}
           selectedRuleId={selectedRuleId}
           hasLlmProvider={!!activeLlmProviderId}
+          providerId={activeLlmProviderId ?? undefined}
+          context={{ entries, bookMeta, graph }}
           onSelectRule={(ruleId) => {
             setSelectedRuleId(ruleId)
             setSelectedFinding(null)
           }}
-          onDeepAnalysis={() => setDeepAnalysisOpen(true)}
+          onComplete={handleDeepAnalysisComplete}
         />
       </div>
 
@@ -83,15 +83,6 @@ export function AnalysisTabContent({ tabId, graph, onOpenEntry, onSelectEntry, o
           onNavigateToKeyword={onNavigateToKeyword}
         />
       </div>
-
-      {deepAnalysisOpen && activeLlmProviderId && (
-        <DeepAnalysisDialog
-          providerId={activeLlmProviderId}
-          context={{ entries, bookMeta, graph }}
-          onComplete={handleDeepAnalysisComplete}
-          onClose={() => setDeepAnalysisOpen(false)}
-        />
-      )}
     </div>
   )
 }
