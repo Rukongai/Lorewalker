@@ -1,5 +1,5 @@
 import { useReactFlow } from '@xyflow/react'
-import { LayoutGrid, Maximize2, Eye, EyeOff, Network, Crosshair, Minus, Spline, CornerDownRight, Search, X, HelpCircle } from 'lucide-react'
+import { LayoutGrid, Maximize2, Eye, EyeOff, Network, Crosshair, Minus, Spline, CornerDownRight, Search, X, HelpCircle, Loader2, Layers, Filter, Group, ScanLine } from 'lucide-react'
 import { GraphLegend } from './GraphLegend'
 import { Tooltip } from '@/components/ui/Tooltip'
 
@@ -7,6 +7,7 @@ export type ConnectionVisibility = 'all' | 'selected' | 'none'
 
 interface GraphControlsProps {
   onAutoLayout: () => void
+  isLayouting?: boolean
   showBlockedEdges: boolean
   onToggleBlockedEdges: () => void
   connectionVisibility: ConnectionVisibility
@@ -18,6 +19,10 @@ interface GraphControlsProps {
   legendOpen: boolean
   onToggleLegend: () => void
   connectionsMode: boolean
+  layoutMode: 'default' | 'skeleton' | 'clustered'
+  onCycleLayoutMode: () => void
+  dimEdges: boolean
+  onToggleDimEdges: () => void
 }
 
 const visibilityIcon = {
@@ -32,8 +37,21 @@ const visibilityTitle = {
   none: 'Connections hidden (click to show all)',
 }
 
+const layoutModeIcon = {
+  default: Layers,
+  skeleton: Filter,
+  clustered: Group,
+}
+
+const layoutModeNextLabel = {
+  default: 'Default layout (click to switch to Skeleton mode)',
+  skeleton: 'Skeleton layout – top edges only (click to switch to Clustered mode)',
+  clustered: 'Clustered layout – grouped by keywords (click to switch to Default mode)',
+}
+
 export function GraphControls({
   onAutoLayout,
+  isLayouting = false,
   showBlockedEdges,
   onToggleBlockedEdges,
   connectionVisibility,
@@ -45,9 +63,14 @@ export function GraphControls({
   legendOpen,
   onToggleLegend,
   connectionsMode,
+  layoutMode,
+  onCycleLayoutMode,
+  dimEdges,
+  onToggleDimEdges,
 }: GraphControlsProps) {
   const { fitView } = useReactFlow()
   const VisibilityIcon = visibilityIcon[connectionVisibility]
+  const LayoutModeIcon = layoutModeIcon[layoutMode]
 
   return (
     <div className="absolute top-3 right-3 z-10 flex gap-1 items-center">
@@ -73,10 +96,29 @@ export function GraphControls({
       <Tooltip text="Auto Layout">
         <button
           onClick={onAutoLayout}
-          className="flex items-center gap-1.5 px-2 py-1.5 text-xs bg-ctp-surface0 border border-ctp-accent/50 rounded text-ctp-accent hover:bg-ctp-accent/15 hover:border-ctp-accent transition-colors"
+          disabled={isLayouting}
+          className="flex items-center gap-1.5 px-2 py-1.5 text-xs bg-ctp-surface0 border border-ctp-accent/50 rounded text-ctp-accent hover:bg-ctp-accent/15 hover:border-ctp-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <LayoutGrid size={13} />
+          {isLayouting ? <Loader2 size={13} className="animate-spin" /> : <LayoutGrid size={13} />}
           Layout
+        </button>
+      </Tooltip>
+
+      <Tooltip text={layoutModeNextLabel[layoutMode]}>
+        <button
+          onClick={onCycleLayoutMode}
+          className="p-1.5 bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext1 hover:bg-ctp-surface1 hover:text-ctp-text transition-colors"
+        >
+          <LayoutModeIcon size={13} />
+        </button>
+      </Tooltip>
+
+      <Tooltip text={dimEdges ? 'Edge dimming on (click to disable)' : 'Dim unrelated edges when node selected'}>
+        <button
+          onClick={onToggleDimEdges}
+          className={`p-1.5 bg-ctp-surface0 border rounded transition-colors ${dimEdges ? 'border-ctp-accent text-ctp-accent hover:bg-ctp-accent/15' : 'border-ctp-surface1 text-ctp-subtext1 hover:bg-ctp-surface1 hover:text-ctp-text'}`}
+        >
+          <ScanLine size={13} />
         </button>
       </Tooltip>
 

@@ -5,10 +5,9 @@ import type {
   CycleResult,
   DeadLink,
   KeywordMatchOptions,
-  GraphLayoutSettings,
 } from '@/types'
 import { doesEntryMatchText } from '@/services/simulator/keyword-matching'
-import dagre from 'dagre'
+import ELK from 'elkjs/lib/elk.bundled.js'
 
 const DEFAULT_OPTIONS: KeywordMatchOptions = {
   caseSensitive: false,
@@ -310,12 +309,106 @@ export function findLongestChain(graph: RecursionGraph, startId: string): string
 const NODE_WIDTH = 180
 const NODE_HEIGHT = 60
 
-export function computeLayout(
+const elk = new ELK()
+
+/**
+ * Returns a filtered subset of edges for ELK in skeleton mode.
+ * Keeps only the highest-scoring edges per source node to give ELK
+ * a structurally meaningful skeleton instead of overwhelming it with
+ * the full edge set.
+ */
+export function buildLayoutSkeleton(
+  graph: RecursionGraph,
+  maxEdgesPerNode = 5,
+): Array<{ sourceId: string; targetId: string }> {
+  const result: Array<{ sourceId: string; targetId: string }> = []
+
+  for (const [sourceId, targets] of graph.edges) {
+    type Candidate = { targetId: string; score: number }
+    const candidates: Candidate[] = []
+
+    for (const targetId of targets) {
+      const edgeKey = `${sourceId}\u2192${targetId}`
+      const meta = graph.edgeMeta.get(edgeKey)
+      if (meta?.blockedByPreventRecursion || meta?.blockedByExcludeRecursion) continue
+
+      const inDegree = graph.reverseEdges.get(targetId)?.size ?? 0
+      const isReciprocal = graph.edges.get(targetId)?.has(sourceId) ?? false
+      const matchedKeywordsLen = meta?.matchedKeywords.length ?? 0
+      const score = inDegree + (isReciprocal ? 2 : 0) + matchedKeywordsLen
+
+      candidates.push({ targetId, score })
+    }
+
+    candidates.sort((a, b) => b.score - a.score)
+    for (const c of candidates.slice(0, maxEdgesPerNode)) {
+      result.push({ sourceId, targetId: c.targetId })
+    }
+  }
+
+  return result
+}
+
+/**
+ * Groups entries into communities based on shared keyword overlap using
+ * Union-Find on a keyword bipartite graph.
+ * Returns a map of entryId → clusterId (smallest entryId in component).
+ */
+export function detectKeywordCommunities(entries: WorkingEntry[]): Map<string, string> {
+  // Union-Find
+  const parent = new Map<string, string>()
+
+  function find(id: string): string {
+    let root = parent.get(id) ?? id
+    if (root !== id) {
+      root = find(root)
+      parent.set(id, root)
+    }
+    return root
+  }
+
+  function union(a: string, b: string): void {
+    const ra = find(a)
+    const rb = find(b)
+    if (ra === rb) return
+    // Keep lexicographically smaller as root for stable cluster IDs
+    if (ra < rb) parent.set(rb, ra)
+    else parent.set(ra, rb)
+  }
+
+  // Initialize all entries
+  for (const e of entries) parent.set(e.id, e.id)
+
+  // Build keyword→entries map and union entries sharing a keyword
+  const keywordToEntries = new Map<string, string[]>()
+  for (const entry of entries) {
+    for (const key of entry.keys) {
+      const norm = key.toLowerCase()
+      if (!keywordToEntries.has(norm)) keywordToEntries.set(norm, [])
+      keywordToEntries.get(norm)!.push(entry.id)
+    }
+  }
+
+  for (const members of keywordToEntries.values()) {
+    if (members.length < 2) continue
+    for (let i = 1; i < members.length; i++) {
+      union(members[0], members[i])
+    }
+  }
+
+  const result = new Map<string, string>()
+  for (const entry of entries) {
+    result.set(entry.id, find(entry.id))
+  }
+  return result
+}
+
+export async function computeLayout(
   entries: WorkingEntry[],
   graph: RecursionGraph,
   existingPositions?: Map<string, { x: number; y: number }>,
-  settings?: GraphLayoutSettings,
-): Map<string, { x: number; y: number }> {
+  layoutMode?: 'default' | 'skeleton' | 'clustered',
+): Promise<Map<string, { x: number; y: number }>> {
   // If all entries already have positions, return them unchanged
   if (existingPositions && entries.every((e) => existingPositions.has(e.id))) {
     const entryIds = new Set(entries.map((e) => e.id))
@@ -326,41 +419,124 @@ export function computeLayout(
     return filtered
   }
 
-  const g = new dagre.graphlib.Graph()
-  g.setGraph({
-    acyclicer: settings?.acyclicer === 'none' ? undefined : (settings?.acyclicer ?? 'greedy'),
-    ranker: settings?.ranker ?? 'network-simplex',
-    align: settings?.align ?? 'UR',
-    rankdir: settings?.rankdir ?? 'LR',
-    nodesep: 30, ranksep: 60, marginx: 20, marginy: 20,
-  })
-  g.setDefaultEdgeLabel(() => ({}))
+  // --- Clustered mode: compound ELK graph grouped by keyword communities ---
+  if (layoutMode === 'clustered') {
+    const clusterMap = detectKeywordCommunities(entries)
+    const clusterIds = new Set(clusterMap.values())
 
-  for (const entry of entries) {
-    g.setNode(entry.id, { width: NODE_WIDTH, height: NODE_HEIGHT })
-  }
+    const elkChildren: {
+      id: string
+      width?: number
+      height?: number
+      children?: { id: string; width: number; height: number }[]
+    }[] = []
 
-  for (const [sourceId, targets] of graph.edges) {
-    if (!g.hasNode(sourceId)) continue
-    for (const targetId of targets) {
-      if (!g.hasNode(targetId)) continue
-      const edgeKey = `${sourceId}\u2192${targetId}`
-      const meta = graph.edgeMeta.get(edgeKey)
-      if (meta?.blockedByPreventRecursion || meta?.blockedByExcludeRecursion) continue
-      g.setEdge(sourceId, targetId)
+    for (const clusterId of clusterIds) {
+      const members = entries.filter((e) => clusterMap.get(e.id) === clusterId)
+      elkChildren.push({
+        id: `cluster_${clusterId}`,
+        children: members.map((e) => ({ id: e.id, width: NODE_WIDTH, height: NODE_HEIGHT })),
+      })
     }
+
+    const elkEdges: { id: string; sources: string[]; targets: string[] }[] = []
+    let edgeIdx = 0
+    for (const [sourceId, targets] of graph.edges) {
+      for (const targetId of targets) {
+        const edgeKey = `${sourceId}\u2192${targetId}`
+        const meta = graph.edgeMeta.get(edgeKey)
+        if (meta?.blockedByPreventRecursion || meta?.blockedByExcludeRecursion) continue
+        elkEdges.push({ id: `e${edgeIdx++}`, sources: [sourceId], targets: [targetId] })
+      }
+    }
+
+    const elkGraph = {
+      id: 'root',
+      layoutOptions: {
+        'elk.algorithm': 'org.eclipse.elk.layered',
+        'elk.padding': '[top=30, left=30, bottom=30, right=30]',
+        'elk.spacing.nodeNode': '20',
+        'elk.layered.spacing.nodeNodeBetweenLayers': '40',
+        'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+      },
+      children: elkChildren,
+      edges: elkEdges,
+    }
+
+    const laid = await elk.layout(elkGraph)
+
+    const positions = new Map<string, { x: number; y: number }>()
+    for (const cluster of laid.children ?? []) {
+      const px = cluster.x ?? 0
+      const py = cluster.y ?? 0
+      for (const child of cluster.children ?? []) {
+        positions.set(child.id, { x: px + (child.x ?? 0), y: py + (child.y ?? 0) })
+      }
+    }
+    for (const entry of entries) {
+      if (!positions.has(entry.id)) positions.set(entry.id, { x: 0, y: 0 })
+    }
+    return positions
   }
 
-  dagre.layout(g)
+  // --- Skeleton mode: reduced edge set fed to ELK ---
+  // --- Default mode: full edge set ---
+
+  const elkEdgePairs: Array<{ sourceId: string; targetId: string }> =
+    layoutMode === 'skeleton'
+      ? buildLayoutSkeleton(graph)
+      : (() => {
+          const pairs: Array<{ sourceId: string; targetId: string }> = []
+          for (const [sourceId, targets] of graph.edges) {
+            for (const targetId of targets) {
+              const edgeKey = `${sourceId}\u2192${targetId}`
+              const meta = graph.edgeMeta.get(edgeKey)
+              if (meta?.blockedByPreventRecursion || meta?.blockedByExcludeRecursion) continue
+              pairs.push({ sourceId, targetId })
+            }
+          }
+          return pairs
+        })()
+
+  // Count active edges to choose algorithm
+  const edgeCount = elkEdgePairs.length
+  const useDense = edgeCount > 300
+  const algorithm = useDense ? 'org.eclipse.elk.stress' : 'org.eclipse.elk.layered'
+
+  const elkEdges = elkEdgePairs.map((p, i) => ({
+    id: `e${i}`,
+    sources: [p.sourceId],
+    targets: [p.targetId],
+  }))
+
+  const elkGraph = {
+    id: 'root',
+    layoutOptions: {
+      'elk.algorithm': algorithm,
+      'elk.padding': '[top=20, left=20, bottom=20, right=20]',
+      ...(useDense
+        ? {
+            'elk.stress.desiredEdgeLength': '200',
+          }
+        : {
+            'elk.layered.spacing.nodeNodeBetweenLayers': '60',
+            'elk.spacing.nodeNode': '30',
+            'elk.direction': 'RIGHT',
+          }),
+    },
+    children: entries.map((e) => ({ id: e.id, width: NODE_WIDTH, height: NODE_HEIGHT })),
+    edges: elkEdges,
+  }
+
+  const laid = await elk.layout(elkGraph)
 
   const positions = new Map<string, { x: number; y: number }>()
+  for (const child of laid.children ?? []) {
+    positions.set(child.id, { x: child.x ?? 0, y: child.y ?? 0 })
+  }
+  // Fallback for any entries not placed by ELK
   for (const entry of entries) {
-    const node = g.node(entry.id)
-    // dagre centers nodes; React Flow uses top-left corner
-    positions.set(entry.id, {
-      x: node ? node.x - NODE_WIDTH / 2 : 0,
-      y: node ? node.y - NODE_HEIGHT / 2 : 0,
-    })
+    if (!positions.has(entry.id)) positions.set(entry.id, { x: 0, y: 0 })
   }
 
   // Preserve any existing positions (don't overwrite manual layout)

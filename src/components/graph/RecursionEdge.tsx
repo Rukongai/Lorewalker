@@ -10,6 +10,7 @@ export interface RecursionEdgeData {
   isSkippedTarget?: boolean
   edgeStyle?: 'bezier' | 'straight' | 'smoothstep'
   recursionDepth?: number
+  dimmed?: boolean
   [key: string]: unknown
 }
 
@@ -61,13 +62,15 @@ export function RecursionEdge({
       ? getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
       : getBezierPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition })
 
+  const dimmed = data?.dimmed ?? false
+
   return (
     <>
       <path
         id={id}
         d={edgePath}
         fill="none"
-        style={{ stroke: color, strokeWidth, strokeDasharray: (blocked || isSkippedTarget) ? '5 3' : undefined }}
+        style={{ stroke: color, strokeWidth, strokeDasharray: (blocked || isSkippedTarget) ? '5 3' : undefined, opacity: dimmed ? 0.08 : 1 }}
         markerEnd={markerEnd}
         className="react-flow__edge-path"
       />

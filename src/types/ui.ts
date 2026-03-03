@@ -85,6 +85,8 @@ export interface GraphDisplayDefaults {
   connectionVisibility: 'all' | 'selected' | 'none'
   showBlockedEdges: boolean
   edgeStyle: 'bezier' | 'straight' | 'smoothstep'
+  graphLayoutMode: 'default' | 'skeleton' | 'clustered'
+  graphDimEdges: boolean
 }
 
 export interface EditorDefaults {

@@ -130,6 +130,11 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
   const [edgeStyle, setEdgeStyle] = useState<'bezier' | 'straight' | 'smoothstep'>(
     graphDisplayDefaults.edgeStyle,
   )
+  const [layoutMode, setLayoutMode] = useState<'default' | 'skeleton' | 'clustered'>(
+    graphDisplayDefaults.graphLayoutMode,
+  )
+  const [dimEdges, setDimEdges] = useState(graphDisplayDefaults.graphDimEdges)
+  const [isLayouting, setIsLayouting] = useState(false)
   const didInitialFitRef = useRef(false)
   const lastClickRef = useRef<{ id: string; time: number } | null>(null)
   const savedVisibilityRef = useRef<ConnectionVisibility | null>(null)
@@ -289,6 +294,11 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
           ? 'var(--edge-incoming)'
           : 'var(--edge-active)'
 
+        const isDimmed = dimEdges
+          && selectedEntryId !== null
+          && selectedEntryId !== sourceId
+          && selectedEntryId !== targetId
+
         newEdges.push({
           id: edgeKey,
           source: sourceId,
@@ -298,12 +308,12 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
             type: MarkerType.ArrowClosed,
             color: markerColor,
           },
-          data: { blocked, isCyclic, isIncoming, isActivated, edgeStyle },
+          data: { blocked, isCyclic, isIncoming, isActivated, edgeStyle, dimmed: isDimmed },
         })
       }
     }
     setEdges(newEdges)
-  }, [graph, cycleInfo, showBlockedEdges, connectionVisibility, selectedEntryId, edgeStyle, activatedEntryIds, connectionsMode, entryDepthMap, activationStatusMap, setEdges])
+  }, [graph, cycleInfo, showBlockedEdges, connectionVisibility, selectedEntryId, edgeStyle, activatedEntryIds, connectionsMode, entryDepthMap, activationStatusMap, dimEdges, setEdges])
 
   // Fit view on first load — wait until positions are computed and at least one node is measured
   useEffect(() => {
@@ -358,11 +368,19 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
     setContextMenu(null)
   }, [store])
 
+  const LAYOUT_CYCLE = ['default', 'skeleton', 'clustered'] as const
+  const handleCycleLayoutMode = useCallback(() => {
+    setLayoutMode((m) => LAYOUT_CYCLE[(LAYOUT_CYCLE.indexOf(m) + 1) % LAYOUT_CYCLE.length])
+  }, [])  // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleAutoLayout = useCallback(() => {
-    const newPositions = computeLayout(entries, graph, undefined, graphSettings)
-    store.setState((s) => ({ ...s, graphPositions: newPositions }))
-    setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 50)
-  }, [entries, graph, graphSettings, store, fitView])
+    setIsLayouting(true)
+    void computeLayout(entries, graph, undefined, layoutMode).then((newPositions) => {
+      store.setState((s) => ({ ...s, graphPositions: newPositions }))
+      setIsLayouting(false)
+      setTimeout(() => fitView({ padding: 0.15, duration: 400 }), 50)
+    })
+  }, [entries, graph, store, fitView, layoutMode])
 
   const handleNodesDelete = useCallback(
     (deleted: Node[]) => {
@@ -500,6 +518,7 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
         <GraphAddButton onAdd={handleAddEntry} />
         <GraphControls
           onAutoLayout={handleAutoLayout}
+          isLayouting={isLayouting}
           showBlockedEdges={showBlockedEdges}
           onToggleBlockedEdges={() => setShowBlockedEdges((v) => !v)}
           connectionVisibility={connectionVisibility}
@@ -511,6 +530,10 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
           legendOpen={legendOpen}
           onToggleLegend={() => setLegendOpen((v) => !v)}
           connectionsMode={connectionsMode}
+          layoutMode={layoutMode}
+          onCycleLayoutMode={handleCycleLayoutMode}
+          dimEdges={dimEdges}
+          onToggleDimEdges={() => setDimEdges((v) => !v)}
         />
       </ReactFlow>
 

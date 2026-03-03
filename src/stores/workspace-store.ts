@@ -14,6 +14,8 @@ const DEFAULT_GRAPH_DISPLAY_DEFAULTS: GraphDisplayDefaults = {
   connectionVisibility: 'selected',
   showBlockedEdges: false,
   edgeStyle: 'bezier',
+  graphLayoutMode: 'default',
+  graphDimEdges: false,
 }
 
 const DEFAULT_EDITOR_DEFAULTS: EditorDefaults = {
