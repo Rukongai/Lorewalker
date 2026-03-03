@@ -1,0 +1,9 @@
+{
+  "name": "@lorewalker/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@lorewalker/core": "*"
+  }
+}

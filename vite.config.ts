@@ -5,14 +5,16 @@ import { resolve } from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  root: resolve(__dirname, 'packages/web'),
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src'),
+      '@': resolve(__dirname, 'packages/web/src'),
       '@lorewalker/core': resolve(__dirname, 'packages/core/src'),
     },
   },
   build: {
+    outDir: resolve(__dirname, 'dist'),
     rollupOptions: {
       output: {
         chunkFileNames: 'assets/[name]-[hash].js',
@@ -35,7 +37,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test-setup.ts'],
+    setupFiles: [resolve(__dirname, 'packages/web/src/test-setup.ts')],
     exclude: ['**/references/**', 'node_modules/**', '.worktrees/**'],
   },
 })

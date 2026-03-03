@@ -24,10 +24,10 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "@/*": ["./src/*"],
+      "@/*": ["./packages/web/src/*"],
       "@lorewalker/core": ["./packages/core/src/index.ts"],
       "@lorewalker/core/*": ["./packages/core/src/*"]
     }
   },
-  "include": ["src", "packages/core/src"]
+  "include": ["packages/web/src", "packages/core/src"]
 }
