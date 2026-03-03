@@ -39,6 +39,85 @@ This document is the source of truth for Lorewalker's design. Implementation age
 
 ---
 
+## File Structure
+
+```
+src/
+├── assets/
+├── components/
+│   ├── analysis/          — AnalysisPanel, FindingItem, InspectorPanel, DeepAnalysisDialog, ModalFindingsPane
+│   ├── editor/            — EntryEditor, EntryEditorModal, ContentEditor, KeywordInput, BookMetaEditor,
+│   │                        ActivationLinks, RCActivationSection, RoleCallPositionSelect,
+│   │                        KeywordObjectsEditor, ConditionsEditor, ConditionsViewer
+│   ├── entry-list/        — EntryList, EntryListItem, CategoryMenu
+│   ├── graph/             — GraphCanvas, GraphControls, GraphLegend, EntryNode, RecursionEdge,
+│   │                        GraphAddButton, EdgeConnectDialog
+│   ├── inspector/
+│   ├── keywords/          — KeywordsTabContent, KeywordTable, KeywordDetailPane
+│   ├── settings/          — SettingsDialog, LlmToolsPanel, ProviderSettingsPanel, LorebookSettingsPanel
+│   ├── shared/            — ErrorBoundary, ToastStack, Toggle
+│   ├── simulator/         — SimulatorPanel, ActivationResults, RecursionTrace, MessageInput
+│   ├── tools-modal/       — WorkspaceToolsModal, AnalysisTabContent, SimulatorTabContent,
+│   │                        RulesTabContent, KeywordsTabContent (root), AnalysisFindingList,
+│   │                        AnalysisDetailPane, AnalysisViolationList, ChainDiagram,
+│   │                        SimulatorConversationPane, SimulatorResultsPane, RuleEditorModal,
+│   │                        RuleTestingPane, ConditionBuilder, VariablePicker, TemplateField
+│   ├── ui/                — Tooltip, HelpTooltip
+│   └── workspace/         — WorkspaceShell, TabBar, FilesPanel, WelcomeScreen, StatusBar,
+│                            ExportButton, LorebookPickerDialog, SaveSnapshotDialog,
+│                            WhatsNewDialog, KeywordNameDialog
+├── hooks/
+│   ├── useDerivedState.ts     — debounced graph + analysis recomputation, exports EMPTY_STORE
+│   ├── useAutosave.ts         — 2s debounced autosave to IndexedDB
+│   ├── useWorkspacePersistence.ts — workspace/panel layout save + restore on mount
+│   └── useKeyboardShortcuts.ts    — global keyboard shortcut handler (Cmd+Z, Cmd+S, Cmd+N, Escape, etc.)
+├── lib/
+│   ├── cn.ts              — Tailwind class merging utility
+│   ├── debounce.ts        — generic debounce
+│   ├── edge-edit.ts       — addKeywordMention, removeKeywordMention (graph edge helpers)
+│   ├── entry-badge.ts     — getTypeBadge() — shared badge label + color for entry types
+│   ├── entry-type.ts      — entry type classification utilities
+│   ├── platform.ts        — platform detection (macOS/Windows for modifier key display)
+│   ├── severity-color.ts  — severity → CSS class mapping for findings
+│   ├── token-estimate.ts  — lightweight token estimator
+│   ├── undo-describe.ts   — describeStateChange() — human-readable undo toast messages
+│   └── uuid.ts            — uuid v4 generator
+├── services/
+│   ├── analysis/          — see Analysis Service section
+│   ├── llm/               — llm-service.ts, providers/anthropic.ts, providers/openai-compatible.ts
+│   ├── simulator/         — engines/sillytavern-engine.ts, keyword-matching.ts
+│   ├── categorize-service.ts
+│   ├── file-service.ts
+│   ├── graph-service.ts
+│   ├── keyword-analysis-service.ts
+│   ├── persistence-service.ts
+│   ├── simulator-service.ts
+│   └── transform-service.ts
+├── stores/
+│   ├── document-store-registry.ts  — Map<tabId, DocumentStore> singleton
+│   ├── document-store.ts           — DocumentStore factory + slice definitions
+│   ├── hooks.ts                    — useDocumentStore, useWorkspaceStore convenience hooks
+│   └── workspace-store.ts          — WorkspaceStore singleton
+├── styles/
+│   └── globals.css        — CSS custom properties: --edge-*, --node-*, --theme-*
+├── types/
+│   ├── analysis.ts        — Rule, Finding, HealthScore, Rubric, CustomRule, SerializedEvaluation
+│   ├── entry.ts           — WorkingEntry, BookMeta, LorebookFormat, RoleCallKeyword, RoleCallCondition
+│   ├── graph.ts           — RecursionGraph, EdgeMeta, GraphNode, GraphEdge
+│   ├── keywords.ts        — KeywordStat
+│   ├── llm.ts             — LLMProvider, CompletionRequest, CompletionResponse
+│   ├── persistence.ts     — PersistedDocument, PersistedWorkspace, PersistedSnapshot
+│   ├── simulator.ts       — SimulatorState, ActivationResult, RecursionTrace, ActivationEngine
+│   ├── ui.ts              — ThemeId, TabMeta, SelectionState, PanelLayout, GraphDisplayDefaults
+│   └── index.ts           — re-exports all types
+├── App.tsx
+├── changelog.ts           — changelog entries for WhatsNewDialog
+├── main.tsx
+└── test-setup.ts
+```
+
+---
+
 ## Service Inventory
 
 ### FileService
@@ -86,6 +165,8 @@ This document is the source of truth for Lorewalker's design. Implementation age
 **Dependencies:** @character-foundry/character-foundry (countTokens)
 
 **Design note:** This service is pure functions with no state. It's a transformation layer, not a stateful service. All functions are synchronous.
+
+**RoleCall format:** When `lorebookFormat === 'rolecall'`, inflate maps `entry.positionRoleCall`, `entry.keywordObjects`, `entry.triggerConditions`, and `entry.triggerMode` from RoleCall-specific extensions into WorkingEntry. Deflate reconstructs these fields. `DocumentStore.activeFormat` is set at import time and preserved in autosave — it controls which editor panels render.
 
 ---
 
@@ -389,6 +470,36 @@ const entries = activeStore((s) => s.entries)  // always safe — never conditio
 ### Undo/Redo Scoping
 
 Zundo wraps only `entries`, `bookMeta`. UI state (selection, simulator state), derived state (findings, health score), rule overrides, and graph positions are all excluded. Position writes always use `store.setState(...)` to bypass temporal.
+
+---
+
+## Hooks
+
+### useDerivedState (`src/hooks/useDerivedState.ts`)
+
+Orchestrates graph recomputation and analysis on every entry change.
+
+- Subscribes to the active DocumentStore's `entries`
+- On change (debounced 150ms): calls `GraphService.incrementalUpdate` or `buildGraph`, then assembles the three-layer active rubric, then calls `AnalysisService.runDeterministic`
+- Writes results back to the store via `setState` (bypasses zundo — findings are derived, not content)
+- **Exports `EMPTY_STORE`** — a stable fallback DocumentStore for unconditional hook calls across the app
+- Handles missing positions: `persistMissingPositions` writes layout positions for newly-added nodes via a single `store.setState(...)` call to bypass zundo
+
+### useAutosave (`src/hooks/useAutosave.ts`)
+
+- Subscribes to the active DocumentStore
+- On any state change (debounced 2s): calls `PersistenceService.saveDocument(tabId)`
+- Also marks the tab dirty in WorkspaceStore
+
+### useWorkspacePersistence (`src/hooks/useWorkspacePersistence.ts`)
+
+- On mount: restores panel layout, theme, open tabs, active tab from IndexedDB
+- On WorkspaceStore change: saves current workspace state to IndexedDB (debounced)
+
+### useKeyboardShortcuts (`src/hooks/useKeyboardShortcuts.ts`)
+
+- Global `window.addEventListener('keydown', ...)` handler
+- Binds: Cmd/Ctrl+Z (undo), Cmd/Ctrl+Shift+Z (redo), Cmd/Ctrl+S (save snapshot), Cmd/Ctrl+N (new entry), Escape (clear selection)
 
 ---
 
