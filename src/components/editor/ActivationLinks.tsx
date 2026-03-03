@@ -119,8 +119,8 @@ export function ActivationLinks({ entryId, graph, onNavigate }: ActivationLinksP
   const activeStore = realStore ?? EMPTY_STORE
   const entries = activeStore((s) => s.entries)
 
-  const [hideBlockedLeft, setHideBlockedLeft] = useState(false)
-  const [hideBlockedRight, setHideBlockedRight] = useState(false)
+  const [hideBlockedLeft, setHideBlockedLeft] = useState(true)
+  const [hideBlockedRight, setHideBlockedRight] = useState(true)
 
   const entryMap = new Map(entries.map((e) => [e.id, e.name]))
 
@@ -174,7 +174,7 @@ export function ActivationLinks({ entryId, graph, onNavigate }: ActivationLinksP
                       : 'bg-ctp-surface0 border-ctp-surface1 text-ctp-overlay0 hover:text-ctp-subtext0'
                   }`}
                 >
-                  {hideBlockedLeft ? 'Blocked: Visible' : 'Blocked: Hide'}
+                  {hideBlockedLeft ? 'Blocked: Hidden' : 'Blocked: Visible'}
                 </button>
               </Tooltip>
             </span>
@@ -214,7 +214,7 @@ export function ActivationLinks({ entryId, graph, onNavigate }: ActivationLinksP
                       : 'bg-ctp-surface0 border-ctp-surface1 text-ctp-overlay0 hover:text-ctp-subtext0'
                   }`}
                 >
-                  {hideBlockedRight ? 'Blocked: Visible' : 'Blocked: Hide'}
+                  {hideBlockedRight ? 'Blocked: Hidden' : 'Blocked: Visible'}
                 </button>
               </Tooltip>
             </span>
