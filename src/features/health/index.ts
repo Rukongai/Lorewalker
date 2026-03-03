@@ -1,2 +1,2 @@
 // Public exports — populated as primitives are extracted
-export {}
+export { FindingItem } from './FindingItem'
