@@ -113,6 +113,7 @@ type LorebookFormat =
   | 'agnai'
   | 'risu'
   | 'wyvern'
+  | 'rolecall'
   | 'unknown';
 ```
 
@@ -123,6 +124,37 @@ interface CharacterFilter {
   isExclude: boolean;   // If true, entry is excluded for these characters; if false, only included for them
   names: string[];      // Character names this filter applies to
   tags: string[];       // Character tags this filter applies to
+}
+```
+
+### RoleCall Types
+
+RoleCall-specific types used when the active lorebook format is `'rolecall'`. These fields are optional on `WorkingEntry` and only populated when importing RoleCall format files.
+
+```typescript
+type RoleCallPosition = 'world' | 'character' | 'scene' | 'depth';
+
+type RoleCallConditionType =
+  | 'emotion'
+  | 'messageCount'
+  | 'randomChance'
+  | 'characterPresent'
+  | 'locationMatch'
+  | 'timeOfDay'
+  | 'custom'
+  | 'flag';
+
+interface RoleCallKeyword {
+  keyword: string;
+  isRegex: boolean;
+  probability: number;   // 0–100
+  frequency: number;     // Minimum messages between activations
+}
+
+interface RoleCallCondition {
+  type: RoleCallConditionType;
+  value: string | number | boolean;
+  frequency?: number;
 }
 ```
 
