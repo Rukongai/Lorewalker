@@ -1,6 +1,8 @@
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { FindingsList } from '@/features/health/FindingsList'
+import { ConnectionsList } from '@/features/health/ConnectionsList'
+import type { ConnectionRow } from '@/features/health/ConnectionsList'
 import { cn } from '@/lib/cn'
 import { getTypeBadge } from '@/lib/entry-badge'
 import type { RecursionGraph } from '@/types'
@@ -51,6 +53,20 @@ export function InspectorPanel({ tabId, graph, showFindings = true, onNavigate, 
 
   const badge = getTypeBadge(entry)
 
+  const incomingRows: ConnectionRow[] = incomingIds.map((id) => ({
+    id,
+    name: entryName(id),
+    keywords: [...(graph.edgeMeta.get(`${id}\u2192${selectedEntryId}`)?.matchedKeywords ?? [])],
+    blocked: false,
+  }))
+
+  const outgoingRows: ConnectionRow[] = outgoingIds.map((id) => ({
+    id,
+    name: entryName(id),
+    keywords: [...(graph.edgeMeta.get(`${selectedEntryId}\u2192${id}`)?.matchedKeywords ?? [])],
+    blocked: false,
+  }))
+
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       {/* Entry header */}
@@ -76,48 +92,16 @@ export function InspectorPanel({ tabId, graph, showFindings = true, onNavigate, 
         </div>
       )}
 
-      {/* Incoming edges */}
-      <div className="border-b border-ctp-surface0 shrink-0 p-3">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1 mb-1.5">
-          Triggered by ({incomingIds.length})
+      {/* Connections */}
+      <div className="flex-1 border-b border-ctp-surface0 shrink-0">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1 px-3 py-1.5">
+          Connections
         </p>
-        {incomingIds.length === 0 ? (
-          <p className="text-[10px] text-ctp-overlay0">No incoming edges</p>
-        ) : (
-          <div className="space-y-1">
-            {incomingIds.map((id) => (
-              <button
-                key={id}
-                onClick={() => handleSelectEntry(id)}
-                className="block w-full text-left text-[10px] text-ctp-subtext1 hover:text-ctp-text truncate transition-colors"
-              >
-                → {entryName(id)}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Outgoing edges */}
-      <div className="p-3 shrink-0">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1 mb-1.5">
-          Triggers ({outgoingIds.length})
-        </p>
-        {outgoingIds.length === 0 ? (
-          <p className="text-[10px] text-ctp-overlay0">No outgoing edges</p>
-        ) : (
-          <div className="space-y-1">
-            {outgoingIds.map((id) => (
-              <button
-                key={id}
-                onClick={() => handleSelectEntry(id)}
-                className="block w-full text-left text-[10px] text-ctp-subtext1 hover:text-ctp-text truncate transition-colors"
-              >
-                → {entryName(id)}
-              </button>
-            ))}
-          </div>
-        )}
+        <ConnectionsList
+          incoming={incomingRows}
+          outgoing={outgoingRows}
+          onNavigate={handleSelectEntry}
+        />
       </div>
     </div>
   )
