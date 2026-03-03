@@ -159,7 +159,7 @@ export function FilesPanel({ onRestoreDoc, onFileOpened, snapshotSaveCount }: Fi
       entries: snap.entries,
       bookMeta: snap.bookMeta,
       graphPositions: state?.graphPositions ?? new Map(),
-      simulatorState: state?.simulatorState ?? null,
+      simulatorState: state?.simulatorState ?? undefined,
       cardPayload: state?.cardPayload ?? null,
     })
     useWorkspaceStore.getState().openTab(tab.id, tab.fileMeta.fileName, tab.fileMeta)
