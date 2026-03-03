@@ -506,7 +506,7 @@ export function WorkspaceShell() {
 
         {/* Left panel: entry list */}
         <aside
-          className="shrink-0 border-r border-ctp-surface1 bg-ctp-mantle flex flex-col overflow-hidden"
+          className="relative shrink-0 border-r border-ctp-surface1 bg-ctp-mantle flex flex-col overflow-hidden"
           style={{
             width: leftCollapsed ? COLLAPSED_WIDTH : leftWidth,
             transition: isResizing ? 'none' : 'width 200ms ease-in-out',
@@ -515,10 +515,10 @@ export function WorkspaceShell() {
           {leftCollapsed ? (
             <Tooltip text="Expand entries panel">
               <button
-                className="flex-1 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
+                className="absolute inset-0 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
                 onClick={() => setLeftCollapsed(false)}
               >
-                <ChevronRight size={14} />
+                <ChevronRight size={18} />
               </button>
             </Tooltip>
           ) : (
@@ -599,7 +599,7 @@ export function WorkspaceShell() {
 
         {/* Right panel: entry editor */}
         <aside
-          className="shrink-0 border-l border-ctp-surface1 bg-ctp-mantle flex flex-col overflow-hidden"
+          className="relative shrink-0 border-l border-ctp-surface1 bg-ctp-mantle flex flex-col overflow-hidden"
           style={{
             width: rightCollapsed ? COLLAPSED_WIDTH : rightWidth,
             transition: isResizing ? 'none' : 'width 200ms ease-in-out',
@@ -608,10 +608,10 @@ export function WorkspaceShell() {
           {rightCollapsed ? (
             <Tooltip text="Expand editor panel">
               <button
-                className="flex-1 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
+                className="absolute inset-0 flex items-center justify-center text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0 transition-colors"
                 onClick={() => setRightCollapsed(false)}
               >
-                <ChevronLeft size={14} />
+                <ChevronLeft size={18} />
               </button>
             </Tooltip>
           ) : (
