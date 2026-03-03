@@ -1,26 +1,19 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { llmService } from '@/services/llm/llm-service'
 import { categorizeAll } from '@/services/categorize-service'
-import { FindingItem } from './FindingItem'
 import { DeepAnalysisDialog } from './DeepAnalysisDialog'
 import { HealthScoreCard } from '@/features/health/HealthScoreCard'
-import type { Finding, FindingSeverity, RuleCategory, RecursionGraph } from '@/types'
+import { FindingsList } from '@/features/health/FindingsList'
+import type { Finding, RecursionGraph } from '@/types'
 
 interface AnalysisPanelProps {
   tabId: string | null
   graph: RecursionGraph
 }
-
-type Filter = FindingSeverity | 'all'
-
-const CATEGORIES: RuleCategory[] = ['structure', 'config', 'keywords', 'recursion', 'budget', 'content']
-
-const SEVERITY_ORDER: Record<FindingSeverity, number> = { error: 0, warning: 1, suggestion: 2 }
 
 function AiBadge() {
   return (
@@ -30,16 +23,7 @@ function AiBadge() {
   )
 }
 
-const LLM_RULE_IDS = new Set([
-  'content/quality-assessment',
-  'content/structure-check',
-  'content/scope-check',
-  'keywords/missing-variations',
-])
-
 export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
-  const [filter, setFilter] = useState<Filter>('all')
-  const [collapsedCats, setCollapsedCats] = useState<Set<RuleCategory>>(new Set())
   const [deepAnalysisOpen, setDeepAnalysisOpen] = useState(false)
   const [categorizing, setCategorizing] = useState(false)
   const [categorizeProgress, setCategorizeProgress] = useState<{ done: number; total: number } | null>(null)
@@ -56,22 +40,7 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
   const entries = activeStore((s) => s.entries)
   const bookMeta = activeStore((s) => s.bookMeta)
 
-  const allFindings: Finding[] = [...findings, ...llmFindings].sort(
-    (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
-  )
-
-  const errorCount = allFindings.filter((f) => f.severity === 'error').length
-  const warningCount = allFindings.filter((f) => f.severity === 'warning').length
-  const suggestionCount = allFindings.filter((f) => f.severity === 'suggestion').length
-
-  const filtered = filter === 'all' ? allFindings : allFindings.filter((f) => f.severity === filter)
-
-  const byCategory = new Map<RuleCategory, Finding[]>()
-  for (const finding of filtered) {
-    const cat = finding.category
-    if (!byCategory.has(cat)) byCategory.set(cat, [])
-    byCategory.get(cat)!.push(finding)
-  }
+  const allFindings: Finding[] = [...findings, ...llmFindings]
 
   function handleSelectEntry(entryId: string) {
     realStore?.getState().selectEntry(entryId)
@@ -79,15 +48,6 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
 
   function handleDeepAnalysisComplete(newLlmFindings: Finding[]) {
     realStore?.getState().setLlmFindings(newLlmFindings)
-  }
-
-  function toggleCategory(cat: RuleCategory) {
-    setCollapsedCats((prev) => {
-      const next = new Set(prev)
-      if (next.has(cat)) next.delete(cat)
-      else next.add(cat)
-      return next
-    })
   }
 
   const categorizationProviderId = llmCategorization.providerId ?? activeLlmProviderId ?? ''
@@ -184,70 +144,12 @@ export function AnalysisPanel({ tabId, graph }: AnalysisPanelProps) {
         </div>
       </div>
 
-      {/* Filter bar */}
-      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-ctp-surface0 shrink-0">
-        {(['all', 'error', 'warning', 'suggestion'] as Filter[]).map((f) => {
-          const count = f === 'all' ? allFindings.length : f === 'error' ? errorCount : f === 'warning' ? warningCount : suggestionCount
-          const active = filter === f
-          return (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-1.5 py-0.5 rounded text-[10px] transition-colors ${
-                active ? 'bg-ctp-accent text-ctp-base' : 'text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0'
-              }`}
-            >
-              {f === 'all' ? `All ${count}` : f === 'error' ? `Error ${count}` : f === 'warning' ? `Warn ${count}` : `Hint ${count}`}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Finding list */}
-      <div className="flex-1 overflow-y-auto">
-        {filtered.length === 0 ? (
-          <div className="flex items-center justify-center h-16">
-            <p className="text-xs text-ctp-overlay1">
-              {allFindings.length === 0 ? 'No issues detected' : 'No findings match filter'}
-            </p>
-          </div>
-        ) : (
-          CATEGORIES.map((cat) => {
-            const catFindings = byCategory.get(cat)
-            if (!catFindings || catFindings.length === 0) return null
-            const collapsed = collapsedCats.has(cat)
-            return (
-              <div key={cat}>
-                <button
-                  onClick={() => toggleCategory(cat)}
-                  className="w-full flex items-center gap-1.5 px-2 py-1 bg-ctp-surface0 border-b border-ctp-surface1 text-left hover:bg-ctp-surface1 transition-colors"
-                >
-                  {collapsed
-                    ? <ChevronRight size={10} className="text-ctp-overlay1 shrink-0" />
-                    : <ChevronDown size={10} className="text-ctp-overlay1 shrink-0" />
-                  }
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-ctp-subtext0 capitalize">
-                    {cat}
-                  </span>
-                  <span className="ml-auto text-[10px] text-ctp-overlay1">{catFindings.length}</span>
-                </button>
-                {!collapsed && catFindings.map((finding) => (
-                  <div key={finding.id} className="relative">
-                    {LLM_RULE_IDS.has(finding.ruleId) && (
-                      <span className="absolute top-2 right-2 z-10">
-                        <AiBadge />
-                      </span>
-                    )}
-                    <FindingItem
-                      finding={finding}
-                      onSelectEntry={handleSelectEntry}
-                    />
-                  </div>
-                ))}
-              </div>
-            )
-          })
-        )}
+      {/* Findings list */}
+      <div className="flex-1 overflow-hidden">
+        <FindingsList
+          findings={allFindings}
+          onSelectEntry={handleSelectEntry}
+        />
       </div>
 
       {deepAnalysisOpen && activeLlmProviderId && (

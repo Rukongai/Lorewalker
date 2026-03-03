@@ -2,7 +2,7 @@ import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { computeHealthScore } from '@/services/analysis/analysis-service'
 import { defaultRubric } from '@/services/analysis/default-rubric'
-import { FindingItem } from './FindingItem'
+import { FindingsList } from '@/features/health/FindingsList'
 import { HealthScoreCard } from '@/features/health/HealthScoreCard'
 
 interface ModalFindingsPaneProps {
@@ -59,16 +59,8 @@ export function ModalFindingsPane({ tabId, entryId }: ModalFindingsPaneProps) {
         </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {entryFindings.length === 0 ? (
-          <div className="flex items-center justify-center h-16">
-            <p className="text-xs text-ctp-overlay1">No issues found</p>
-          </div>
-        ) : (
-          entryFindings.map((f) => (
-            <FindingItem key={f.id} finding={f} onSelectEntry={handleSelectEntry} />
-          ))
-        )}
+      <div className="flex-1 overflow-hidden">
+        <FindingsList findings={entryFindings} onSelectEntry={handleSelectEntry} />
       </div>
     </div>
   )

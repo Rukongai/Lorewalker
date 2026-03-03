@@ -1,6 +1,6 @@
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
-import { FindingItem } from './FindingItem'
+import { FindingsList } from '@/features/health/FindingsList'
 import { cn } from '@/lib/cn'
 import { getTypeBadge } from '@/lib/entry-badge'
 import type { RecursionGraph } from '@/types'
@@ -72,9 +72,7 @@ export function InspectorPanel({ tabId, graph, showFindings = true, onNavigate, 
               Issues ({entryFindings.length})
             </span>
           </div>
-          {entryFindings.map((f) => (
-            <FindingItem key={f.id} finding={f} onSelectEntry={handleSelectEntry} />
-          ))}
+          <FindingsList findings={entryFindings} onSelectEntry={handleSelectEntry} />
         </div>
       )}
 
