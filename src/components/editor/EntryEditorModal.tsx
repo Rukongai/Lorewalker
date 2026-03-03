@@ -111,7 +111,7 @@ export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
               <ActivationLinksHeader entryId={currentEntryId} graph={graph} />
             )}
             renderBottomRightHeader={() => (
-              <ModalFindingsPaneHeader tabId={activeTabId} />
+              <ModalFindingsPaneHeader tabId={activeTabId} entryId={currentEntryId} />
             )}
             renderBottomLeft={() => (
               <ActivationLinks
