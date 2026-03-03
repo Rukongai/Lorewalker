@@ -558,7 +558,7 @@ Root layout component. Manages panel arrangement, modal state, tab bar, and glob
 - `modalEntryId: string | null` — entry open in EntryEditorModal
 - `settingsOpen: boolean` — SettingsDialog visibility
 - `toolsModalOpen: boolean` — WorkspaceToolsModal visibility
-- `toolsModalTab: 'analysis' | 'simulator' | 'rules'` — active tools modal tab
+- `toolsModalTab: 'analysis' | 'simulator' | 'rules' | 'keywords'` — active tools modal tab
 
 **Toolbar buttons:** Undo, Redo, Export, Open File, Save Snapshot, Settings, Analysis (BarChart2), Simulator (Zap), Rules (Scale)
 
@@ -636,6 +636,15 @@ Tag-style input for primary and secondary keyword arrays.
 ### ActivationLinks (`src/components/editor/ActivationLinks.tsx`)
 Inline display of incoming edges (what triggers this entry) and outgoing edges (what this entry triggers) from the RecursionGraph.
 
+### RCActivationSection (`src/components/editor/`)
+Activation panel shown in the EntryEditor when `activeFormat === 'rolecall'`. Replaces the standard keywords panel with RoleCall-specific controls.
+
+**Sub-components:**
+- `RoleCallPositionSelect` — Dropdown for `positionRoleCall` field: `world | character | scene | depth`
+- `KeywordObjectsEditor` — Edit `keywordObjects: RoleCallKeyword[]` (per-keyword probability, frequency, regex flag) used in `triggerMode === 'advanced'`
+- `ConditionsEditor` — Edit `triggerConditions: RoleCallCondition[]` (emotion, messageCount, randomChance, etc.)
+- `ConditionsViewer` — Read-only display of conditions for collapsed/preview state
+
 ### AnalysisPanel (`src/components/analysis/AnalysisPanel.tsx`)
 Right panel "Analysis" tab. Health score (overall grade), finding count by severity, expandable finding list. Filter by severity, category. "Deep Analysis" button triggers LLM rules.
 
@@ -665,10 +674,11 @@ Large overlay modal for complex analysis, simulation, and custom rules workflows
 
 **Dimensions:** `95vw` × `90vh`
 
-**Three tabs:**
+**Four tabs:**
 1. **analysis** — `AnalysisTabContent` (full finding list, detail pane, chain diagram)
 2. **simulator** — `SimulatorTabContent` (conversation pane, results pane)
 3. **rules** — `RulesTabContent` (built-in rule list with enable/disable toggles, custom rules with CRUD, rule editor modal)
+4. **keywords** — `KeywordsTabContent` (keyword inventory table, detail pane, usage statistics)
 
 **Escape handling:** bubble phase (standard `window.addEventListener('keydown', handler)` without capture flag). Escape closes WorkspaceToolsModal only when EntryEditorModal is not open (because EntryEditorModal at z-50 captures Escape first and calls `stopImmediatePropagation()`).
 
@@ -702,6 +712,9 @@ Full-size analysis view inside WorkspaceToolsModal. Shows all findings with full
 ### ChainDiagram (`src/components/tools-modal/ChainDiagram.tsx`)
 Compact recursion chain visualization for the analysis detail pane.
 
+### KeywordsTabContent, KeywordTable, KeywordDetailPane (`src/components/keywords/`)
+Keywords inventory view inside WorkspaceToolsModal. `KeywordsTabContent` is the tab root. `KeywordTable` is a searchable/sortable table of all unique keywords across all entries (powered by `KeywordAnalysisService.buildKeywordInventory`). `KeywordDetailPane` shows per-keyword details including which entries use it, match options, and occurrence count.
+
 ### SimulatorTabContent, SimulatorConversationPane, SimulatorResultsPane (`src/components/tools-modal/`)
 Full-size simulator UI inside WorkspaceToolsModal with conversation builder and multi-message result display.
 
@@ -722,6 +735,18 @@ Multi-lorebook selection dialog shown when importing a character card containing
 
 ### SaveSnapshotDialog (`src/components/workspace/SaveSnapshotDialog.tsx`)
 Dialog for naming and saving a snapshot of the current document state.
+
+### WhatsNewDialog (`src/components/workspace/WhatsNewDialog.tsx`)
+Changelog viewer. Shows release notes with a "New" badge when the user hasn't seen the latest version. Tracks visibility via `WorkspaceStore.lastSeenChangelogDate`.
+
+### ExportButton (`src/components/workspace/ExportButton.tsx`)
+Toolbar dropdown for selecting export format: `json | png | charx`. Delegates to `FileService.export()`.
+
+### KeywordNameDialog (`src/components/workspace/KeywordNameDialog.tsx`)
+Quick-action dialog for bulk-renaming unnamed entries using their first keyword as the display name.
+
+### CategoryMenu (`src/components/shared/CategoryMenu.tsx`)
+Portal-based context menu for assigning or clearing an entry's `userCategory`. Triggered from entry list item right-click and EntryNode context menu.
 
 ### ErrorBoundary (`src/components/shared/ErrorBoundary.tsx`)
 React error boundary wrapping major UI regions. Shows a user-facing error message with reload option.
