@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { Search, ChevronDown, ChevronUp, CheckCheck, XCircle } from 'lucide-react'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -116,6 +117,8 @@ export function EntryList({ onOpenModal }: EntryListProps = {}) {
     realStore?.getState().bulkRemove(multiSelect)
   }
 
+  const listRef = useRef<HTMLDivElement>(null)
+
   const sorted = useMemo(() => {
     const filtered = search.trim()
       ? entries.filter((e) =>
@@ -136,6 +139,13 @@ export function EntryList({ onOpenModal }: EntryListProps = {}) {
       return sortDir2 === 'asc' ? cmp2 : -cmp2
     })
   }, [entries, search, sortBy, sortDir, sortBy2, sortDir2, pinConstantsToTop])
+
+  const virtualizer = useVirtualizer({
+    count: sorted.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => 36, // py-2 + text-sm + border-b ≈ 36px per row
+    overscan: 5,
+  })
 
   if (!activeTabId) {
     return (
@@ -308,29 +318,44 @@ export function EntryList({ onOpenModal }: EntryListProps = {}) {
         )}
       </div>
 
-      {/* List */}
-      <div className="flex-1 overflow-y-auto">
+      {/* List — windowed via @tanstack/react-virtual */}
+      <div ref={listRef} className="flex-1 overflow-y-auto">
         {sorted.length === 0 ? (
           <div className="flex items-center justify-center h-16">
             <p className="text-xs text-ctp-overlay1">No entries found</p>
           </div>
         ) : (
-          sorted.map((entry) => (
-            <EntryListItem
-              key={entry.id}
-              entry={entry}
-              isSelected={selectedId === entry.id}
-              isMultiSelected={multiSelect.includes(entry.id)}
-              onSelect={handleSelect}
-              onMultiToggle={handleMultiToggle}
-              onShiftSelect={handleShiftSelect}
-              onToggleEnabled={handleToggleEnabled}
-              onSetCategory={handleSetCategory}
-              onOpenModal={onOpenModal ? () => onOpenModal(entry.id) : undefined}
-              displayMetric={displayMetric}
-              severity={entryWorstSeverity.get(entry.id) ?? null}
-            />
-          ))
+          <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+            {virtualizer.getVirtualItems().map((vItem) => {
+              const entry = sorted[vItem.index]
+              return (
+                <div
+                  key={entry.id}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${vItem.start}px)`,
+                  }}
+                >
+                  <EntryListItem
+                    entry={entry}
+                    isSelected={selectedId === entry.id}
+                    isMultiSelected={multiSelect.includes(entry.id)}
+                    onSelect={handleSelect}
+                    onMultiToggle={handleMultiToggle}
+                    onShiftSelect={handleShiftSelect}
+                    onToggleEnabled={handleToggleEnabled}
+                    onSetCategory={handleSetCategory}
+                    onOpenModal={onOpenModal ? () => onOpenModal(entry.id) : undefined}
+                    displayMetric={displayMetric}
+                    severity={entryWorstSeverity.get(entry.id) ?? null}
+                  />
+                </div>
+              )
+            })}
+          </div>
         )}
       </div>
     </div>
