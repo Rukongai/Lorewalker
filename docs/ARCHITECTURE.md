@@ -45,24 +45,36 @@ This document is the source of truth for Lorewalker's design. Implementation age
 src/
 ├── assets/
 ├── components/
-│   ├── analysis/          — AnalysisPanel, FindingItem, InspectorPanel, DeepAnalysisDialog
-│   ├── editor/            — EntryEditor, ContentEditor, KeywordInput, BookMetaEditor,
-│   │                        ActivationLinks, RCActivationSection, RoleCallPositionSelect,
-│   │                        KeywordObjectsEditor, ConditionsEditor, ConditionsViewer
+│   ├── analysis/          — DeepAnalysisDialog
+│   ├── editor/            — KeywordInput, KeywordObjectsEditor, RoleCallPositionSelect
 │   ├── entry-list/        — EntryList, EntryListItem, CategoryMenu
 │   ├── graph/             — GraphCanvas, GraphControls, GraphLegend, EntryNode, RecursionEdge,
 │   │                        GraphAddButton, EdgeConnectDialog
-│   ├── inspector/
-│   ├── keywords/          — KeywordTable, KeywordDetailPane
 │   ├── settings/          — SettingsDialog, LlmToolsPanel, ProviderSettingsPanel, LorebookSettingsPanel
 │   ├── shared/            — ErrorBoundary, ToastStack, Toggle
-│   ├── simulator/         — SimulatorPanel, ActivationResults, RecursionTrace, MessageInput
+│   ├── simulator/         — ActivationResults
 │   ├── ui/                — Tooltip, HelpTooltip
 │   └── workspace/         — WorkspaceShell, TabBar, FilesPanel, WelcomeScreen, StatusBar,
 │                            ExportButton, LorebookPickerDialog, SaveSnapshotDialog,
 │                            WhatsNewDialog, KeywordNameDialog
+├── features/
+│   ├── editor/            — EditorView (scope-aware: entry fields | BookMeta)
+│   │   ├── fields/        — ActivationFields, PriorityFields, TimedEffectFields, RecursionFields,
+│   │   │                    GroupFields, ScanOverrideFields, MatchSourceFields, CharFilterFields,
+│   │   │                    BudgetFields, AdvancedFields, TriggersFields
+│   │   └── variants/
+│   │       ├── sillytavern/ — STEntryFields, STBookMetaFields
+│   │       └── rolecall/    — RCEntryFields, RCBookMetaFields, ConditionsEditor, ConditionsViewer
+│   ├── health/            — HealthView (scope-aware), FindingsList, FindingItem, FindingDetail,
+│   │                        HealthScoreCard, ConnectionsList, ChainDiagram, DeepAnalysisTrigger
+│   ├── keywords/          — KeywordsView (scope-aware), KeywordTable, KeywordTag,
+│   │                        KeywordContextCard, KeywordEditor, KeywordObjectsEditor
+│   ├── rules/             — RulesView, RuleEditor, ConditionBuilder, VariablePicker,
+│   │                        TemplateField, RuleTestingPane
+│   └── simulator/         — SimulatorView (scope-aware), MessageComposer, ActivationResultList,
+│                            RecursionTraceView, EntryActivationProfile, ReachAnalysis
 ├── layouts/
-│   └── desktop/           — LorebookWorkspace, EntryWorkspace
+│   └── desktop/           — WorkspaceShell, SidebarPanel, LorebookWorkspace, EntryWorkspace
 ├── hooks/
 │   ├── useDerivedState.ts     — debounced graph + analysis recomputation, exports EMPTY_STORE
 │   ├── useAutosave.ts         — 2s debounced autosave to IndexedDB
@@ -718,9 +730,6 @@ Floating "add entry" button on the graph canvas.
 ### EdgeConnectDialog (`src/components/graph/EdgeConnectDialog.tsx`)
 Dialog shown when user drags an edge between nodes. Lets user choose which keyword mention to add to the source entry's content.
 
-### EntryEditor (`src/components/editor/EntryEditor.tsx`)
-Right panel entry form. All WorkingEntry fields organized in logical groups. Inline findings from AnalysisPanel for the selected entry.
-
 ### EntryWorkspace (`src/layouts/desktop/EntryWorkspace.tsx`)
 Full-screen layout container for per-entry editing and analysis. **z-50.** Opened by double-clicking a node or from LorebookWorkspace's `onOpenEntry` callback.
 
@@ -732,47 +741,46 @@ Full-screen layout container for per-entry editing and analysis. **z-50.** Opene
 
 **Dimensions:** `90vw` × `90vh`, min-width `640px`.
 
-### BookMetaEditor (`src/components/editor/BookMetaEditor.tsx`)
-Form for book-level metadata (scanDepth, budget, caseSensitive, matchWholeWords, recursiveScan, ST-specific global settings).
-
-### ContentEditor (`src/components/editor/ContentEditor.tsx`)
-Textarea with keyword highlighting for the entry content field.
-
 ### KeywordInput (`src/components/editor/KeywordInput.tsx`)
-Tag-style input for primary and secondary keyword arrays.
+Tag-style input for primary and secondary keyword arrays. Used by `features/editor/fields/ActivationFields`, `CharFilterFields`, and `features/editor/variants/rolecall/RCEntryFields`.
 
-### ActivationLinks (`src/components/editor/ActivationLinks.tsx`)
-Inline display of incoming edges (what triggers this entry) and outgoing edges (what this entry triggers) from the RecursionGraph.
+### RoleCallPositionSelect (`src/components/editor/RoleCallPositionSelect.tsx`)
+Dropdown for `positionRoleCall` field: `world | character | scene | depth`. Used by `features/editor/fields/PriorityFields`.
 
-### RCActivationSection (`src/components/editor/`)
-Activation panel shown in the EntryEditor when `activeFormat === 'rolecall'`. Replaces the standard keywords panel with RoleCall-specific controls.
-
-**Sub-components:**
-- `RoleCallPositionSelect` — Dropdown for `positionRoleCall` field: `world | character | scene | depth`
-- `KeywordObjectsEditor` — Edit `keywordObjects: RoleCallKeyword[]` (per-keyword probability, frequency, regex flag) used in `triggerMode === 'advanced'`
-- `ConditionsEditor` — Edit `triggerConditions: RoleCallCondition[]` (emotion, messageCount, randomChance, etc.)
-- `ConditionsViewer` — Read-only display of conditions for collapsed/preview state
+### KeywordObjectsEditor (`src/components/editor/KeywordObjectsEditor.tsx`)
+Edit `keywordObjects: RoleCallKeyword[]` (per-keyword probability, frequency, regex flag). Used by `features/editor/variants/rolecall/RCEntryFields`.
 
 ### SidebarPanel (`src/layouts/desktop/SidebarPanel.tsx`)
 Right sidebar with 4 tabs: Edit, Health, Simulator, Keywords. Infers scope from `selectedEntryId`: entry scope when an entry is selected, lorebook scope otherwise. Each tab renders the corresponding `*View` feature module. Manages all entry and book-meta mutations internally via store hooks.
 
-### AnalysisPanel (`src/components/analysis/AnalysisPanel.tsx`)
-Legacy thin-wrapper (kept for compatibility). Superseded by HealthView inside SidebarPanel.
-
-### InspectorPanel (`src/components/analysis/InspectorPanel.tsx`)
-Legacy thin-wrapper (kept for compatibility). Superseded by HealthView entry-scope inside SidebarPanel.
-
 ### DeepAnalysisDialog (`src/components/analysis/DeepAnalysisDialog.tsx`)
-Modal for confirming LLM deep analysis. Shows token estimate, provider selection, and runs the analysis.
-
-### SimulatorPanel (`src/components/simulator/SimulatorPanel.tsx`)
-Right panel "Simulator" tab. Message input, settings, engine selector, run button. Delegates heavy UI to LorebookWorkspace's simulator tab.
+Modal for confirming LLM deep analysis. Shows token estimate, provider selection, and runs the analysis. Consumed by `features/health/DeepAnalysisTrigger`.
 
 ### ActivationResults (`src/components/simulator/ActivationResults.tsx`)
-Displays list of activated entries with trigger details, matched keywords, token cost.
+Displays list of activated entries with trigger details, matched keywords, token cost. Consumed by `features/keywords/KeywordContextCard`.
 
-### RecursionTrace (`src/components/simulator/RecursionTrace.tsx`)
-Step-by-step display of recursion unfolding.
+---
+
+## Feature Modules (`src/features/`)
+
+Feature modules are scope-aware view components that replace the old per-panel components. Each module renders either an entry-scoped or lorebook-scoped variant depending on the `scope` prop passed by the container (SidebarPanel, EntryWorkspace, or LorebookWorkspace).
+
+### EditorView (`src/features/editor/EditorView.tsx`)
+Scope-aware editor. `scope="entry"` renders entry fields organized by format (sillytavern vs rolecall variants); `scope="lorebook"` renders BookMeta fields. Delegates to field subcomponents in `fields/` and format-specific variants in `variants/`.
+
+### HealthView (`src/features/health/HealthView.tsx`)
+Scope-aware health panel. `scope="entry"` shows per-entry findings, connections, and token count. `scope="lorebook"` shows the full finding list, health score card, chain diagram, and deep analysis trigger.
+
+### SimulatorView (`src/features/simulator/SimulatorView.tsx`)
+Scope-aware simulator panel. `scope="lorebook"` renders the full message composer, settings, results list, and recursion trace. `scope="entry"` renders the entry activation profile and reach analysis for a single entry.
+
+### KeywordsView (`src/features/keywords/KeywordsView.tsx`)
+Scope-aware keyword panel. `scope="lorebook"` renders the full keyword inventory table with detail pane and usage stats. `scope="entry"` renders a per-entry keyword context card with activation results.
+
+### RulesView (`src/features/rules/RulesView.tsx`)
+Lorebook-scoped only. Renders the built-in rule list with enable/disable toggles, custom rules with CRUD, the rule editor (ConditionBuilder + VariablePicker), and the rule testing pane.
+
+---
 
 ### LorebookWorkspace (`src/layouts/desktop/LorebookWorkspace.tsx`)
 Large layout container for lorebook-wide analysis, simulation, rules, and keywords workflows. **z-40.**
