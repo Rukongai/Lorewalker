@@ -551,7 +551,7 @@ export function WorkspaceShell() {
 
               {/* Left panel content */}
               {leftPanelTab === 'files'
-                ? <FilesPanel onRestoreDoc={handleRestoreDoc} snapshotSaveCount={snapshotSaveCount} />
+                ? <FilesPanel onRestoreDoc={handleRestoreDoc} onFileOpened={() => setLeftPanelTab('entries')} snapshotSaveCount={snapshotSaveCount} />
                 : <EntryList onOpenModal={setModalEntryId} />
               }
             </>
