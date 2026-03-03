@@ -5,6 +5,7 @@ import type { WorkingEntry } from '@lorewalker/core'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import type { EntriesStackParamList } from './AppNavigator'
 import { EditorView } from '../../features/editor'
+import { EntryHealthView } from '../../features/health'
 
 type Props = NativeStackScreenProps<EntriesStackParamList, 'Entry'>
 
@@ -85,9 +86,7 @@ export function EntryScreen({ route, navigation }: Props) {
           />
         )}
         {activeTab === 'health' && (
-          <View style={styles.placeholder}>
-            <Text style={styles.placeholderText}>Health — coming soon</Text>
-          </View>
+          <EntryHealthView entryId={entryId} />
         )}
         {activeTab === 'insights' && (
           <View style={styles.placeholder}>
