@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Finding, HealthScore, WorkingEntry, RecursionGraph, BookMeta, AnalysisContext } from '../../types'
+import type { Finding, HealthScore, WorkingEntry, RecursionGraph, BookMeta, AnalysisContext, Rubric } from '../../types'
 import type { ConnectionRow } from './ConnectionsList'
 import { computeHealthScore } from '../../services/analysis/analysis-service'
 import { defaultRubric } from '../../services/analysis/default-rubric'
@@ -20,6 +20,7 @@ export interface HealthViewProps {
   // Entry scope
   entry?: WorkingEntry
   entryFindings?: Finding[]
+  activeRubric?: Rubric
   // Deep analysis (lorebook scope, optional)
   llmProviderId?: string
   onDeepAnalysisComplete?: (findings: Finding[]) => void
@@ -82,6 +83,7 @@ export function HealthView({
   bookMeta,
   entry,
   entryFindings,
+  activeRubric,
   llmProviderId,
   onDeepAnalysisComplete,
   onEntrySelect,
@@ -150,7 +152,9 @@ export function HealthView({
 
   // --- Entry scope ---
   const resolvedFindings = entryFindings ?? []
-  const entryScore = computeHealthScore(resolvedFindings, defaultRubric).overall
+  // Use the assembled activeRubric (with disabled rules and custom rules applied) when available.
+  // Fallback to defaultRubric only when called outside a document context.
+  const entryScore = computeHealthScore(resolvedFindings, activeRubric ?? defaultRubric).overall
 
   const connections = entry && graph
     ? buildConnectionRows(entry.id, entries, graph)

@@ -141,7 +141,9 @@ export function WorkspaceShell() {
       }
       await cleanupStaleDocuments(prefs.recoveryRetentionDays)
     }
-    init()
+    init().catch((err) => {
+      console.error('[WorkspaceShell] init failed:', err)
+    })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Warn before unload if any tabs have unsaved changes

@@ -56,8 +56,9 @@ export function useAutosave(tabId: string | null): { isSaving: boolean } {
       try {
         await saveDocument(doc)
         useWorkspaceStore.getState().markDirty(tabId, false)
-      } catch {
-        // Autosave failures are non-fatal — don't surface to user
+      } catch (err) {
+        // Autosave failures are non-fatal — don't surface to user, but log for debugging
+        console.error('[useAutosave] Failed to save document:', err)
       } finally {
         setIsSaving(false)
       }

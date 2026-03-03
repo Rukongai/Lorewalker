@@ -33,7 +33,7 @@ export function EntryWorkspace({ entryId, onClose }: EntryWorkspaceProps) {
   const [activeTab, setActiveTab] = useState<EntryWorkspaceTab>('edit')
 
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
-  const { graph, findings } = useDerivedState(activeTabId)
+  const { graph, findings, activeRubric } = useDerivedState(activeTabId)
 
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
@@ -211,6 +211,7 @@ export function EntryWorkspace({ entryId, onClose }: EntryWorkspaceProps) {
                 graph={graph}
                 entry={currentEntry}
                 entryFindings={entryFindings}
+                activeRubric={activeRubric}
                 onEntrySelect={navigate}
                 onEntryOpen={navigate}
               />

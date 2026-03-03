@@ -13,6 +13,7 @@ export interface DerivedState {
   graph: RecursionGraph
   findings: Finding[]
   healthScore: HealthScore
+  activeRubric: Rubric
 }
 
 function emptyGraph(): RecursionGraph {
@@ -131,23 +132,27 @@ export function useDerivedState(tabId: string | null): DerivedState {
           // auto-layout position writes should not create undo steps.
           realStore.setState((s) => ({ ...s, graphPositions: newPositions }))
         }
-      })
+      }).catch((err) => console.error('[useDerivedState] ELK layout failed:', err))
     },
     [realStore],
   )
 
   const runAnalysis = useCallback(
     async (currentEntries: WorkingEntry[], newGraph: RecursionGraph) => {
-      const newFindings = await runDeterministic(
-        { entries: currentEntries, bookMeta, graph: newGraph },
-        activeRubric,
-      )
-      const newHealthScore = computeHealthScore(newFindings, activeRubric)
-      if (realStore) {
-        realStore.setState((s) => ({ ...s, findings: newFindings, healthScore: newHealthScore }))
+      try {
+        const newFindings = await runDeterministic(
+          { entries: currentEntries, bookMeta, graph: newGraph },
+          activeRubric,
+        )
+        const newHealthScore = computeHealthScore(newFindings, activeRubric)
+        if (realStore) {
+          realStore.setState((s) => ({ ...s, findings: newFindings, healthScore: newHealthScore }))
+        }
+        setFindings(newFindings)
+        setHealthScore(newHealthScore)
+      } catch (err) {
+        console.error('[useDerivedState] Analysis failed:', err)
       }
-      setFindings(newFindings)
-      setHealthScore(newHealthScore)
     },
     [realStore, bookMeta, activeRubric],
   )
@@ -230,5 +235,5 @@ export function useDerivedState(tabId: string | null): DerivedState {
     }
   }, [entries, bookMatchOptions, tabId, recompute])
 
-  return { graph, findings, healthScore }
+  return { graph, findings, healthScore, activeRubric }
 }
