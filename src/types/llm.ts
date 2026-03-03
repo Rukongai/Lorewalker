@@ -38,3 +38,10 @@ export interface LLMProvider {
   estimateTokens(text: string): number;
   testConnection(): Promise<{ success: boolean; error?: string }>;
 }
+
+// LLM categorization settings — used by WorkspaceStore and LlmToolsPanel
+export interface LlmCategorizationSettings {
+  enabled: boolean;
+  providerId?: string;
+  skipManualOverrides: boolean;
+}

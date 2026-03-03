@@ -71,7 +71,10 @@ export function FilesPanel({ onRestoreDoc, onFileOpened, snapshotSaveCount }: Fi
         return next
       })
     })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- expandedTabIds intentionally omitted:
+  // this effect must only fire when a snapshot is saved (snapshotSaveCount increments), not
+  // every time the user expands or collapses a tab row. expandedTabIds is read synchronously
+  // at fire-time which is correct behavior.
   }, [snapshotSaveCount])
 
   async function handleDeleteDoc(tabId: string) {

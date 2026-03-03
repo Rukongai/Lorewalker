@@ -158,3 +158,6 @@ export interface BookMeta {
   alertOnOverflow: boolean;     // Show alert when WI exceeds token budget
   budgetCap: number;            // Hard token cap; 0 = no cap
 }
+
+// Entry categorization — used by EntryList, CategoryMenu, GraphCanvas, and DocumentStore
+export type EntryCategory = 'character' | 'location' | 'rule' | 'event' | 'faction' | 'item' | 'lore' | 'generic'

@@ -1,15 +1,12 @@
-import type { WorkingEntry, BookMeta } from '@/types'
 import type {
   ComparisonOp,
   ConditionLeaf,
   ConditionGroup,
   SerializedEvaluation,
+  EvaluationContext,
 } from '@/types'
 
-export interface EvaluationContext {
-  entry: WorkingEntry;
-  book: BookMeta;
-}
+export type { EvaluationContext }
 
 /**
  * Resolves a dot-path variable like "entry.keys.length" against an EvaluationContext.

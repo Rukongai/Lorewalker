@@ -22,17 +22,12 @@ import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
 import { useAutosave } from '@/hooks/useAutosave'
 import { useWorkspacePersistence } from '@/hooks/useWorkspacePersistence'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
-import { loadWorkspace, loadPreferences, cleanupStaleDocuments, loadProviders, saveSnapshot } from '@/services/persistence-service'
-import { llmService } from '@/services/llm/llm-service'
-import { OpenAICompatibleProvider } from '@/services/llm/providers/openai-compatible'
-import { AnthropicProvider } from '@/services/llm/providers/anthropic'
+import { saveSnapshot } from '@/services/persistence-service'
 const GraphCanvas = lazy(() => import('@/components/graph/GraphCanvas').then(m => ({ default: m.GraphCanvas })))
 const SettingsDialog = lazy(() => import('@/components/settings/SettingsDialog').then(m => ({ default: m.SettingsDialog })))
 const EntryWorkspace = lazy(() => import('@/layouts/desktop/EntryWorkspace').then(m => ({ default: m.EntryWorkspace })))
 const LorebookWorkspace = lazy(() => import('@/layouts/desktop/LorebookWorkspace').then(m => ({ default: m.LorebookWorkspace })))
-import type { LorebookWorkspaceTab } from '@/layouts/desktop/LorebookWorkspace'
 import { SidebarPanel } from '@/layouts/desktop/SidebarPanel'
-import type { SidebarPanelTab } from '@/layouts/desktop/SidebarPanel'
 import { ToastStack } from '@/components/shared/ToastStack'
 import type { UndoToast } from '@/components/shared/ToastStack'
 import { describeStateChange } from '@/lib/undo-describe'
@@ -40,11 +35,8 @@ import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import type { PersistedDocument, PersistedSnapshot } from '@/types'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { generateId } from '@/lib/uuid'
-
-type RightPanelTab = SidebarPanelTab
-type LeftPanelTab = 'files' | 'entries'
-
-const DEFAULT_PREFERENCES = { autosaveIntervalMs: 2000, recoveryRetentionDays: 7, simulationDefaults: { defaultScanDepth: 4, defaultTokenBudget: 50000, defaultCaseSensitive: false, defaultMatchWholeWords: false, defaultMaxRecursionSteps: 0, defaultIncludeNames: false } }
+import { useWorkspaceInit } from './useWorkspaceInit'
+import { useModalState } from './useModalState'
 
 export function WorkspaceShell() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
@@ -52,18 +44,28 @@ export function WorkspaceShell() {
   const tabs = useWorkspaceStore((s) => s.tabs)
   const [isDragOver, setIsDragOver] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
-  const [leftWidth, setLeftWidth] = useState(256)
-  const [rightWidth, setRightWidth] = useState(320)
   const dragStateRef = useRef<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
   const COLLAPSED_WIDTH = 28
-  const [leftCollapsed, setLeftCollapsed] = useState(false)
-  const [rightCollapsed, setRightCollapsed] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
-  const [modalEntryId, setModalEntryId] = useState<string | null>(null)
-  const [leftPanelTab, setLeftPanelTab] = useState<LeftPanelTab>('entries')
-  const [showSnapshotDialog, setShowSnapshotDialog] = useState(false)
-  const [snapshotSaveCount, setSnapshotSaveCount] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const {
+    leftWidth, setLeftWidth,
+    rightWidth, setRightWidth,
+    leftCollapsed, setLeftCollapsed,
+    rightCollapsed, setRightCollapsed,
+    rightPanelTab, setRightPanelTab,
+    leftPanelTab, setLeftPanelTab,
+  } = useWorkspaceInit()
+
+  const {
+    modalEntryId, setModalEntryId,
+    toolsModalOpen, setToolsModalOpen,
+    toolsModalTab, setToolsModalTab,
+    settingsOpen, setSettingsOpen,
+    showSnapshotDialog, setShowSnapshotDialog,
+    snapshotSaveCount, setSnapshotSaveCount,
+  } = useModalState()
 
   // Lorebook picker dialog state
   const [lorebookPickerState, setLorebookPickerState] = useState<{
@@ -83,10 +85,6 @@ export function WorkspaceShell() {
   const setLastSeenChangelogDate = useWorkspaceStore((s) => s.setLastSeenChangelogDate)
   const hasUnreadChangelog = lastSeenChangelogDate === null || lastSeenChangelogDate < LATEST_CHANGELOG_DATE
 
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [toolsModalOpen, setToolsModalOpen] = useState(false)
-  const [toolsModalTab, setToolsModalTab] = useState<LorebookWorkspaceTab>('health')
-  const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>('edit')
   const [toasts, setToasts] = useState<UndoToast[]>([])
 
   // Autosave the active document to IndexedDB
@@ -102,47 +100,6 @@ export function WorkspaceShell() {
     leftPanelTab: leftPanelTab as 'files' | 'entries',
   }), [leftWidth, rightWidth, leftCollapsed, rightCollapsed, rightPanelTab, leftPanelTab])
   useWorkspacePersistence(panelLayout)
-
-  // On mount: restore persisted state and check for recovery docs
-  useEffect(() => {
-    async function init() {
-      // Bootstrap LLMService from IndexedDB
-      try {
-        const persistedProviders = await loadProviders()
-        for (const p of persistedProviders) {
-          const config = { ...p.config, apiKey: p.apiKey }
-          const provider = p.type === 'anthropic'
-            ? new AnthropicProvider(p.id, p.name, config)
-            : new OpenAICompatibleProvider(p.id, p.name, config)
-          llmService.registerProvider(provider)
-        }
-        if (persistedProviders.length > 0) {
-          const firstId = persistedProviders[0].id
-          if (!useWorkspaceStore.getState().activeLlmProviderId) {
-            useWorkspaceStore.getState().setActiveLlmProviderId(firstId)
-          }
-        }
-      } catch {
-        // Non-fatal — app works without LLM
-      }
-
-      const prefs = await loadPreferences() ?? DEFAULT_PREFERENCES
-      const workspace = await loadWorkspace()
-      if (workspace) {
-        useWorkspaceStore.getState().setTheme(workspace.theme)
-        setLeftWidth(workspace.panelLayout.leftPanelWidth)
-        setRightWidth(workspace.panelLayout.rightPanelWidth)
-        setLeftCollapsed(workspace.panelLayout.leftCollapsed)
-        setRightCollapsed(workspace.panelLayout.rightCollapsed)
-        const storedTab = workspace.panelLayout.rightPanelTab
-        const validTabs: RightPanelTab[] = ['edit', 'health', 'simulator', 'keywords']
-        setRightPanelTab(validTabs.includes(storedTab as RightPanelTab) ? (storedTab as RightPanelTab) : 'edit')
-        setLeftPanelTab(workspace.panelLayout.leftPanelTab ?? 'entries')
-      }
-      await cleanupStaleDocuments(prefs.recoveryRetentionDays)
-    }
-    init()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Warn before unload if any tabs have unsaved changes
   useEffect(() => {

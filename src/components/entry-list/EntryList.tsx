@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useMemo, useRef } from 'react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { Search, ChevronDown, ChevronUp, CheckCheck, XCircle } from 'lucide-react'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Tooltip } from '@/components/ui/Tooltip'
@@ -8,6 +9,18 @@ import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { EntryListItem } from './EntryListItem'
 import { Toggle } from '@/components/shared/Toggle'
 import type { WorkingEntry, SortKey, FindingSeverity } from '@/types'
+
+const SEVERITY_RANK: Record<FindingSeverity, number> = { error: 2, warning: 1, suggestion: 0 }
+
+function compare(a: WorkingEntry, b: WorkingEntry, key: SortKey): number {
+  switch (key) {
+    case 'uid':          return a.uid - b.uid
+    case 'name':         return a.name.localeCompare(b.name)
+    case 'tokenCount':   return a.tokenCount - b.tokenCount
+    case 'order':        return a.order - b.order
+    case 'displayIndex': return (a.displayIndex ?? a.uid) - (b.displayIndex ?? b.uid)
+  }
+}
 
 interface EntryListProps {
   onOpenModal?: (entryId: string) => void
@@ -32,17 +45,19 @@ export function EntryList({ onOpenModal }: EntryListProps = {}) {
   const multiSelect = activeStore((s) => s.selection.multiSelect)
   const findings = activeStore((s) => s.findings)
 
-  // Compute worst severity per entry
-  const SEVERITY_RANK: Record<FindingSeverity, number> = { error: 2, warning: 1, suggestion: 0 }
-  const entryWorstSeverity = new Map<string, FindingSeverity>()
-  for (const finding of findings) {
-    for (const id of finding.entryIds) {
-      const current = entryWorstSeverity.get(id)
-      if (!current || SEVERITY_RANK[finding.severity] > SEVERITY_RANK[current]) {
-        entryWorstSeverity.set(id, finding.severity)
+  // Compute worst severity per entry — memoized to avoid O(n) rebuild on unrelated re-renders
+  const entryWorstSeverity = useMemo(() => {
+    const map = new Map<string, FindingSeverity>()
+    for (const finding of findings) {
+      for (const id of finding.entryIds) {
+        const current = map.get(id)
+        if (!current || SEVERITY_RANK[finding.severity] > SEVERITY_RANK[current]) {
+          map.set(id, finding.severity)
+        }
       }
     }
-  }
+    return map
+  }, [findings])
 
   function handleSelect(id: string) {
     realStore?.getState().selectEntry(id)
@@ -102,34 +117,34 @@ export function EntryList({ onOpenModal }: EntryListProps = {}) {
     realStore?.getState().bulkRemove(multiSelect)
   }
 
-  const filtered = search.trim()
-    ? entries.filter((e) =>
-        e.name.toLowerCase().includes(search.toLowerCase()) ||
-        e.content.toLowerCase().includes(search.toLowerCase()) ||
-        e.keys.some((k) => k.toLowerCase().includes(search.toLowerCase()))
-      )
-    : entries
+  const listRef = useRef<HTMLDivElement>(null)
 
-  function compare(a: WorkingEntry, b: WorkingEntry, key: SortKey): number {
-    switch (key) {
-      case 'uid':          return a.uid - b.uid
-      case 'name':         return a.name.localeCompare(b.name)
-      case 'tokenCount':   return a.tokenCount - b.tokenCount
-      case 'order':        return a.order - b.order
-      case 'displayIndex': return (a.displayIndex ?? a.uid) - (b.displayIndex ?? b.uid)
-    }
-  }
+  const sorted = useMemo(() => {
+    const filtered = search.trim()
+      ? entries.filter((e) =>
+          e.name.toLowerCase().includes(search.toLowerCase()) ||
+          e.content.toLowerCase().includes(search.toLowerCase()) ||
+          e.keys.some((k) => k.toLowerCase().includes(search.toLowerCase()))
+        )
+      : entries
+    return [...filtered].sort((a, b) => {
+      if (pinConstantsToTop) {
+        const pin = (b.constant ? 1 : 0) - (a.constant ? 1 : 0)
+        if (pin !== 0) return pin
+      }
+      const cmp1 = compare(a, b, sortBy)
+      const primary = sortDir === 'asc' ? cmp1 : -cmp1
+      if (primary !== 0 || sortBy2 === null) return primary
+      const cmp2 = compare(a, b, sortBy2)
+      return sortDir2 === 'asc' ? cmp2 : -cmp2
+    })
+  }, [entries, search, sortBy, sortDir, sortBy2, sortDir2, pinConstantsToTop])
 
-  const sorted = [...filtered].sort((a, b) => {
-    if (pinConstantsToTop) {
-      const pin = (b.constant ? 1 : 0) - (a.constant ? 1 : 0)
-      if (pin !== 0) return pin
-    }
-    const cmp1 = compare(a, b, sortBy)
-    const primary = sortDir === 'asc' ? cmp1 : -cmp1
-    if (primary !== 0 || sortBy2 === null) return primary
-    const cmp2 = compare(a, b, sortBy2)
-    return sortDir2 === 'asc' ? cmp2 : -cmp2
+  const virtualizer = useVirtualizer({
+    count: sorted.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => 36, // py-2 + text-sm + border-b ≈ 36px per row
+    overscan: 5,
   })
 
   if (!activeTabId) {
@@ -303,29 +318,44 @@ export function EntryList({ onOpenModal }: EntryListProps = {}) {
         )}
       </div>
 
-      {/* List */}
-      <div className="flex-1 overflow-y-auto">
+      {/* List — windowed via @tanstack/react-virtual */}
+      <div ref={listRef} className="flex-1 overflow-y-auto">
         {sorted.length === 0 ? (
           <div className="flex items-center justify-center h-16">
             <p className="text-xs text-ctp-overlay1">No entries found</p>
           </div>
         ) : (
-          sorted.map((entry) => (
-            <EntryListItem
-              key={entry.id}
-              entry={entry}
-              isSelected={selectedId === entry.id}
-              isMultiSelected={multiSelect.includes(entry.id)}
-              onSelect={handleSelect}
-              onMultiToggle={handleMultiToggle}
-              onShiftSelect={handleShiftSelect}
-              onToggleEnabled={handleToggleEnabled}
-              onSetCategory={handleSetCategory}
-              onOpenModal={onOpenModal ? () => onOpenModal(entry.id) : undefined}
-              displayMetric={displayMetric}
-              severity={entryWorstSeverity.get(entry.id) ?? null}
-            />
-          ))
+          <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+            {virtualizer.getVirtualItems().map((vItem) => {
+              const entry = sorted[vItem.index]
+              return (
+                <div
+                  key={entry.id}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${vItem.start}px)`,
+                  }}
+                >
+                  <EntryListItem
+                    entry={entry}
+                    isSelected={selectedId === entry.id}
+                    isMultiSelected={multiSelect.includes(entry.id)}
+                    onSelect={handleSelect}
+                    onMultiToggle={handleMultiToggle}
+                    onShiftSelect={handleShiftSelect}
+                    onToggleEnabled={handleToggleEnabled}
+                    onSetCategory={handleSetCategory}
+                    onOpenModal={onOpenModal ? () => onOpenModal(entry.id) : undefined}
+                    displayMetric={displayMetric}
+                    severity={entryWorstSeverity.get(entry.id) ?? null}
+                  />
+                </div>
+              )
+            })}
+          </div>
         )}
       </div>
     </div>

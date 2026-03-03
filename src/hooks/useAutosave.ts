@@ -56,8 +56,9 @@ export function useAutosave(tabId: string | null): { isSaving: boolean } {
       try {
         await saveDocument(doc)
         useWorkspaceStore.getState().markDirty(tabId, false)
-      } catch {
-        // Autosave failures are non-fatal — don't surface to user
+      } catch (err) {
+        // Autosave failures are non-fatal — don't surface to user, but log for debugging
+        console.error('[useAutosave] Failed to save document:', err)
       } finally {
         setIsSaving(false)
       }
@@ -66,7 +67,7 @@ export function useAutosave(tabId: string | null): { isSaving: boolean } {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- realStore is derived from tabId (already in deps); saveDocument is a stable module import
   }, [entries, bookMeta, graphPositions, simulatorState, ruleOverrides, cardPayload, activeFormat, tabId])
 
   return { isSaving }

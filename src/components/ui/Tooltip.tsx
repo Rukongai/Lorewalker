@@ -43,9 +43,8 @@ export function Tooltip({ text, children, placement = 'above' }: TooltipProps) {
             transform: placement === 'below'
               ? 'translate(-50%, 6px)'
               : 'translate(-50%, calc(-100% - 6px))',
-            zIndex: 9999,
           }}
-          className="w-max max-w-56 px-2 py-1.5 text-xs bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext0 pointer-events-none whitespace-normal leading-relaxed shadow-lg"
+          className="z-[9999] w-max max-w-56 px-2 py-1.5 text-xs bg-ctp-surface0 border border-ctp-surface1 rounded text-ctp-subtext0 pointer-events-none whitespace-normal leading-relaxed shadow-lg"
         >
           {text}
         </div>,
