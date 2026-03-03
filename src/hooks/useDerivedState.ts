@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { filterRulesByFormat } from '@/services/analysis/format-filter'
 import type { RecursionGraph, WorkingEntry, KeywordMatchOptions, Finding, HealthScore, Rubric } from '@/types'
 import { buildGraph, incrementalUpdate, computeLayout } from '@/services/graph-service'
 import { runDeterministic, computeHealthScore } from '@/services/analysis/analysis-service'
@@ -77,6 +78,7 @@ export function useDerivedState(tabId: string | null): DerivedState {
   const entries = activeStore((s) => s.entries)
   const bookMeta = activeStore((s) => s.bookMeta)
   const ruleOverrides = activeStore((s) => s.ruleOverrides)
+  const activeFormat = activeStore((s) => s.activeFormat)
   const bookMatchOptions = useMemo(
     () => ({ caseSensitive: bookMeta.caseSensitive, matchWholeWords: bookMeta.matchWholeWords }),
     [bookMeta.caseSensitive, bookMeta.matchWholeWords],
@@ -102,11 +104,12 @@ export function useDerivedState(tabId: string | null): DerivedState {
       .filter((r) => r.enabled)
       .map(customRuleToRule)
 
+    const allRules = [...filteredDefault, ...filteredWsCustom, ...filteredDocCustom]
     return {
       ...defaultRubric,
-      rules: [...filteredDefault, ...filteredWsCustom, ...filteredDocCustom],
+      rules: filterRulesByFormat(allRules, activeFormat),
     }
-  }, [wsCustomRules, disabledBuiltinRuleIds, ruleOverrides])
+  }, [wsCustomRules, disabledBuiltinRuleIds, ruleOverrides, activeFormat])
 
   const persistMissingPositions = useCallback(
     (currentEntries: WorkingEntry[], newGraph: RecursionGraph) => {

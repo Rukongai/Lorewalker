@@ -1,4 +1,4 @@
-import type { BookMeta, WorkingEntry } from './entry'
+import type { BookMeta, WorkingEntry, LorebookFormat } from './entry'
 import type { RecursionGraph } from './graph'
 
 export type RuleCategory =
@@ -25,6 +25,7 @@ export interface Rule {
   category: RuleCategory;
   severity: FindingSeverity;          // Default severity (individual findings can override)
   requiresLLM: boolean;
+  formatCompatibility?: LorebookFormat[];  // undefined = applies to all formats
   evaluate(context: AnalysisContext): Promise<Finding[]>;
 }
 
