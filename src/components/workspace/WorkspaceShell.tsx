@@ -305,6 +305,7 @@ export function WorkspaceShell() {
     onRedo: handleRedo,
     onNewEntry: handleNewEntry,
     onClearSelection: handleClearSelection,
+    onOpenFile: () => fileInputRef.current?.click(),
   })
 
   const startDrag = useCallback((e: React.MouseEvent, side: 'left' | 'right') => {

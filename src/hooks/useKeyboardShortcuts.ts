@@ -7,6 +7,7 @@ interface KeyboardShortcutsOptions {
   onRedo: () => void
   onNewEntry: () => void
   onClearSelection: () => void
+  onOpenFile: () => void
 }
 
 function isEditableTarget(target: EventTarget | null): boolean {
@@ -24,6 +25,7 @@ export function useKeyboardShortcuts({
   onRedo,
   onNewEntry,
   onClearSelection,
+  onOpenFile,
 }: KeyboardShortcutsOptions) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -49,6 +51,12 @@ export function useKeyboardShortcuts({
         return
       }
 
+      if (isMod && e.key === 'o') {
+        e.preventDefault()
+        onOpenFile()
+        return
+      }
+
       if (isMod && e.key === 'n' && activeTabId) {
         e.preventDefault()
         onNewEntry()
@@ -63,5 +71,5 @@ export function useKeyboardShortcuts({
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [activeTabId, onSave, onUndo, onRedo, onNewEntry, onClearSelection])
+  }, [activeTabId, onSave, onUndo, onRedo, onNewEntry, onClearSelection, onOpenFile])
 }
