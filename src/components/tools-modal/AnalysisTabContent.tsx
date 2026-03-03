@@ -4,6 +4,7 @@ import { EMPTY_STORE } from '@/hooks/useDerivedState'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { DeepAnalysisDialog } from '@/components/analysis/DeepAnalysisDialog'
 import { AnalysisFindingList } from './AnalysisFindingList'
+import { AnalysisViolationList } from './AnalysisViolationList'
 import { AnalysisDetailPane } from './AnalysisDetailPane'
 import type { Finding, RecursionGraph } from '@/types'
 
@@ -16,6 +17,7 @@ interface AnalysisTabContentProps {
 }
 
 export function AnalysisTabContent({ tabId, graph, onOpenEntry, onSelectEntry, onNavigateToKeyword }: AnalysisTabContentProps) {
+  const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null)
   const [selectedFinding, setSelectedFinding] = useState<Finding | null>(null)
   const [deepAnalysisOpen, setDeepAnalysisOpen] = useState(false)
 
@@ -45,19 +47,32 @@ export function AnalysisTabContent({ tabId, graph, onOpenEntry, onSelectEntry, o
 
   return (
     <div className="flex h-full overflow-hidden">
-      {/* Left pane: finding list (~35%) */}
-      <div className="w-[35%] min-w-[280px] border-r border-ctp-surface0 flex flex-col overflow-hidden">
+      {/* Left nav: ~240px, fixed width */}
+      <div className="w-[240px] shrink-0 border-r border-ctp-surface0 flex flex-col overflow-hidden">
         <AnalysisFindingList
           findings={allFindings}
           healthScore={healthScore}
-          selectedFindingId={selectedFinding?.id ?? null}
+          selectedRuleId={selectedRuleId}
           hasLlmProvider={!!activeLlmProviderId}
-          onSelectFinding={setSelectedFinding}
+          onSelectRule={(ruleId) => {
+            setSelectedRuleId(ruleId)
+            setSelectedFinding(null)
+          }}
           onDeepAnalysis={() => setDeepAnalysisOpen(true)}
         />
       </div>
 
-      {/* Right pane: detail (~65%) */}
+      {/* Middle: violations for selected rule (~35%) */}
+      <div className="w-[35%] min-w-[240px] border-r border-ctp-surface0 flex flex-col overflow-hidden">
+        <AnalysisViolationList
+          findings={allFindings.filter((f) => f.ruleId === selectedRuleId)}
+          ruleId={selectedRuleId}
+          selectedFindingId={selectedFinding?.id ?? null}
+          onSelectFinding={setSelectedFinding}
+        />
+      </div>
+
+      {/* Right: detail pane */}
       <div className="flex-1 overflow-hidden">
         <AnalysisDetailPane
           finding={selectedFinding}

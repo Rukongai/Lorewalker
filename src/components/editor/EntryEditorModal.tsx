@@ -107,7 +107,7 @@ export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
             entryId={currentEntryId}
             layout="quadrant"
             onNavigate={navigate}
-            renderBottomLeftHeader={() => (
+            renderBottomMiddleHeader={() => (
               <ActivationLinksHeader entryId={currentEntryId} graph={graph} />
             )}
             renderBottomRightHeader={() => (

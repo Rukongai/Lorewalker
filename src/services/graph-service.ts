@@ -307,6 +307,34 @@ export function findLongestChain(graph: RecursionGraph, startId: string): string
   return path
 }
 
+export function getReachableEntries(
+  entryId: string,
+  graph: RecursionGraph,
+  maxDepth?: number,
+): Set<string> {
+  const visited = new Set<string>()
+  const queue: [string, number][] = [[entryId, 0]]
+  while (queue.length > 0) {
+    const [current, depth] = queue.shift()!
+    if (visited.has(current)) continue
+    visited.add(current)
+    if (maxDepth && depth >= maxDepth) continue
+    const neighbors = graph.edges.get(current)
+    if (neighbors) {
+      for (const neighbor of neighbors) {
+        if (!visited.has(neighbor)) {
+          const edgeKey = `${current}\u2192${neighbor}`
+          const meta = graph.edgeMeta.get(edgeKey)
+          if (meta?.blockedByPreventRecursion || meta?.blockedByExcludeRecursion) continue
+          queue.push([neighbor, depth + 1])
+        }
+      }
+    }
+  }
+  visited.delete(entryId)
+  return visited
+}
+
 const NODE_WIDTH = 180
 const NODE_HEIGHT = 60
 

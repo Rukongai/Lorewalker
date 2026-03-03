@@ -114,7 +114,7 @@ interface EntryEditorProps {
   entryId: string
   layout?: 'single' | 'wide' | 'quadrant'
   onNavigate?: (entryId: string) => void
-  renderBottomLeftHeader?: () => React.ReactNode
+  renderBottomMiddleHeader?: () => React.ReactNode
   renderBottomRightHeader?: () => React.ReactNode
   renderBottomLeft?: () => React.ReactNode
   renderBottomRight?: () => React.ReactNode
@@ -185,7 +185,7 @@ function QuadrantLayout({
   nameField,
   contentField,
   fieldGroups,
-  renderBottomLeftHeader,
+  renderBottomMiddleHeader,
   renderBottomRightHeader,
   renderBottomLeft,
   renderBottomRight,
@@ -193,7 +193,7 @@ function QuadrantLayout({
   nameField: React.ReactNode
   contentField: React.ReactNode
   fieldGroups: React.ReactNode
-  renderBottomLeftHeader?: () => React.ReactNode
+  renderBottomMiddleHeader?: () => React.ReactNode
   renderBottomRightHeader?: () => React.ReactNode
   renderBottomLeft?: () => React.ReactNode
   renderBottomRight?: () => React.ReactNode
@@ -211,25 +211,26 @@ function QuadrantLayout({
         </div>
       </div>
 
-      {/* Bottom section: 4-cell CSS Grid — headers share a row, so heights are equal */}
+      {/* Bottom section: 3-column CSS Grid — col 0+1 = 1.5fr each (matches ActivationLinks 50/50), col 2 = 2fr */}
       <div
         className="overflow-hidden"
         style={{
           flex: '60 1 0',
           display: 'grid',
-          gridTemplateColumns: '3fr 2fr',
+          gridTemplateColumns: '1.5fr 1.5fr 2fr',
           gridTemplateRows: 'auto 1fr',
         }}
       >
-        {/* Header cells — same grid row = same height automatically */}
+        {/* Header row — 3 cells, same grid row = same height automatically */}
+        <div className="border-b border-r border-ctp-surface1 overflow-hidden" />
         <div className="border-b border-r border-ctp-surface1 overflow-hidden">
-          {renderBottomLeftHeader?.()}
+          {renderBottomMiddleHeader?.()}
         </div>
         <div className="border-b border-ctp-surface1 overflow-hidden">
           {renderBottomRightHeader?.()}
         </div>
-        {/* Content cells */}
-        <div className="overflow-hidden border-r border-ctp-surface1">
+        {/* Content row — left spans cols 0+1 to match the 3fr area */}
+        <div className="overflow-hidden border-r border-ctp-surface1" style={{ gridColumn: 'span 2' }}>
           {renderBottomLeft?.()}
         </div>
         <div className="overflow-hidden">
@@ -240,7 +241,7 @@ function QuadrantLayout({
   )
 }
 
-export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBottomLeftHeader, renderBottomRightHeader, renderBottomLeft, renderBottomRight }: EntryEditorProps) {
+export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBottomMiddleHeader, renderBottomRightHeader, renderBottomLeft, renderBottomRight }: EntryEditorProps) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
@@ -1239,7 +1240,7 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
             onSelect={handleCategorySelect}
           />
         }
-        renderBottomLeftHeader={renderBottomLeftHeader}
+        renderBottomMiddleHeader={renderBottomMiddleHeader}
         renderBottomRightHeader={renderBottomRightHeader}
         renderBottomLeft={renderBottomLeft}
         renderBottomRight={renderBottomRight}

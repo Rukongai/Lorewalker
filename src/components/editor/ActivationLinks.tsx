@@ -84,7 +84,7 @@ export function ActivationLinksHeader({ entryId, graph }: ActivationLinksHeaderP
       <div className="flex items-center gap-1.5">
         <span className="text-[10px] font-semibold text-ctp-overlay1 uppercase tracking-wider">Reach</span>
         {reachable.size > 0 ? (
-          <span className="text-xs text-ctp-subtext0">
+          <span className={`text-xs ${reachPercent > 75 ? 'text-ctp-red' : reachPercent > 50 ? 'text-ctp-yellow' : 'text-ctp-subtext0'}`}>
             ~{reachPercent}%{' '}
             <span className="text-ctp-overlay0">
               ({reachable.size} of {entries.length - 1})

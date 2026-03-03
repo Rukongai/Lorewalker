@@ -6,9 +6,9 @@ import type { Finding, FindingSeverity, HealthScore, RuleCategory } from '@/type
 interface AnalysisFindingListProps {
   findings: Finding[]
   healthScore: HealthScore
-  selectedFindingId: string | null
+  selectedRuleId: string | null
   hasLlmProvider: boolean
-  onSelectFinding: (finding: Finding) => void
+  onSelectRule: (ruleId: string) => void
   onDeepAnalysis: () => void
 }
 
@@ -17,13 +17,6 @@ type Filter = FindingSeverity | 'all'
 const CATEGORIES: RuleCategory[] = ['structure', 'config', 'keywords', 'recursion', 'budget', 'content']
 
 const SEVERITY_ORDER: Record<FindingSeverity, number> = { error: 0, warning: 1, suggestion: 2 }
-
-const LLM_RULE_IDS = new Set([
-  'content/quality-assessment',
-  'content/structure-check',
-  'content/scope-check',
-  'keywords/missing-variations',
-])
 
 function scoreColor(score: number): string {
   if (score < 60) return 'text-ctp-red'
@@ -45,12 +38,24 @@ function AiBadge() {
   )
 }
 
+function ruleDisplayName(ruleId: string): string {
+  const slug = ruleId.split('/').pop() ?? ruleId
+  return slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+}
+
+const LLM_RULE_IDS = new Set([
+  'content/quality-assessment',
+  'content/structure-check',
+  'content/scope-check',
+  'keywords/missing-variations',
+])
+
 export function AnalysisFindingList({
   findings,
   healthScore,
-  selectedFindingId,
+  selectedRuleId,
   hasLlmProvider,
-  onSelectFinding,
+  onSelectRule,
   onDeepAnalysis,
 }: AnalysisFindingListProps) {
   const [filter, setFilter] = useState<Filter>('all')
@@ -75,12 +80,14 @@ export function AnalysisFindingList({
     })
   }
 
-  // Group by category
-  const byCategory = new Map<RuleCategory, Finding[]>()
+  // Group by category → ruleId → findings
+  const byCategoryRule = new Map<RuleCategory, Map<string, Finding[]>>()
   for (const finding of filtered) {
     const cat = finding.category
-    if (!byCategory.has(cat)) byCategory.set(cat, [])
-    byCategory.get(cat)!.push(finding)
+    if (!byCategoryRule.has(cat)) byCategoryRule.set(cat, new Map())
+    const ruleMap = byCategoryRule.get(cat)!
+    if (!ruleMap.has(finding.ruleId)) ruleMap.set(finding.ruleId, [])
+    ruleMap.get(finding.ruleId)!.push(finding)
   }
 
   return (
@@ -130,7 +137,7 @@ export function AnalysisFindingList({
         })}
       </div>
 
-      {/* Grouped finding list */}
+      {/* Category accordion with rule items */}
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
           <div className="flex items-center justify-center h-16">
@@ -140,9 +147,10 @@ export function AnalysisFindingList({
           </div>
         ) : (
           CATEGORIES.map((cat) => {
-            const catFindings = byCategory.get(cat)
-            if (!catFindings || catFindings.length === 0) return null
+            const ruleMap = byCategoryRule.get(cat)
+            if (!ruleMap || ruleMap.size === 0) return null
             const collapsed = collapsedCats.has(cat)
+            const totalForCat = Array.from(ruleMap.values()).reduce((sum, arr) => sum + arr.length, 0)
 
             return (
               <div key={cat}>
@@ -155,30 +163,37 @@ export function AnalysisFindingList({
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-ctp-subtext0 capitalize">
                     {cat}
                   </span>
-                  <span className="ml-auto text-[10px] text-ctp-overlay1">{catFindings.length}</span>
+                  <span className="ml-auto text-[10px] text-ctp-overlay1">{totalForCat}</span>
                 </button>
 
-                {/* Findings in category */}
-                {!collapsed && catFindings.map((finding) => (
-                  <button
-                    key={finding.id}
-                    onClick={() => onSelectFinding(finding)}
-                    className={`w-full flex items-start gap-2 px-3 py-2 text-left border-b border-ctp-surface0 last:border-b-0 transition-colors ${
-                      finding.id === selectedFindingId
-                        ? 'bg-ctp-surface1'
-                        : 'hover:bg-ctp-surface0'
-                    }`}
-                  >
-                    <span className="mt-0.5 shrink-0"><SeverityIcon severity={finding.severity} /></span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-ctp-text leading-snug">{finding.message}</p>
-                      <p className="text-[10px] text-ctp-overlay1 mt-0.5">{finding.ruleId}</p>
-                    </div>
-                    {LLM_RULE_IDS.has(finding.ruleId) && (
-                      <span className="shrink-0 mt-0.5"><AiBadge /></span>
-                    )}
-                  </button>
-                ))}
+                {/* Rule items under category */}
+                {!collapsed && Array.from(ruleMap.entries()).map(([ruleId, ruleFindings]) => {
+                  const isSelected = ruleId === selectedRuleId
+                  // findings are sorted by severity, so first = highest
+                  const topSeverity = ruleFindings[0].severity
+                  const isLlm = LLM_RULE_IDS.has(ruleId)
+
+                  return (
+                    <button
+                      key={ruleId}
+                      onClick={() => onSelectRule(ruleId)}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-left border-b border-ctp-surface0 last:border-b-0 transition-colors ${
+                        isSelected
+                          ? 'bg-ctp-surface1 border-l-2 border-l-ctp-accent'
+                          : 'hover:bg-ctp-surface0'
+                      }`}
+                    >
+                      <SeverityIcon severity={topSeverity} />
+                      <span className="flex-1 text-xs text-ctp-text truncate">
+                        {ruleDisplayName(ruleId)}
+                      </span>
+                      {isLlm && <AiBadge />}
+                      <span className="text-[10px] text-ctp-overlay1 tabular-nums shrink-0">
+                        {ruleFindings.length}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             )
           })
