@@ -83,6 +83,13 @@ interface WorkingEntry {
   // === Lorewalker-specific ===
   userCategory?: string;          // Manual or LLM-assigned category override (stored in extensions.lorewalker.userCategory)
 
+  // === RoleCall-specific (populated only when activeFormat === 'rolecall') ===
+  triggerMode?: 'simple' | 'advanced';       // RoleCall trigger mode
+  keywordObjects?: RoleCallKeyword[];        // Per-keyword config objects (advanced mode)
+  triggerConditions?: RoleCallCondition[];   // Condition-based triggers
+  positionRoleCall?: RoleCallPosition;       // RoleCall injection position (native to RC format)
+  rolecallComment?: string;                  // RoleCall comment/notes field
+
   // === Passthrough ===
   extensions: Record<string, unknown>;  // Preserves unknown platform-specific extensions for round-trip fidelity
 }
