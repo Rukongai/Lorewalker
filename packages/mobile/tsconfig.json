@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-native",
+    "lib": ["ES2022"],
+    "paths": {
+      "@lorewalker/core": ["../core/src/index.ts"],
+      "@lorewalker/core/*": ["../core/src/*"]
+    },
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["src", "index.js"]
+}

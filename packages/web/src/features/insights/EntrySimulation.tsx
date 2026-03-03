@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { WorkingEntry, ActivationResult, BookMeta } from '@/types'
-import { simulate } from '@/services/simulator-service'
+import { simulate } from '@lorewalker/core'
 import { ActivationResultList } from '@/features/simulator/ActivationResultList'
 
 export interface EntrySimulationProps {

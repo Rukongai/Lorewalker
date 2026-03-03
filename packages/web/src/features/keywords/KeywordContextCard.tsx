@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Play, Loader2 } from 'lucide-react'
 import type { KeywordStat, WorkingEntry, BookMeta, ActivationResult } from '@/types'
-import { simulateKeyword } from '@/services/keyword-analysis-service'
+import { simulateKeyword } from '@lorewalker/core'
 import { ActivationResults } from '@/components/simulator/ActivationResults'
 
 interface KeywordContextCardProps {

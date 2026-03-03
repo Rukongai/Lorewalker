@@ -7,7 +7,7 @@ import { RuleTestingPane } from './RuleTestingPane'
 import { TemplateField } from './TemplateField'
 import { VariablePicker } from './VariablePicker'
 import type { SerializedEvaluation } from '@/types'
-import { RULE_SEEDS } from '@/services/analysis/copy-seeds'
+import { RULE_SEEDS } from '@lorewalker/core'
 
 const CATEGORIES: RuleCategory[] = ['structure', 'config', 'keywords', 'content', 'recursion', 'budget']
 const SEVERITIES: FindingSeverity[] = ['error', 'warning', 'suggestion']

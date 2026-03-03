@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { Play } from 'lucide-react'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE } from '@/hooks/useDerivedState'
-import { evaluateCondition, interpolateMessage } from '@/services/analysis/evaluation-engine'
-import type { EvaluationContext } from '@/services/analysis/evaluation-engine'
+import { evaluateCondition, interpolateMessage, type EvaluationContext } from '@lorewalker/core'
 import type { SerializedEvaluation, WorkingEntry } from '@/types'
 
 interface TestResult {

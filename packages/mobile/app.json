@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Lorewalker",
+    "slug": "lorewalker",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#1e1e2e"
+      }
+    }
+  }
+}

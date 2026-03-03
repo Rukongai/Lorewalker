@@ -14,14 +14,10 @@ import {
   GroupFields, ScanOverrideFields, MatchSourceFields, CharFilterFields,
   TriggersFields, AdvancedFields,
 } from '@/features/editor'
-import { categorizeEntry } from '@/services/categorize-service'
-import { llmService } from '@/services/llm/llm-service'
+import { categorizeEntry, llmService, computeHealthScore, defaultRubric, getReachableEntries } from '@lorewalker/core'
 import {
   buildConnectionRows, ConnectionsList, HealthScoreCard, FindingsList,
 } from '@/features/health'
-import { computeHealthScore } from '@/services/analysis/analysis-service'
-import { defaultRubric } from '@/services/analysis/default-rubric'
-import { getReachableEntries } from '@/services/graph-service'
 
 const LazyRCEntryFields = lazy(
   () => import('@/features/editor/variants/rolecall/RCEntryFields').then(m => ({ default: m.RCEntryFields }))

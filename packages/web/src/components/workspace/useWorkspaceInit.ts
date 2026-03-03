@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { SidebarPanelTab } from '@/layouts/desktop/SidebarPanel'
 import { storageAdapter } from '@/lib/storage'
-import { llmService } from '@/services/llm/llm-service'
-import { OpenAICompatibleProvider } from '@/services/llm/providers/openai-compatible'
-import { AnthropicProvider } from '@/services/llm/providers/anthropic'
+import { llmService, OpenAICompatibleProvider, AnthropicProvider } from '@lorewalker/core'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
 export type RightPanelTab = SidebarPanelTab

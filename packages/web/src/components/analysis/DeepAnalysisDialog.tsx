@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { llmService } from '@/services/llm/llm-service'
-import { runLLMRules } from '@/services/analysis/analysis-service'
-import { defaultRubric } from '@/services/analysis/default-rubric'
+import { llmService, runLLMRules, defaultRubric } from '@lorewalker/core'
 import type { AnalysisContext, Finding } from '@/types'
 
 interface DeepAnalysisDialogProps {

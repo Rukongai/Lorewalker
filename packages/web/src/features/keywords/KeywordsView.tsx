@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import type { WorkingEntry, BookMeta, KeywordStat, RecursionGraph } from '@/types'
-import { buildKeywordInventory } from '@/services/keyword-analysis-service'
+import { buildKeywordInventory } from '@lorewalker/core'
 import { KeywordContextCard } from './KeywordContextCard'
 import { KeywordTag } from './KeywordTag'
 import { KeywordReachTable } from './KeywordReachTable'

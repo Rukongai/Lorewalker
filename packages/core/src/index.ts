@@ -6,3 +6,38 @@ export { documentStoreRegistry } from './stores/document-store-registry'
 export type { StorageAdapter } from './storage'
 export { generateId } from './lib/uuid'
 export { debounce } from './lib/debounce'
+export { FIXED_CATEGORIES, isFixedCategory, getEntryIcon } from './lib/entry-type'
+
+// Services
+export { inflate, deflate, inflateFromRawST, inflateFromRoleCall, deflateToRoleCall } from './services/transform-service'
+export type { InflateResult, RawSTBook, RawRoleCallBook, RawSTEntry } from './services/transform-service'
+export {
+  buildGraph,
+  incrementalUpdate,
+  findCycles,
+  findOrphans,
+  findDeadLinks,
+  findIslands,
+  findLongestChain,
+  computeLayout,
+  getReachableEntries,
+  buildLayoutSkeleton,
+  detectKeywordCommunities,
+  computeChainDepths,
+} from './services/graph-service'
+export { simulate, simulateConversation } from './services/simulator-service'
+export { buildKeywordInventory, simulateKeyword } from './services/keyword-analysis-service'
+export { categorizeEntry, categorizeAll } from './services/categorize-service'
+export { runDeterministic, runLLMRules, computeHealthScore } from './services/analysis/analysis-service'
+export { customRuleToRule } from './services/analysis/custom-rule-adapter'
+export { defaultRubric } from './services/analysis/default-rubric'
+export { evaluateCondition, interpolateMessage } from './services/analysis/evaluation-engine'
+export type { EvaluationContext } from './services/analysis/evaluation-engine'
+export { filterRulesByFormat } from './services/analysis/format-filter'
+export { INCOMPATIBLE_RULE_IDS } from './services/analysis/copy-compatibility'
+export { RULE_SEEDS } from './services/analysis/copy-seeds'
+export { doesEntryMatchText, isRegexKey } from './services/simulator/keyword-matching'
+export { sillyTavernEngine } from './services/simulator/engines/sillytavern-engine'
+export { LLMService, llmService } from './services/llm/llm-service'
+export { AnthropicProvider } from './services/llm/providers/anthropic'
+export { OpenAICompatibleProvider, LLMError } from './services/llm/providers/openai-compatible'

@@ -1,4 +1,4 @@
-import { llmService } from '@/services/llm/llm-service'
+import { llmService } from '@lorewalker/core'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { Toggle } from '@/components/shared/Toggle'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'

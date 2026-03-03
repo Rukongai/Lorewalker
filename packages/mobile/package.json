@@ -1,0 +1,30 @@
+{
+  "name": "@lorewalker/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios"
+  },
+  "dependencies": {
+    "@lorewalker/core": "*",
+    "@character-foundry/character-foundry": "^0.5.0",
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-navigation/bottom-tabs": "^6.6.1",
+    "@react-navigation/native": "^6.1.18",
+    "@react-navigation/native-stack": "^6.10.1",
+    "expo": "~52.0.0",
+    "expo-document-picker": "~12.0.2",
+    "expo-file-system": "~18.0.7",
+    "react": "18.3.1",
+    "react-native": "0.76.9",
+    "react-native-safe-area-context": "4.12.0",
+    "react-native-screens": "~3.35.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "typescript": "~5.9.3"
+  }
+}

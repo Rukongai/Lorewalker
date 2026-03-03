@@ -7,11 +7,12 @@
  */
 
 import { parseLorebook, parseCard } from '@character-foundry/character-foundry/loader'
+import type { CCv3CharacterBook } from '@character-foundry/character-foundry/loader'
 import { exportToPng, exportToCharx } from '@character-foundry/character-foundry/exporter'
 import type { ExportAsset } from '@character-foundry/character-foundry/exporter'
 import { generateId } from '@/lib/uuid'
-import { inflate, inflateFromRawST, inflateFromRoleCall, deflate, deflateToRoleCall } from './transform-service'
-import type { RawSTBook, RawRoleCallBook } from './transform-service'
+import { inflate, inflateFromRawST, inflateFromRoleCall, deflate, deflateToRoleCall } from '@lorewalker/core'
+import type { RawSTBook, RawRoleCallBook } from '@lorewalker/core'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import type { FileMeta, LorebookFormat, CardPayload, WorkingEntry } from '@/types'
@@ -237,7 +238,7 @@ export function exportFile(tabId: string, fileName?: string): void {
     return
   }
 
-  let book
+  let book: CCv3CharacterBook
   try {
     book = deflate(entries, bookMeta)
   } catch (err) {
@@ -361,7 +362,7 @@ export async function exportFileAs(
     throw new FileExportError('No card data available for binary export')
   }
 
-  let book
+  let book: CCv3CharacterBook
   try {
     book = deflate(entries, bookMeta)
   } catch (err) {

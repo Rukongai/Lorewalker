@@ -5,7 +5,8 @@
   "type": "module",
   "workspaces": [
     "packages/core",
-    "packages/web"
+    "packages/web",
+    "packages/mobile"
   ],
   "scripts": {
     "dev": "vite",
