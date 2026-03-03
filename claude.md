@@ -48,7 +48,8 @@ This project uses specialized agents. See `AGENTS.md` for full definitions.
 - **Framework:** React + TypeScript + Vite
 - **State:** Zustand + immer + zundo (undo/redo)
 - **Graph:** @xyflow/react (React Flow v12)
-- **UI:** Tailwind CSS + shadcn/ui (dark mode default)
+- **Layout:** elkjs (ELK auto-layout for directed graphs)
+- **UI:** Tailwind CSS + shadcn/ui (dark mode default, 14 theme options)
 - **Persistence:** IndexedDB via idb-keyval
 - **Format I/O:** @character-foundry/character-foundry
 - **Testing:** Vitest + React Testing Library
@@ -56,13 +57,50 @@ This project uses specialized agents. See `AGENTS.md` for full definitions.
 
 ## Key Architecture Concepts
 
-- **WorkingEntry** is the core data type — a flattened representation of CCv3 lorebook entries optimized for editing. TransformService handles inflation/deflation.
-- **One Zustand store per tab** — undo/redo is scoped per document. Don't share stores across tabs.
-- **RecursionGraph is derived, not stored** — recomputed incrementally when entries change. Never persist it.
+- **WorkingEntry** is the core data type — a flattened representation of CCv3 lorebook entries optimized for editing. TransformService handles inflation/deflation. Optional RoleCall fields (`triggerMode`, `keywordObjects`, `triggerConditions`, `positionRoleCall`) are populated only when `activeFormat === 'rolecall'`.
+
+- **One Zustand store per tab** — undo/redo is scoped per document. Don't share stores across tabs. Only `entries`, `bookMeta`, and `graphPositions` are tracked by zundo. Graph positions are in the partialize list but writes bypass zundo via `store.setState(...)`.
+
+- **EMPTY_STORE pattern** — Components that need a DocumentStore but must handle "no active tab" import `EMPTY_STORE` from `src/hooks/useDerivedState.ts` as a fallback. This keeps Zustand `useStore` calls unconditional (Rules of Hooks). Never write to `EMPTY_STORE`.
+
+- **RecursionGraph is derived, not stored** — recomputed incrementally when entries change via `useDerivedState` (debounced 150ms). Never persist it.
+
 - **Keyword matching is shared** — defined in `services/simulator/keyword-matching.ts`, imported by both GraphService and SimulatorService. Never duplicate this logic.
-- **Services are pure functions** (except LLMService and CategorizeService which manage provider state). Data in, data out. State lives in Zustand stores.
+
+- **Services are pure functions** (except LLMService which manages provider instances). Data in, data out. State lives in Zustand stores. CategorizeService takes `llmService` as a parameter — it is stateless, not a provider manager.
+
 - **Analysis rules** implement a uniform Rule interface regardless of whether they're deterministic or LLM-powered. The `requiresLLM` flag controls when they execute.
-- **RoleCall format** — Two format families are supported: `sillytavern` and `rolecall`. `DocumentStore.activeFormat` determines which editor panels render. When `activeFormat === 'rolecall'`, EntryEditor swaps keyword/activation panels for RoleCall-specific variants (RCActivationSection, KeywordObjectsEditor, ConditionsEditor). TransformService handles both formats via inflate/deflate.
-- **Three-layer rubric assembly** — Active rubric = `defaultRubric` (filtered by disabled IDs) + workspace-level custom rules + per-document rule overrides. Assembled in `useDerivedState` before each analysis run. Never run analysis with just the default rubric.
-- **EMPTY_STORE pattern** — Components that need a DocumentStore but must handle "no active tab" import `EMPTY_STORE` from `src/hooks/useDerivedState.ts` as a fallback. This keeps Zustand `useStore` calls unconditional (Rules of Hooks). Never call `useStore` conditionally.
-- **CategorizeService is also non-pure** — Like LLMService, CategorizeService manages provider state and makes async LLM calls. Both are exceptions to the pure-function service rule.
+
+- **Three-layer rubric assembly** — Active rubric = `defaultRubric` (filtered by `WorkspaceStore.disabledBuiltinRuleIds`) + workspace-level `customRules` (via `customRuleToRule()` adapter) + per-document `ruleOverrides`. Assembled in `useDerivedState` before each analysis run. Never run analysis with just the default rubric.
+
+- **Custom Rules System** — Users build rules visually via ConditionBuilder, which produces a `SerializedEvaluation` JSON tree. The `evaluation-engine.ts` resolves variable paths (e.g., `entry.keys.length`) against WorkingEntry fields at runtime. Custom rules are workspace-scoped with per-document overrides for disabling.
+
+- **RoleCall format** — Two format families: standard (sillytavern/ccv3/agnai/risu/wyvern) and `rolecall`. `DocumentStore.activeFormat` determines which editor panels render. When `activeFormat === 'rolecall'`, EntryEditor swaps keyword/activation panels for RoleCall-specific variants.
+
+## UI Patterns
+
+- **Modal layering** — z-9999 for portal tooltips (never clipped), z-50 for EntryEditorModal and SettingsDialog (capture Escape + stopImmediatePropagation), z-40 for WorkspaceToolsModal (bubble Escape, blocked by z-50). New modals must follow this hierarchy. See ARCHITECTURE.md "Modal Layering Pattern".
+
+- **Navigation delegation** — Components inside WorkspaceToolsModal use `onOpenEntry(entryId)` and `onSelectEntry(entryId)` callbacks from WorkspaceShell. They never import WorkspaceShell internals. See CONVENTIONS.md "Navigation Delegation".
+
+- **WorkspaceToolsModal** — Large overlay (95vw × 90vh, z-40) with four tabs: analysis (findings + chain diagram), simulator (conversation + results), rules (built-in toggles + custom rule CRUD + editor), keywords (inventory table + detail pane). This is where complex analysis and simulation workflows live — the right-side panels are for quick access only.
+
+- **Theme system** — 14 themes defined as CSS variable blocks in `globals.css`. ThemeId set as class on `<html>`. Color tokens use `--ctp-*` (palette), `--edge-*` (graph edges), `--node-*` (graph nodes). Light themes (`catppuccin-latte`, `nord-aurora`, `rose-pine-dawn`, `tokyo-night-day`) set React Flow `colorMode: 'light'`. Never use Tailwind `dark:` variant — use CSS variables.
+
+- **Graph edge editing** — Users can drag-to-create edges (EdgeConnectDialog picks which keyword to add to source content) and delete edges (removes keyword mention). Helpers in `src/lib/edge-edit.ts`.
+
+- **Shared utilities** — `getTypeBadge()` in `entry-badge.ts` for entry type badges (used in EntryListItem, EntryNode, EntryEditorModal), `modKey` in `platform.ts` for platform-aware shortcut labels, `severityColor()` for finding severity styling, `cn()` for Tailwind class merging. See CONVENTIONS.md "Shared Utility Patterns" before reimplementing any of these.
+
+## Service Inventory (Quick Reference)
+
+| Service | Owns | Stateful? |
+|---------|------|-----------|
+| FileService | Import, export, format detection, file dialogs | No |
+| TransformService | CCv3 ↔ WorkingEntry[] conversion (both ST and RoleCall) | No |
+| GraphService | Recursion graph, keyword matching, graph queries, ELK layout | No |
+| AnalysisService | Health scoring, rule execution, finding generation | No |
+| SimulatorService | Activation simulation, multi-message replay, engine management | No |
+| LLMService | Provider management, API calls, cost estimation | Yes (singleton) |
+| CategorizeService | LLM-powered entry categorization (8 fixed categories) | No |
+| KeywordAnalysisService | Keyword inventory stats across all entries | No |
+| PersistenceService | IndexedDB autosave, recovery, snapshots, preferences | No |
