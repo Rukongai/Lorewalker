@@ -2,17 +2,24 @@ import { useCallback, useState, useMemo } from 'react'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EMPTY_STORE, useDerivedState } from '@/hooks/useDerivedState'
-import type { WorkingEntry, SelectiveLogic, EntryPosition, RoleCallPosition } from '@/types'
+import type { WorkingEntry } from '@/types'
 import { estimateTokenCount } from '@/lib/token-estimate'
-import { KeywordInput } from './KeywordInput'
 import { HelpTooltip } from '@/components/ui/HelpTooltip'
-import { Toggle } from '@/components/shared/Toggle'
 import { ActivationLinks } from './ActivationLinks'
-import { RoleCallPositionSelect } from './RoleCallPositionSelect'
 import { RCActivationSection } from './RCActivationSection'
 import { FieldGroup, Field, inputClass } from '@/features/editor/primitives'
 import { ContentField } from '@/features/editor/ContentField'
 import { CategoryAssign } from '@/features/editor/CategoryAssign'
+import { ActivationFields } from '@/features/editor/fields/ActivationFields'
+import { PriorityFields } from '@/features/editor/fields/PriorityFields'
+import { TimedEffectFields } from '@/features/editor/fields/TimedEffectFields'
+import { RecursionFields } from '@/features/editor/fields/RecursionFields'
+import { GroupFields } from '@/features/editor/fields/GroupFields'
+import { ScanOverrideFields } from '@/features/editor/fields/ScanOverrideFields'
+import { MatchSourceFields } from '@/features/editor/fields/MatchSourceFields'
+import { CharFilterFields } from '@/features/editor/fields/CharFilterFields'
+import { TriggersFields } from '@/features/editor/fields/TriggersFields'
+import { AdvancedFields } from '@/features/editor/fields/AdvancedFields'
 
 function CategoryPane({
   categories,
@@ -52,10 +59,6 @@ function CategoryPane({
     </div>
   )
 }
-
-type InsertionStrategy = 'constant' | 'normal' | 'vectorized'
-
-const TRIGGER_OPTIONS = ['Normal', 'Continue', 'Impersonate', 'Swipe', 'Regenerate', 'Quiet'] as const
 
 interface EntryEditorProps {
   entryId: string
@@ -227,59 +230,21 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
       if (field === 'name') {
         changes.addMemo = String(value).trim().length > 0
       }
-      if (field === 'probability') {
-        changes.useProbability = Number(value) < 100
-      }
       realStore.getState().updateEntry(entryId, changes)
       if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
     },
     [realStore, entryId, activeTabId]
   )
 
-  const handleSecondaryKeysChange = useCallback((v: string[]) => {
+  const handleUpdate = useCallback((patch: Partial<WorkingEntry>) => {
     if (!realStore) return
-    const changes: Partial<WorkingEntry> = { secondaryKeys: v }
-    if (v.length === 0) changes.selective = false
-    realStore.getState().updateEntry(entryId, changes)
+    realStore.getState().updateEntry(entryId, patch)
     if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
   }, [realStore, entryId, activeTabId])
-
-  const handleStrategyChange = useCallback((strategy: InsertionStrategy) => {
-    if (!realStore) return
-    const changes: Partial<WorkingEntry> =
-      strategy === 'constant'
-        ? { constant: true, vectorized: false }
-        : strategy === 'vectorized'
-          ? { constant: false, vectorized: true }
-          : { constant: false, vectorized: false }
-    realStore.getState().updateEntry(entryId, changes)
-    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
-  }, [realStore, entryId, activeTabId])
-
-  const handleTriggerToggle = useCallback((trigger: string) => {
-    if (!realStore || !entry) return
-    const next = entry.triggers.includes(trigger)
-      ? entry.triggers.filter((t) => t !== trigger)
-      : [...entry.triggers, trigger]
-    realStore.getState().updateEntry(entryId, { triggers: next })
-    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
-  }, [realStore, entry, entryId, activeTabId])
 
   const handleSetCategory = useCallback((category: string | undefined) => {
     if (!realStore) return
     realStore.getState().setEntryCategory(entryId, category)
-    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
-  }, [realStore, entryId, activeTabId])
-
-  const handleRoleCallPositionChange = useCallback((pos: RoleCallPosition) => {
-    if (!realStore) return
-    realStore.getState().updateEntry(entryId, { positionRoleCall: pos })
-    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
-  }, [realStore, entryId, activeTabId])
-
-  const handleRCChange = useCallback((patch: Partial<WorkingEntry>) => {
-    if (!realStore) return
-    realStore.getState().updateEntry(entryId, patch)
     if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
   }, [realStore, entryId, activeTabId])
 
@@ -290,15 +255,6 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
       </div>
     )
   }
-
-  const strategy: InsertionStrategy = entry.constant ? 'constant' : entry.vectorized ? 'vectorized' : 'normal'
-
-  const strategyActiveClass: Record<InsertionStrategy, string> = {
-    constant:   'bg-ctp-mauve/40 text-ctp-mauve font-medium',
-    normal:     'bg-ctp-sky/40 text-ctp-sky font-medium',
-    vectorized: 'bg-ctp-sapphire/40 text-ctp-sapphire font-medium',
-  }
-  const strategyInactiveClass = 'bg-ctp-surface0 text-ctp-subtext0 hover:text-ctp-text hover:bg-ctp-surface1'
 
   const nameField = (
     <>
@@ -346,440 +302,61 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
 
   const fieldGroups = (
     <>
-      {/* Activation */}
       <FieldGroup label="Activation" rcOnly={isRoleCall}>
-        {isRoleCall ? (
-          <RCActivationSection entry={entry} onChange={handleRCChange} />
-        ) : (
-          <>
-            <Field
-              label="Insertion Strategy"
-              help="Controls how this entry activates. Constant = always active; Normal = keyword-triggered; Vectorized = semantic similarity search."
-            >
-              <div className="flex rounded border border-ctp-surface1 overflow-hidden">
-                {(['constant', 'normal', 'vectorized'] as InsertionStrategy[]).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => handleStrategyChange(s)}
-                    className={`flex-1 px-2 py-1 text-xs capitalize transition-colors ${strategy === s ? strategyActiveClass[s] : strategyInactiveClass}`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </Field>
-            <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-              <Toggle checked={entry.selective} onChange={(val) => handleChange('selective', val)} />
-              Selective (requires secondary key match)
-              <HelpTooltip text="When checked, the entry only activates if secondary keys also match according to the Selective Logic rule." />
-            </label>
-            <Field label="Keys" help="Primary trigger keywords. When any key appears in the scan window, this entry may activate. Supports plain text or /regex/ patterns.">
-              <KeywordInput
-                value={entry.keys}
-                onChange={(v) => handleChange('keys', v)}
-                placeholder="keyword, keyword…"
-              />
-            </Field>
-            {entry.selective && (
-              <>
-                <Field label="Selective Logic" help="How secondary keys interact with primary keys: AND ANY (any secondary matches), AND ALL (all must match), NOT ANY (blocks if any secondary matches), NOT ALL (blocks only if all match).">
-                  <select
-                    value={entry.selectiveLogic}
-                    onChange={(e) => handleChange('selectiveLogic', Number(e.target.value) as SelectiveLogic)}
-                    className={inputClass}
-                  >
-                    <option value={0}>AND ANY (primary + any secondary)</option>
-                    <option value={1}>AND ALL (primary + all secondary)</option>
-                    <option value={2}>NOT ANY (primary + none of secondary)</option>
-                    <option value={3}>NOT ALL (primary, not all secondary)</option>
-                  </select>
-                </Field>
-                <Field label="Secondary Keys (Optional Filter)" help="Additional keywords evaluated after a primary key match. Activation depends on the Selective Logic setting.">
-                  <KeywordInput
-                    variant="secondary"
-                    value={entry.secondaryKeys}
-                    onChange={handleSecondaryKeysChange}
-                    placeholder="secondary, secondary…"
-                  />
-                </Field>
-              </>
-            )}
-          </>
-        )}
+        {isRoleCall
+          ? <RCActivationSection entry={entry} onChange={handleUpdate} />
+          : <ActivationFields entry={entry} onChange={handleUpdate} />}
       </FieldGroup>
 
-      {/* Insertion */}
       <FieldGroup label="Insertion">
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Position" help={isRoleCall ? "RoleCall injection position. World/Character inject near character context; Scene injects near recent messages; @ Depth injects at an exact chat depth." : "Where the entry's content is injected in the final prompt."}>
-            {isRoleCall ? (
-              <RoleCallPositionSelect
-                value={entry.positionRoleCall ?? 'depth'}
-                onChange={handleRoleCallPositionChange}
-              />
-            ) : (
-              <select
-                value={entry.position}
-                onChange={(e) => handleChange('position', Number(e.target.value) as EntryPosition)}
-                className={inputClass}
-              >
-                <option value={0}>0 — Before Char Defs</option>
-                <option value={1}>1 — After Char Defs</option>
-                <option value={2}>2 — Before Examples</option>
-                <option value={3}>3 — After Examples</option>
-                <option value={4}>4 — @ Depth</option>
-                <option value={5}>5 — Top of AN</option>
-                <option value={6}>6 — Bottom of AN</option>
-                <option value={7}>7 — Outlet</option>
-              </select>
-            )}
-          </Field>
-          <Field label="Order" help="Priority when multiple entries activate simultaneously. Higher values place entries closer to the end of the prompt, giving them more influence.">
-            <input
-              type="number"
-              value={entry.order}
-              onChange={(e) => handleChange('order', Number(e.target.value))}
-              className={inputClass}
-            />
-          </Field>
-        </div>
-        {(isRoleCall ? entry.positionRoleCall === 'depth' : entry.position === 4) && (
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Role" help="Whether this entry is injected as a system, user, or assistant message.">
-              <select
-                value={entry.role}
-                onChange={(e) => handleChange('role', Number(e.target.value))}
-                className={inputClass}
-              >
-                <option value={0}>System</option>
-                <option value={1}>User</option>
-                <option value={2}>Assistant</option>
-              </select>
-            </Field>
-            <Field label="Context Depth" help="Chat depth at which this entry is injected. Depth 0 = bottom of the prompt (most recent); higher values insert further up in the conversation history.">
-              <input
-                type="number"
-                value={entry.depth}
-                onChange={(e) => handleChange('depth', Number(e.target.value))}
-                className={inputClass}
-              />
-            </Field>
-          </div>
-        )}
-        {entry.position === 7 && (
-          <Field label="Outlet Name" help="The named outlet this entry's content is stored under. Reference it in your prompt template with {{outlet::Name}}.">
-            <input
-              type="text"
-              value={entry.outletName}
-              onChange={(e) => handleChange('outletName', e.target.value)}
-              className={inputClass}
-              placeholder="Outlet name"
-            />
-          </Field>
-        )}
+        <PriorityFields entry={entry} isRoleCall={isRoleCall} onChange={handleUpdate} />
       </FieldGroup>
 
-      {/* Timed Effects — shared: delay/cooldown/sticky; ST-exclusive: useProbability */}
       {isPlatform && (
         <FieldGroup label="Timed Effects" defaultCollapsed>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Trigger %" help="Probability (1–100) that the entry is inserted when its keys match. Set below 100 to add randomness. Probability is enabled automatically when below 100.">
-              <input
-                type="number"
-                min={1}
-                max={100}
-                value={entry.probability}
-                onChange={(e) => handleChange('probability', Number(e.target.value))}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Delay" help="Minimum number of messages that must exist in the chat before this entry can activate. Leave empty to use the global default.">
-              <input
-                type="number"
-                min={0}
-                value={entry.delay ?? ''}
-                placeholder="Global default"
-                onChange={(e) => handleChange('delay', e.target.value === '' ? null : Number(e.target.value))}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Cooldown Duration" help="After this entry activates, it cannot activate again for this many messages. Leave empty to use the global default.">
-              <input
-                type="number"
-                min={0}
-                value={entry.cooldown ?? ''}
-                placeholder="Global default"
-                onChange={(e) => handleChange('cooldown', e.target.value === '' ? null : Number(e.target.value))}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Sticky Duration" help="After activating, the entry stays injected for this many additional messages without needing keyword triggers. Leave empty to use the global default.">
-              <input
-                type="number"
-                min={0}
-                value={entry.sticky ?? ''}
-                placeholder="Global default"
-                onChange={(e) => handleChange('sticky', e.target.value === '' ? null : Number(e.target.value))}
-                className={inputClass}
-              />
-            </Field>
-          </div>
-          {isSillyTavern && (
-            <FieldGroup label="Use Probability" stOnly>
-              <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-                <Toggle checked={entry.useProbability} onChange={(val) => handleChange('useProbability', val)} />
-                Enable Trigger %
-                <HelpTooltip text="When off, the Trigger % field is ignored and the entry always activates on keyword match." />
-              </label>
-            </FieldGroup>
-          )}
+          <TimedEffectFields entry={entry} isSillyTavern={isSillyTavern} onChange={handleUpdate} />
         </FieldGroup>
       )}
 
-      {/* Recursion — platform shared */}
       {isPlatform && (
         <FieldGroup label="Recursion" defaultCollapsed>
-        <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-          <Toggle checked={entry.preventRecursion} onChange={(val) => handleChange('preventRecursion', val)} />
-          Prevent Further Recursion
-          <HelpTooltip text="When active, this entry won't trigger other entries through recursion. Stops unintended cascading activation chains." />
-        </label>
-        <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-          <Toggle checked={entry.excludeRecursion} onChange={(val) => handleChange('excludeRecursion', val)} />
-          Non-recursable
-          <HelpTooltip text="This entry can only be activated by direct keyword matches in chat. Other entries cannot recursively trigger it." />
-        </label>
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 text-xs text-ctp-subtext0 shrink-0">
-            <Toggle
-              checked={entry.delayUntilRecursion > 0}
-              onChange={(val) => handleChange('delayUntilRecursion', val ? 1 : 0)}
-            />
-            Delay Until Recursion
-            <HelpTooltip text="The entry stays inactive for this many recursion passes before it can be triggered by other entries." />
-          </label>
-          {entry.delayUntilRecursion > 0 && (
-            <input
-              type="number"
-              min={1}
-              value={entry.delayUntilRecursion}
-              onChange={(e) => handleChange('delayUntilRecursion', Number(e.target.value))}
-              className={`${inputClass} w-16`}
-            />
-          )}
-        </div>
-      </FieldGroup>
+          <RecursionFields entry={entry} onChange={handleUpdate} />
+        </FieldGroup>
       )}
 
-      {/* Inclusion Group — platform shared; useGroupScoring + groupOverride are ST-exclusive */}
       {isPlatform && (
         <FieldGroup label="Inclusion Group" defaultCollapsed>
-          <Field label="Inclusion Group" help="A shared label for mutually exclusive entries. When multiple entries in the same group activate, only one is inserted. Leave blank for independent entries.">
-            <input
-              type="text"
-              value={entry.group}
-              onChange={(e) => handleChange('group', e.target.value)}
-              className={inputClass}
-              placeholder="Group name"
-            />
-          </Field>
-          <Field label="Group Weight" help="Relative likelihood of this entry being selected when competing within an inclusion group. Higher values increase selection probability.">
-            <input
-              type="number"
-              min={0}
-              value={entry.groupWeight}
-              onChange={(e) => handleChange('groupWeight', Number(e.target.value))}
-              className={inputClass}
-            />
-          </Field>
-          {isSillyTavern && (
-            <FieldGroup label="Group Scoring" stOnly>
-              <Field label="Use Group Scoring" help="When enabled, the entry with the most matching keys wins the group instead of random weight rolling. Default inherits the book-level setting.">
-                <select
-                  value={entry.useGroupScoring === null ? '' : String(entry.useGroupScoring)}
-                  onChange={(e) => handleChange('useGroupScoring', e.target.value === '' ? null : e.target.value === 'true')}
-                  className={inputClass}
-                >
-                  <option value="">Default</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-              </Field>
-              <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-                <Toggle checked={entry.groupOverride} onChange={(val) => handleChange('groupOverride', val)} />
-                Prioritize Inclusion
-                <HelpTooltip text="Forces deterministic selection — picks the entry with the highest Insertion Order instead of random weight rolling." />
-              </label>
-            </FieldGroup>
-          )}
+          <GroupFields entry={entry} isSillyTavern={isSillyTavern} onChange={handleUpdate} />
         </FieldGroup>
       )}
 
-      {/* Scan Settings — platform shared */}
       {isPlatform && (
         <FieldGroup label="Scan Settings" defaultCollapsed>
-          <Field label="Scan Depth (empty = book default)" help="Overrides the book-level scan depth for this entry only. Leave blank to inherit the book default.">
-            <input
-              type="number"
-              placeholder="Default"
-              value={entry.scanDepth ?? ''}
-              onChange={(e) => handleChange('scanDepth', e.target.value === '' ? null : Number(e.target.value))}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Case Sensitive" help="When enabled, keyword matching is case-sensitive ('King' won't match 'king'). Overrides the book-level default.">
-            <select
-              value={entry.caseSensitive === null ? '' : String(entry.caseSensitive)}
-              onChange={(e) => handleChange('caseSensitive', e.target.value === '' ? null : e.target.value === 'true')}
-              className={inputClass}
-            >
-              <option value="">Default (book setting)</option>
-              <option value="true">Yes</option>
-              <option value="false">No</option>
-            </select>
-          </Field>
-          <Field label="Match Whole Words" help="When enabled, keywords only match complete words ('king' won't match 'liking'). Overrides the book-level default.">
-            <select
-              value={entry.matchWholeWords === null ? '' : String(entry.matchWholeWords)}
-              onChange={(e) => handleChange('matchWholeWords', e.target.value === '' ? null : e.target.value === 'true')}
-              className={inputClass}
-            >
-              <option value="">Default (book setting)</option>
-              <option value="true">Yes</option>
-              <option value="false">No</option>
-            </select>
-          </Field>
+          <ScanOverrideFields entry={entry} onChange={handleUpdate} />
         </FieldGroup>
       )}
 
-      {/* Match Sources — platform shared; depth prompt + creator notes are ST-exclusive */}
       {isPlatform && (
         <FieldGroup label="Match Sources" defaultCollapsed>
-          <div className="grid grid-cols-2 gap-2">
-            <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-              <Toggle checked={entry.matchPersonaDescription} onChange={(val) => handleChange('matchPersonaDescription', val)} />
-              Persona Description
-              <HelpTooltip text="Scan the user's persona description for trigger keywords." />
-            </label>
-            <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-              <Toggle checked={entry.matchCharacterDescription} onChange={(val) => handleChange('matchCharacterDescription', val)} />
-              Char Description
-              <HelpTooltip text="Scan the character's description field for trigger keywords." />
-            </label>
-            <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-              <Toggle checked={entry.matchCharacterPersonality} onChange={(val) => handleChange('matchCharacterPersonality', val)} />
-              Char Personality
-              <HelpTooltip text="Scan the character's personality field for trigger keywords." />
-            </label>
-            <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-              <Toggle checked={entry.matchScenario} onChange={(val) => handleChange('matchScenario', val)} />
-              Scenario
-              <HelpTooltip text="Scan the scenario field for trigger keywords." />
-            </label>
-          </div>
-          {isSillyTavern && (
-            <FieldGroup label="Extended Sources" stOnly>
-              <div className="grid grid-cols-2 gap-2">
-                <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-                  <Toggle checked={entry.matchCharacterDepthPrompt} onChange={(val) => handleChange('matchCharacterDepthPrompt', val)} />
-                  Depth Prompt
-                  <HelpTooltip text="Scan the character's depth prompt / author's note field for trigger keywords." />
-                </label>
-                <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-                  <Toggle checked={entry.matchCreatorNotes} onChange={(val) => handleChange('matchCreatorNotes', val)} />
-                  Creator Notes
-                  <HelpTooltip text="Scan the creator notes field for trigger keywords." />
-                </label>
-              </div>
-            </FieldGroup>
-          )}
+          <MatchSourceFields entry={entry} isSillyTavern={isSillyTavern} onChange={handleUpdate} />
         </FieldGroup>
       )}
 
-      {/* Triggers — ST only */}
       {isSillyTavern && (
         <FieldGroup label="Triggers" stOnly defaultCollapsed>
-          <div className="flex flex-col gap-1">
-            <span className="text-[11px] text-ctp-subtext0 flex items-center">
-              Generation Types
-              <HelpTooltip text="Restrict activation to specific generation types. If none are selected, the entry activates for all generation types." />
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {TRIGGER_OPTIONS.map((trigger) => {
-                const active = entry.triggers.includes(trigger)
-                return (
-                  <button
-                    key={trigger}
-                    onClick={() => handleTriggerToggle(trigger)}
-                    className={`px-2 py-1 text-xs rounded transition-colors ${
-                      active
-                        ? 'bg-ctp-mauve text-ctp-base font-medium'
-                        : 'bg-ctp-surface1 text-ctp-subtext0 hover:bg-ctp-surface2 hover:text-ctp-text'
-                    }`}
-                  >
-                    {trigger}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          <TriggersFields triggers={entry.triggers} onChange={(triggers) => handleUpdate({ triggers })} />
         </FieldGroup>
       )}
 
-      {/* Character Filter — platform shared */}
       {isPlatform && (
         <FieldGroup label="Character Filter" defaultCollapsed>
-          <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-            <Toggle
-              checked={entry.characterFilter.isExclude}
-              onChange={(val) => handleChange('characterFilter', { ...entry.characterFilter, isExclude: val })}
-            />
-            Exclude (block listed characters instead of allow)
-            <HelpTooltip text="When checked, the character list becomes a blocklist — the entry activates for all characters except those named." />
-          </label>
-          <Field label="Character Names" help="Characters this filter applies to. In allowlist mode, only these characters can trigger the entry; in exclude mode, these characters are blocked.">
-            <KeywordInput
-              value={entry.characterFilter.names}
-              onChange={(names) => handleChange('characterFilter', { ...entry.characterFilter, names })}
-              placeholder="CharacterName…"
-            />
-          </Field>
-          <Field label="Character Tags" help="Filter by character tags instead of names. Works alongside the character names list.">
-            <KeywordInput
-              variant="secondary"
-              value={entry.characterFilter.tags}
-              onChange={(tags) => handleChange('characterFilter', { ...entry.characterFilter, tags })}
-              placeholder="tag…"
-            />
-          </Field>
+          <CharFilterFields entry={entry} onChange={handleUpdate} />
         </FieldGroup>
       )}
 
-      {/* Advanced — ST only */}
       {isSillyTavern && (
         <FieldGroup label="Advanced" stOnly defaultCollapsed>
-          <Field label="Automation ID" help="Connects this entry to an STscript in Quick Replies. When the entry activates, the matching script runs automatically.">
-            <input
-              type="text"
-              value={entry.automationId}
-              onChange={(e) => handleChange('automationId', e.target.value)}
-              className={inputClass}
-              placeholder="Automation ID"
-            />
-          </Field>
-          <Field label="Display Index" help="Controls the visual sort order of this entry in SillyTavern's World Info editor. Does not affect activation or injection.">
-            <input
-              type="number"
-              value={entry.displayIndex ?? ''}
-              onChange={(e) => handleChange('displayIndex', e.target.value === '' ? null : Number(e.target.value))}
-              className={inputClass}
-            />
-          </Field>
-          <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-            <Toggle checked={entry.ignoreBudget} onChange={(val) => handleChange('ignoreBudget', val)} />
-            Ignore Budget
-            <HelpTooltip text="Entry bypasses the token budget limit, ensuring it's always inserted regardless of how much context is used. Use sparingly for critical lore." />
-          </label>
+          <AdvancedFields entry={entry} onChange={handleUpdate} />
         </FieldGroup>
       )}
     </>
@@ -788,468 +365,65 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const categories = useMemo(() => {
     const allCategories: Array<{ key: string; label: string; content: React.ReactNode }> = [
-    {
-      key: 'Activation',
-      label: 'Activation',
-      content: isRoleCall ? (
-        <RCActivationSection entry={entry} onChange={handleRCChange} />
-      ) : (
-        <>
-          <Field
-            label="Insertion Strategy"
-            help="Controls how this entry activates. Constant = always active; Normal = keyword-triggered; Vectorized = semantic similarity search."
-          >
-            <div className="flex rounded border border-ctp-surface1 overflow-hidden">
-              {(['constant', 'normal', 'vectorized'] as InsertionStrategy[]).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => handleStrategyChange(s)}
-                  className={`flex-1 px-2 py-1 text-xs capitalize transition-colors ${strategy === s ? strategyActiveClass[s] : strategyInactiveClass}`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </Field>
-          <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-            <Toggle checked={entry.selective} onChange={(val) => handleChange('selective', val)} />
-            Selective (requires secondary key match)
-            <HelpTooltip text="When checked, the entry only activates if secondary keys also match according to the Selective Logic rule." />
-          </label>
-          <Field label="Keys" help="Primary trigger keywords. When any key appears in the scan window, this entry may activate. Supports plain text or /regex/ patterns.">
-            <KeywordInput
-              value={entry.keys}
-              onChange={(v) => handleChange('keys', v)}
-              placeholder="keyword, keyword…"
-            />
-          </Field>
-          {entry.selective && (
-            <>
-              <Field label="Selective Logic" help="How secondary keys interact with primary keys: AND ANY (any secondary matches), AND ALL (all must match), NOT ANY (blocks if any secondary matches), NOT ALL (blocks only if all match).">
-                <select
-                  value={entry.selectiveLogic}
-                  onChange={(e) => handleChange('selectiveLogic', Number(e.target.value) as SelectiveLogic)}
-                  className={inputClass}
-                >
-                  <option value={0}>AND ANY (primary + any secondary)</option>
-                  <option value={1}>AND ALL (primary + all secondary)</option>
-                  <option value={2}>NOT ANY (primary + none of secondary)</option>
-                  <option value={3}>NOT ALL (primary, not all secondary)</option>
-                </select>
-              </Field>
-              <Field label="Secondary Keys (Optional Filter)" help="Additional keywords evaluated after a primary key match. Activation depends on the Selective Logic setting.">
-                <KeywordInput
-                  variant="secondary"
-                  value={entry.secondaryKeys}
-                  onChange={handleSecondaryKeysChange}
-                  placeholder="secondary, secondary…"
-                />
-              </Field>
-            </>
-          )}
-        </>
-      ),
-    },
-    {
-      key: 'Insertion',
-      label: 'Insertion',
-      content: (
-        <>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Position" help={isRoleCall ? "RoleCall injection position." : "Where the entry's content is injected in the final prompt."}>
-              {isRoleCall ? (
-                <RoleCallPositionSelect
-                  value={entry.positionRoleCall ?? 'depth'}
-                  onChange={handleRoleCallPositionChange}
-                />
-              ) : (
-                <select
-                  value={entry.position}
-                  onChange={(e) => handleChange('position', Number(e.target.value) as EntryPosition)}
-                  className={inputClass}
-                >
-                  <option value={0}>0 — Before Char Defs</option>
-                  <option value={1}>1 — After Char Defs</option>
-                  <option value={2}>2 — Before Examples</option>
-                  <option value={3}>3 — After Examples</option>
-                  <option value={4}>4 — @ Depth</option>
-                  <option value={5}>5 — Top of AN</option>
-                  <option value={6}>6 — Bottom of AN</option>
-                  <option value={7}>7 — Outlet</option>
-                </select>
-              )}
-            </Field>
-            <Field label="Order" help="Priority when multiple entries activate simultaneously. Higher values place entries closer to the end of the prompt, giving them more influence.">
-              <input
-                type="number"
-                value={entry.order}
-                onChange={(e) => handleChange('order', Number(e.target.value))}
-                className={inputClass}
-              />
-            </Field>
-          </div>
-          {(isRoleCall ? entry.positionRoleCall === 'depth' : entry.position === 4) && (
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="Role" help="Whether this entry is injected as a system, user, or assistant message.">
-                <select
-                  value={entry.role}
-                  onChange={(e) => handleChange('role', Number(e.target.value))}
-                  className={inputClass}
-                >
-                  <option value={0}>System</option>
-                  <option value={1}>User</option>
-                  <option value={2}>Assistant</option>
-                </select>
-              </Field>
-              <Field label="Context Depth" help="Chat depth at which this entry is injected. Depth 0 = bottom of the prompt (most recent); higher values insert further up in the conversation history.">
-                <input
-                  type="number"
-                  value={entry.depth}
-                  onChange={(e) => handleChange('depth', Number(e.target.value))}
-                  className={inputClass}
-                />
-              </Field>
-            </div>
-          )}
-          {entry.position === 7 && (
-            <Field label="Outlet Name" help="The named outlet this entry's content is stored under. Reference it in your prompt template with {{outlet::Name}}.">
-              <input
-                type="text"
-                value={entry.outletName}
-                onChange={(e) => handleChange('outletName', e.target.value)}
-                className={inputClass}
-                placeholder="Outlet name"
-              />
-            </Field>
-          )}
-        </>
-      ),
-    },
-    ...(isPlatform ? [
       {
-        key: 'Timed Effects',
-        label: 'Timed Effects',
-        content: (
-          <>
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="Trigger %" help="Probability (1–100) that the entry is inserted when its keys match. Set below 100 to add randomness. Probability is enabled automatically when below 100.">
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={entry.probability}
-                  onChange={(e) => handleChange('probability', Number(e.target.value))}
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Delay" help="Minimum number of messages that must exist in the chat before this entry can activate. Leave empty to use the global default.">
-                <input
-                  type="number"
-                  min={0}
-                  value={entry.delay ?? ''}
-                  placeholder="Global default"
-                  onChange={(e) => handleChange('delay', e.target.value === '' ? null : Number(e.target.value))}
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Cooldown Duration" help="After this entry activates, it cannot activate again for this many messages. Leave empty to use the global default.">
-                <input
-                  type="number"
-                  min={0}
-                  value={entry.cooldown ?? ''}
-                  placeholder="Global default"
-                  onChange={(e) => handleChange('cooldown', e.target.value === '' ? null : Number(e.target.value))}
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Sticky Duration" help="After activating, the entry stays injected for this many additional messages without needing keyword triggers. Leave empty to use the global default.">
-                <input
-                  type="number"
-                  min={0}
-                  value={entry.sticky ?? ''}
-                  placeholder="Global default"
-                  onChange={(e) => handleChange('sticky', e.target.value === '' ? null : Number(e.target.value))}
-                  className={inputClass}
-                />
-              </Field>
-            </div>
-            {isSillyTavern && (
-              <FieldGroup label="Use Probability" stOnly>
-                <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-                  <Toggle checked={entry.useProbability} onChange={(val) => handleChange('useProbability', val)} />
-                  Enable Trigger %
-                  <HelpTooltip text="When off, the Trigger % field is ignored and the entry always activates on keyword match." />
-                </label>
-              </FieldGroup>
-            )}
-          </>
-        ),
+        key: 'Activation',
+        label: 'Activation',
+        content: isRoleCall
+          ? <RCActivationSection entry={entry} onChange={handleUpdate} />
+          : <ActivationFields entry={entry} onChange={handleUpdate} />,
       },
       {
-        key: 'Recursion',
-        label: 'Recursion',
-        content: (
-          <>
-            <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-              <Toggle checked={entry.preventRecursion} onChange={(val) => handleChange('preventRecursion', val)} />
-              Prevent Further Recursion
-              <HelpTooltip text="When active, this entry won't trigger other entries through recursion. Stops unintended cascading activation chains." />
-            </label>
-            <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-              <Toggle checked={entry.excludeRecursion} onChange={(val) => handleChange('excludeRecursion', val)} />
-              Non-recursable
-              <HelpTooltip text="This entry can only be activated by direct keyword matches in chat. Other entries cannot recursively trigger it." />
-            </label>
-            <div className="flex items-center gap-2">
-              <label className="flex items-center gap-2 text-xs text-ctp-subtext0 shrink-0">
-                <Toggle
-                  checked={entry.delayUntilRecursion > 0}
-                  onChange={(val) => handleChange('delayUntilRecursion', val ? 1 : 0)}
-                />
-                Delay Until Recursion
-                <HelpTooltip text="The entry stays inactive for this many recursion passes before it can be triggered by other entries." />
-              </label>
-              {entry.delayUntilRecursion > 0 && (
-                <input
-                  type="number"
-                  min={1}
-                  value={entry.delayUntilRecursion}
-                  onChange={(e) => handleChange('delayUntilRecursion', Number(e.target.value))}
-                  className={`${inputClass} w-16`}
-                />
-              )}
-            </div>
-          </>
-        ),
+        key: 'Insertion',
+        label: 'Insertion',
+        content: <PriorityFields entry={entry} isRoleCall={isRoleCall} onChange={handleUpdate} />,
       },
-      {
-        key: 'Inclusion Group',
-        label: 'Inclusion Group',
-        content: (
-          <>
-            <Field label="Inclusion Group" help="A shared label for mutually exclusive entries. When multiple entries in the same group activate, only one is inserted. Leave blank for independent entries.">
-              <input
-                type="text"
-                value={entry.group}
-                onChange={(e) => handleChange('group', e.target.value)}
-                className={inputClass}
-                placeholder="Group name"
-              />
-            </Field>
-            <Field label="Group Weight" help="Relative likelihood of this entry being selected when competing within an inclusion group. Higher values increase selection probability.">
-              <input
-                type="number"
-                min={0}
-                value={entry.groupWeight}
-                onChange={(e) => handleChange('groupWeight', Number(e.target.value))}
-                className={inputClass}
-              />
-            </Field>
-            {isSillyTavern && (
-              <FieldGroup label="Group Scoring" stOnly>
-                <Field label="Use Group Scoring" help="When enabled, the entry with the most matching keys wins the group instead of random weight rolling. Default inherits the book-level setting.">
-                  <select
-                    value={entry.useGroupScoring === null ? '' : String(entry.useGroupScoring)}
-                    onChange={(e) => handleChange('useGroupScoring', e.target.value === '' ? null : e.target.value === 'true')}
-                    className={inputClass}
-                  >
-                    <option value="">Default</option>
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
-                  </select>
-                </Field>
-                <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-                  <Toggle checked={entry.groupOverride} onChange={(val) => handleChange('groupOverride', val)} />
-                  Prioritize Inclusion
-                  <HelpTooltip text="Forces deterministic selection — picks the entry with the highest Insertion Order instead of random weight rolling." />
-                </label>
-              </FieldGroup>
-            )}
-          </>
-        ),
-      },
-      {
-        key: 'Scan Settings',
-        label: 'Scan Settings',
-        content: (
-          <>
-            <Field label="Scan Depth (empty = book default)" help="Overrides the book-level scan depth for this entry only. Leave blank to inherit the book default.">
-              <input
-                type="number"
-                placeholder="Default"
-                value={entry.scanDepth ?? ''}
-                onChange={(e) => handleChange('scanDepth', e.target.value === '' ? null : Number(e.target.value))}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Case Sensitive" help="When enabled, keyword matching is case-sensitive ('King' won't match 'king'). Overrides the book-level default.">
-              <select
-                value={entry.caseSensitive === null ? '' : String(entry.caseSensitive)}
-                onChange={(e) => handleChange('caseSensitive', e.target.value === '' ? null : e.target.value === 'true')}
-                className={inputClass}
-              >
-                <option value="">Default (book setting)</option>
-                <option value="true">Yes</option>
-                <option value="false">No</option>
-              </select>
-            </Field>
-            <Field label="Match Whole Words" help="When enabled, keywords only match complete words ('king' won't match 'liking'). Overrides the book-level default.">
-              <select
-                value={entry.matchWholeWords === null ? '' : String(entry.matchWholeWords)}
-                onChange={(e) => handleChange('matchWholeWords', e.target.value === '' ? null : e.target.value === 'true')}
-                className={inputClass}
-              >
-                <option value="">Default (book setting)</option>
-                <option value="true">Yes</option>
-                <option value="false">No</option>
-              </select>
-            </Field>
-          </>
-        ),
-      },
-      {
-        key: 'Match Sources',
-        label: 'Match Sources',
-        content: (
-          <>
-            <div className="grid grid-cols-2 gap-2">
-              <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-                <Toggle checked={entry.matchPersonaDescription} onChange={(val) => handleChange('matchPersonaDescription', val)} />
-                Persona Description
-                <HelpTooltip text="Scan the user's persona description for trigger keywords." />
-              </label>
-              <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-                <Toggle checked={entry.matchCharacterDescription} onChange={(val) => handleChange('matchCharacterDescription', val)} />
-                Char Description
-                <HelpTooltip text="Scan the character's description field for trigger keywords." />
-              </label>
-              <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-                <Toggle checked={entry.matchCharacterPersonality} onChange={(val) => handleChange('matchCharacterPersonality', val)} />
-                Char Personality
-                <HelpTooltip text="Scan the character's personality field for trigger keywords." />
-              </label>
-              <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-                <Toggle checked={entry.matchScenario} onChange={(val) => handleChange('matchScenario', val)} />
-                Scenario
-                <HelpTooltip text="Scan the scenario field for trigger keywords." />
-              </label>
-            </div>
-            {isSillyTavern && (
-              <FieldGroup label="Extended Sources" stOnly>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-                    <Toggle checked={entry.matchCharacterDepthPrompt} onChange={(val) => handleChange('matchCharacterDepthPrompt', val)} />
-                    Depth Prompt
-                    <HelpTooltip text="Scan the character's depth prompt / author's note field for trigger keywords." />
-                  </label>
-                  <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-                    <Toggle checked={entry.matchCreatorNotes} onChange={(val) => handleChange('matchCreatorNotes', val)} />
-                    Creator Notes
-                    <HelpTooltip text="Scan the creator notes field for trigger keywords." />
-                  </label>
-                </div>
-              </FieldGroup>
-            )}
-          </>
-        ),
-      },
-      {
-        key: 'Char Filter',
-        label: 'Char Filter',
-        content: (
-          <>
-            <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-              <Toggle
-                checked={entry.characterFilter.isExclude}
-                onChange={(val) => handleChange('characterFilter', { ...entry.characterFilter, isExclude: val })}
-              />
-              Exclude (block listed characters instead of allow)
-              <HelpTooltip text="When checked, the character list becomes a blocklist — the entry activates for all characters except those named." />
-            </label>
-            <Field label="Character Names" help="Characters this filter applies to. In allowlist mode, only these characters can trigger the entry; in exclude mode, these characters are blocked.">
-              <KeywordInput
-                value={entry.characterFilter.names}
-                onChange={(names) => handleChange('characterFilter', { ...entry.characterFilter, names })}
-                placeholder="CharacterName…"
-              />
-            </Field>
-            <Field label="Character Tags" help="Filter by character tags instead of names. Works alongside the character names list.">
-              <KeywordInput
-                variant="secondary"
-                value={entry.characterFilter.tags}
-                onChange={(tags) => handleChange('characterFilter', { ...entry.characterFilter, tags })}
-                placeholder="tag…"
-              />
-            </Field>
-          </>
-        ),
-      },
-    ] : []),
-    ...(isSillyTavern ? [
-      {
-        key: 'Triggers',
-        label: 'Triggers',
-        content: (
-          <div className="flex flex-col gap-1">
-            <span className="text-[11px] text-ctp-subtext0 flex items-center">
-              Generation Types
-              <HelpTooltip text="Restrict activation to specific generation types. If none are selected, the entry activates for all generation types." />
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {TRIGGER_OPTIONS.map((trigger) => {
-                const active = entry.triggers.includes(trigger)
-                return (
-                  <button
-                    key={trigger}
-                    onClick={() => handleTriggerToggle(trigger)}
-                    className={`px-2 py-1 text-xs rounded transition-colors ${
-                      active
-                        ? 'bg-ctp-mauve text-ctp-base font-medium'
-                        : 'bg-ctp-surface1 text-ctp-subtext0 hover:bg-ctp-surface2 hover:text-ctp-text'
-                    }`}
-                  >
-                    {trigger}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        ),
-      },
-      {
-        key: 'Advanced',
-        label: 'Advanced',
-        content: (
-          <>
-            <Field label="Automation ID" help="Connects this entry to an STscript in Quick Replies. When the entry activates, the matching script runs automatically.">
-              <input
-                type="text"
-                value={entry.automationId}
-                onChange={(e) => handleChange('automationId', e.target.value)}
-                className={inputClass}
-                placeholder="Automation ID"
-              />
-            </Field>
-            <Field label="Display Index" help="Controls the visual sort order of this entry in SillyTavern's World Info editor. Does not affect activation or injection.">
-              <input
-                type="number"
-                value={entry.displayIndex ?? ''}
-                onChange={(e) => handleChange('displayIndex', e.target.value === '' ? null : Number(e.target.value))}
-                className={inputClass}
-              />
-            </Field>
-            <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-              <Toggle checked={entry.ignoreBudget} onChange={(val) => handleChange('ignoreBudget', val)} />
-              Ignore Budget
-              <HelpTooltip text="Entry bypasses the token budget limit, ensuring it's always inserted regardless of how much context is used. Use sparingly for critical lore." />
-            </label>
-          </>
-        ),
-      },
-    ] : []),
+      ...(isPlatform ? [
+        {
+          key: 'Timed Effects',
+          label: 'Timed Effects',
+          content: <TimedEffectFields entry={entry} isSillyTavern={isSillyTavern} onChange={handleUpdate} />,
+        },
+        {
+          key: 'Recursion',
+          label: 'Recursion',
+          content: <RecursionFields entry={entry} onChange={handleUpdate} />,
+        },
+        {
+          key: 'Inclusion Group',
+          label: 'Inclusion Group',
+          content: <GroupFields entry={entry} isSillyTavern={isSillyTavern} onChange={handleUpdate} />,
+        },
+        {
+          key: 'Scan Settings',
+          label: 'Scan Settings',
+          content: <ScanOverrideFields entry={entry} onChange={handleUpdate} />,
+        },
+        {
+          key: 'Match Sources',
+          label: 'Match Sources',
+          content: <MatchSourceFields entry={entry} isSillyTavern={isSillyTavern} onChange={handleUpdate} />,
+        },
+        {
+          key: 'Char Filter',
+          label: 'Char Filter',
+          content: <CharFilterFields entry={entry} onChange={handleUpdate} />,
+        },
+      ] : []),
+      ...(isSillyTavern ? [
+        {
+          key: 'Triggers',
+          label: 'Triggers',
+          content: <TriggersFields triggers={entry.triggers} onChange={(triggers) => handleUpdate({ triggers })} />,
+        },
+        {
+          key: 'Advanced',
+          label: 'Advanced',
+          content: <AdvancedFields entry={entry} onChange={handleUpdate} />,
+        },
+      ] : []),
     ]
     return allCategories
-  }, [entry, strategy, handleChange, handleSecondaryKeysChange, handleStrategyChange, handleTriggerToggle, isRoleCall, isSillyTavern, isPlatform, handleRoleCallPositionChange, handleRCChange])
+  }, [entry, isRoleCall, isSillyTavern, isPlatform, handleUpdate])
 
   if (layout === 'quadrant') {
     return (
