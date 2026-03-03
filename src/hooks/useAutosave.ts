@@ -67,7 +67,7 @@ export function useAutosave(tabId: string | null): { isSaving: boolean } {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- realStore is derived from tabId (already in deps); saveDocument is a stable module import
   }, [entries, bookMeta, graphPositions, simulatorState, ruleOverrides, cardPayload, activeFormat, tabId])
 
   return { isSaving }
