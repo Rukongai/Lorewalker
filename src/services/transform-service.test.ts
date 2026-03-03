@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { inflate, deflate, inflateFromRawST } from './transform-service'
-import type { RawSTBook, RawSTEntry } from './transform-service'
+import { inflate, deflate, inflateFromRawST, inflateFromRoleCall, deflateToRoleCall } from './transform-service'
+import type { RawSTBook, RawSTEntry, RawRoleCallBook } from './transform-service'
 import type { CCv3CharacterBook } from '@character-foundry/character-foundry/loader'
 
 function makeBook(overrides: Partial<CCv3CharacterBook> = {}): CCv3CharacterBook {
@@ -110,6 +110,101 @@ function makeBook(overrides: Partial<CCv3CharacterBook> = {}): CCv3CharacterBook
       },
     ],
     ...overrides,
+  }
+}
+
+function makeRawRoleCallBook(): RawRoleCallBook {
+  return {
+    schemaVersion: '1.0',
+    lorebook: {
+      settings: {
+        lorebookType: 'standard',
+        globalScanDepth: 5,
+        tokenBudget: 2048,
+        globalRecursion: true,
+      },
+      metadata: {
+        genre: 'fantasy',
+        fandom: 'original',
+        tags: ['magic', 'dragons'],
+      },
+      entries: [
+        {
+          // Simple mode entry
+          id: 'rc-entry-1',
+          title: 'Simple Entry',
+          content: 'Simple entry content.',
+          enabled: true,
+          comment: 'A plain comment',
+          priority: { sortOrder: 0, priority: 10 },
+          injection: { position: 'world' },
+          constant: false,
+          triggers: {
+            mode: 'simple',
+            primary: ['dragon', 'wyrm'],
+            secondary: ['fire', 'scales'],
+            selectiveLogic: 'and_any',
+          },
+          timing: { delay: 2, cooldown: 3, sticky: 1 },
+        },
+        {
+          // Advanced mode entry with keyword objects and conditions
+          id: 'rc-entry-2',
+          title: 'Advanced Entry',
+          content: 'Advanced entry content.',
+          enabled: true,
+          priority: { sortOrder: 0, priority: 20 },
+          injection: { position: 'character' },
+          constant: false,
+          triggers: {
+            mode: 'advanced',
+            primary: [
+              { keyword: 'magic', isRegex: false, probability: 80, frequency: 2 },
+              { keyword: '/spell\\b/', isRegex: true, probability: 100 },
+              { type: 'emotion', value: 'happy' },
+              { type: 'randomChance', value: 50 },
+            ],
+            secondary: [],
+            selectiveLogic: 'not_all',
+          },
+          timing: { delay: 0, cooldown: 0, sticky: 0 },
+        },
+        {
+          // Wildcard entry (should become constant=true)
+          id: 'rc-entry-3',
+          title: 'Wildcard Entry',
+          content: 'Always active.',
+          enabled: true,
+          priority: { sortOrder: 0, priority: 1 },
+          injection: { position: 'scene' },
+          constant: false,
+          triggers: {
+            mode: 'simple',
+            primary: ['*'],
+            secondary: [],
+            selectiveLogic: 'and_any',
+          },
+          timing: { delay: 0, cooldown: 0, sticky: 0 },
+        },
+        {
+          // Depth position entry
+          id: 'rc-entry-4',
+          title: 'Depth Entry',
+          content: 'Inserted at depth.',
+          enabled: false,
+          priority: { sortOrder: 0, priority: 5 },
+          injection: { position: 'depth' },
+          constant: false,
+          triggers: {
+            mode: 'simple',
+            primary: ['lore'],
+            secondary: [],
+            selectiveLogic: 'and_all',
+          },
+          timing: { delay: 0, cooldown: 0, sticky: 0 },
+        },
+      ],
+    },
   }
 }
 
@@ -538,5 +633,140 @@ describe('inflateFromRawST', () => {
       const deflated = deflate(entries, bookMeta)
       expect(deflated.entries[0].extensions?.['lorewalker']).toBeUndefined()
     })
+  })
+})
+
+describe('RoleCall round-trip fidelity', () => {
+  function rcId(entry: { extensions: Record<string, unknown> }): string | undefined {
+    return ((entry.extensions['rolecall'] ?? {}) as Record<string, unknown>)['id'] as string | undefined
+  }
+
+  it('preserves simple-mode keys, position, timing, and comment', () => {
+    const raw = makeRawRoleCallBook()
+    const { entries, bookMeta } = inflateFromRoleCall(raw)
+    const deflated = deflateToRoleCall(entries, bookMeta)
+    const { entries: entries2 } = inflateFromRoleCall(deflated)
+
+    const e1 = entries.find(e => rcId(e) === 'rc-entry-1')!
+    const e1b = entries2.find(e => rcId(e) === 'rc-entry-1')!
+
+    expect(e1b.content).toBe(e1.content)
+    expect(e1b.keys).toEqual(e1.keys)
+    expect(e1b.secondaryKeys).toEqual(e1.secondaryKeys)
+    expect(e1b.position).toBe(e1.position)
+    expect(e1b.positionRoleCall).toBe('world')
+    expect(e1b.delay).toBe(2)
+    expect(e1b.cooldown).toBe(3)
+    expect(e1b.sticky).toBe(1)
+    expect(e1b.rolecallComment).toBe('A plain comment')
+    expect(e1b.triggerMode).toBe('simple')
+  })
+
+  it('preserves advanced-mode keywordObjects and triggerConditions', () => {
+    const raw = makeRawRoleCallBook()
+    const { entries, bookMeta } = inflateFromRoleCall(raw)
+    const deflated = deflateToRoleCall(entries, bookMeta)
+    const { entries: entries2 } = inflateFromRoleCall(deflated)
+
+    const e2b = entries2.find(e => rcId(e) === 'rc-entry-2')!
+
+    expect(e2b.triggerMode).toBe('advanced')
+
+    // keyword objects preserved
+    expect(e2b.keywordObjects).toHaveLength(2)
+    expect(e2b.keywordObjects![0]).toEqual({ keyword: 'magic', isRegex: false, probability: 80, frequency: 2 })
+    expect(e2b.keywordObjects![1]).toEqual({ keyword: '/spell\\b/', isRegex: true, probability: 100 })
+
+    // condition objects preserved
+    expect(e2b.triggerConditions).toHaveLength(2)
+    expect(e2b.triggerConditions![0]).toMatchObject({ type: 'emotion', value: 'happy' })
+    expect(e2b.triggerConditions![1]).toMatchObject({ type: 'randomChance', value: 50 })
+
+    // keys array still populated (extracted from keywordObjects)
+    expect(e2b.keys).toContain('magic')
+    expect(e2b.keys).toContain('/spell\\b/')
+  })
+
+  it('wildcard primary trigger produces constant=true and round-trips', () => {
+    const raw = makeRawRoleCallBook()
+    const { entries, bookMeta } = inflateFromRoleCall(raw)
+    const deflated = deflateToRoleCall(entries, bookMeta)
+    const { entries: entries2 } = inflateFromRoleCall(deflated)
+
+    const e3 = entries.find(e => rcId(e) === 'rc-entry-3')!
+    const e3b = entries2.find(e => rcId(e) === 'rc-entry-3')!
+
+    expect(e3.constant).toBe(true)
+    expect(e3b.constant).toBe(true)
+  })
+
+  it('preserves all four RoleCall positions through round-trip', () => {
+    const raw = makeRawRoleCallBook()
+    const { entries, bookMeta } = inflateFromRoleCall(raw)
+    const deflated = deflateToRoleCall(entries, bookMeta)
+    const { entries: entries2 } = inflateFromRoleCall(deflated)
+
+    const positionMap: Record<string, string> = {
+      'rc-entry-1': 'world',
+      'rc-entry-2': 'character',
+      'rc-entry-3': 'scene',
+      'rc-entry-4': 'depth',
+    }
+
+    for (const [id, expectedRCPos] of Object.entries(positionMap)) {
+      const e = entries2.find(e => rcId(e) === id)!
+      expect(e.positionRoleCall).toBe(expectedRCPos)
+    }
+  })
+
+  it('preserves selectiveLogic values through round-trip', () => {
+    const raw = makeRawRoleCallBook()
+    const { entries, bookMeta } = inflateFromRoleCall(raw)
+    const deflated = deflateToRoleCall(entries, bookMeta)
+    const { entries: entries2 } = inflateFromRoleCall(deflated)
+
+    const e1b = entries2.find(e => rcId(e) === 'rc-entry-1')!
+    const e2b = entries2.find(e => rcId(e) === 'rc-entry-2')!
+    const e4b = entries2.find(e => rcId(e) === 'rc-entry-4')!
+
+    // selectiveLogic 0='and_any', 1='and_all', 2='not_any', 3='not_all'
+    expect(e1b.selectiveLogic).toBe(0) // and_any
+    expect(e2b.selectiveLogic).toBe(3) // not_all
+    expect(e4b.selectiveLogic).toBe(1) // and_all
+  })
+
+  it('preserves book metadata (genre, fandom, tags, schema version) through round-trip', () => {
+    const raw = makeRawRoleCallBook()
+    const { entries, bookMeta } = inflateFromRoleCall(raw)
+    const deflated = deflateToRoleCall(entries, bookMeta)
+    const { bookMeta: bookMeta2 } = inflateFromRoleCall(deflated)
+
+    const rcExt = (bookMeta2.extensions['rolecall'] ?? {}) as Record<string, unknown>
+    const rcMeta = (rcExt['metadata'] ?? {}) as Record<string, unknown>
+
+    expect(rcExt['schemaVersion']).toBe('1.0')
+    expect(rcExt['lorebookType']).toBe('standard')
+    expect(rcMeta['genre']).toBe('fantasy')
+    expect(rcMeta['fandom']).toBe('original')
+    expect(rcMeta['tags']).toEqual(['magic', 'dragons'])
+    expect(bookMeta2.scanDepth).toBe(5)
+    expect(bookMeta2.tokenBudget).toBe(2048)
+  })
+
+  it('preserves RoleCall entry IDs and priorities through round-trip', () => {
+    const raw = makeRawRoleCallBook()
+    const { entries, bookMeta } = inflateFromRoleCall(raw)
+    const deflated = deflateToRoleCall(entries, bookMeta)
+    const { entries: entries2 } = inflateFromRoleCall(deflated)
+
+    for (const original of entries) {
+      const id = rcId(original)
+      if (!id) continue
+      const roundTripped = entries2.find(e => rcId(e) === id)!
+      expect(roundTripped).toBeDefined()
+      const origPriority = ((original.extensions['rolecall'] ?? {}) as Record<string, unknown>)['priority']
+      const rtPriority = ((roundTripped.extensions['rolecall'] ?? {}) as Record<string, unknown>)['priority']
+      expect(rtPriority).toBe(origPriority)
+    }
   })
 })
