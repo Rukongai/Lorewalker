@@ -6,6 +6,13 @@ import { useWorkspaceStore, createDocumentStore, documentStoreRegistry } from '@
 import type { PersistedDocument } from '@lorewalker/core'
 import { AsyncStorageAdapter } from './storage/async-storage-adapter'
 import { AppNavigator } from './layouts/mobile/AppNavigator'
+import { useDerivedState } from './hooks/useDerivedState'
+
+function DerivedStateProvider({ children }: { children: React.ReactNode }) {
+  const activeTabId = useWorkspaceStore((s) => s.activeTabId)
+  useDerivedState(activeTabId)
+  return <>{children}</>
+}
 
 const storage = new AsyncStorageAdapter()
 
@@ -27,7 +34,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <AppNavigator />
+        <DerivedStateProvider>
+          <AppNavigator />
+        </DerivedStateProvider>
       </NavigationContainer>
     </SafeAreaProvider>
   )
