@@ -29,6 +29,7 @@ export interface RoleCallKeyword {
   keyword: string;
   isRegex: boolean;
   probability: number;  // per-keyword probability (0-100)
+  frequency?: number;   // per-keyword cooldown (messages between triggers)
 }
 
 export type RoleCallConditionType =
@@ -44,6 +45,7 @@ export type RoleCallConditionType =
 export interface RoleCallCondition {
   type: RoleCallConditionType;
   value: string | boolean | number;
+  frequency?: number;   // per-condition cooldown
 }
 
 export interface CharacterFilter {
@@ -126,8 +128,8 @@ export interface WorkingEntry {
 
   // === RoleCall-specific ===
   triggerMode?: 'simple' | 'advanced';           // RoleCall trigger mode
-  keywordObjects?: RoleCallKeyword[];            // RoleCall per-keyword objects (advanced mode, preserved for simulation)
-  triggerConditions?: RoleCallCondition[];       // RoleCall condition triggers (read-only, for future RoleCallEngine)
+  keywordObjects?: RoleCallKeyword[];            // RoleCall per-keyword objects (advanced mode)
+  triggerConditions?: RoleCallCondition[];       // RoleCall condition triggers
   positionRoleCall?: RoleCallPosition;           // RoleCall injection position (native)
   rolecallComment?: string;                      // RoleCall comment/notes field (distinct from title/name)
 

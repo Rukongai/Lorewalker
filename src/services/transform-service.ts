@@ -526,12 +526,14 @@ interface RawRoleCallKeywordItem {
   isRegex: boolean
   keyword: string
   probability: number
+  frequency?: number
 }
 
 /** A condition trigger object in RoleCall advanced mode */
 interface RawRoleCallConditionItem {
   type: string
   value: unknown
+  frequency?: number
 }
 
 type RawRoleCallPrimaryItem = RawRoleCallKeywordItem | RawRoleCallConditionItem | string
@@ -687,6 +689,7 @@ export function inflateFromRoleCall(raw: RawRoleCallBook, defaults?: LorebookDef
           keyword: item.keyword,
           isRegex: item.isRegex,
           probability: item.probability,
+          ...(item.frequency !== undefined ? { frequency: item.frequency } : {}),
         })
         const trimmed = item.keyword.trim()
         if (trimmed === '*') {
@@ -700,6 +703,7 @@ export function inflateFromRoleCall(raw: RawRoleCallBook, defaults?: LorebookDef
           conditionObjs.push({
             type: item.type,
             value: item.value as string | boolean | number,
+            ...(item.frequency !== undefined ? { frequency: item.frequency } : {}),
           })
         }
       }
@@ -851,11 +855,16 @@ export function deflateToRoleCall(entries: WorkingEntry[], bookMeta: BookMeta): 
         isRegex: kw.isRegex,
         keyword: kw.keyword,
         probability: kw.probability,
+        ...(kw.frequency !== undefined ? { frequency: kw.frequency } : {}),
       }))
       // Append condition objects
       if (entry.triggerConditions) {
         for (const cond of entry.triggerConditions) {
-          primary.push({ type: cond.type, value: cond.value })
+          primary.push({
+            type: cond.type,
+            value: cond.value,
+            ...(cond.frequency !== undefined ? { frequency: cond.frequency } : {}),
+          })
         }
       }
     } else {

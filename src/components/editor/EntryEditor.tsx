@@ -13,8 +13,8 @@ import { HelpTooltip } from '@/components/ui/HelpTooltip'
 import { Toggle } from '@/components/shared/Toggle'
 import { ActivationLinks } from './ActivationLinks'
 import { useCategoryMenu } from '@/components/entry-list/CategoryMenu'
-import { ConditionsViewer } from './ConditionsViewer'
 import { RoleCallPositionSelect } from './RoleCallPositionSelect'
+import { RCActivationSection } from './RCActivationSection'
 
 function FieldGroup({ label, stOnly, rcOnly, defaultCollapsed = false, labelSuffix, headerRight, children }: {
   label: string
@@ -324,6 +324,12 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
     if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
   }, [realStore, entryId, activeTabId])
 
+  const handleRCChange = useCallback((patch: Partial<WorkingEntry>) => {
+    if (!realStore) return
+    realStore.getState().updateEntry(entryId, patch)
+    if (activeTabId) useWorkspaceStore.getState().markDirty(activeTabId, true)
+  }, [realStore, entryId, activeTabId])
+
   const effectiveCategory = entry?.userCategory ?? 'generic'
   const categoryIcon = getEntryIcon(effectiveCategory)
 
@@ -412,105 +418,66 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
     </div>
   )
 
-  const rcTriggersContent = isRoleCall ? (
-    <>
-      {entry.triggerMode && (
-        <div className="flex items-center gap-1.5 text-xs">
-          <span className="text-ctp-subtext0">Mode:</span>
-          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${entry.triggerMode === 'advanced' ? 'bg-ctp-mauve/20 text-ctp-mauve' : 'bg-ctp-surface1 text-ctp-subtext1'}`}>
-            {entry.triggerMode}
-          </span>
-        </div>
-      )}
-      {entry.keywordObjects && entry.keywordObjects.length > 0 && (
-        <div className="flex flex-col gap-1">
-          <span className="text-[11px] text-ctp-subtext0">Keywords ({entry.keywordObjects.length})</span>
-          <div className="flex flex-wrap gap-1">
-            {entry.keywordObjects.map((kw, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-ctp-sky/15 text-ctp-sky border border-ctp-sky/30"
-                title={`regex: ${kw.isRegex}, probability: ${kw.probability}%`}
-              >
-                {kw.isRegex && <span className="font-mono opacity-60">/</span>}
-                <span>{kw.keyword}</span>
-                {kw.probability < 100 && <span className="opacity-60">{kw.probability}%</span>}
-              </span>
-            ))}
-          </div>
-          <span className="text-[10px] text-ctp-overlay1">Read-only — edit keywords above to update</span>
-        </div>
-      )}
-      {entry.triggerConditions && entry.triggerConditions.length > 0 && (
-        <ConditionsViewer conditions={entry.triggerConditions} />
-      )}
-      {!entry.triggerMode && !entry.keywordObjects?.length && !entry.triggerConditions?.length && (
-        <p className="text-[11px] text-ctp-overlay1">No RoleCall trigger data for this entry.</p>
-      )}
-    </>
-  ) : null
-
   const fieldGroups = (
     <>
-      {/* RoleCall Triggers */}
-      {isRoleCall && (
-        <FieldGroup label="RC Triggers" rcOnly>
-          {rcTriggersContent}
-        </FieldGroup>
-      )}
-
       {/* Activation */}
-      <FieldGroup label="Activation">
-        <Field
-          label="Insertion Strategy"
-          help="Controls how this entry activates. Constant = always active; Normal = keyword-triggered; Vectorized = semantic similarity search."
-        >
-          <div className="flex rounded border border-ctp-surface1 overflow-hidden">
-            {(['constant', 'normal', 'vectorized'] as InsertionStrategy[]).map((s) => (
-              <button
-                key={s}
-                onClick={() => handleStrategyChange(s)}
-                className={`flex-1 px-2 py-1 text-xs capitalize transition-colors ${strategy === s ? strategyActiveClass[s] : strategyInactiveClass}`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </Field>
-        <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
-          <Toggle checked={entry.selective} onChange={(val) => handleChange('selective', val)} />
-          Selective (requires secondary key match)
-          <HelpTooltip text="When checked, the entry only activates if secondary keys also match according to the Selective Logic rule." />
-        </label>
-        <Field label="Keys" help="Primary trigger keywords. When any key appears in the scan window, this entry may activate. Supports plain text or /regex/ patterns.">
-          <KeywordInput
-            value={entry.keys}
-            onChange={(v) => handleChange('keys', v)}
-            placeholder="keyword, keyword…"
-          />
-        </Field>
-        {entry.selective && (
+      <FieldGroup label="Activation" rcOnly={isRoleCall}>
+        {isRoleCall ? (
+          <RCActivationSection entry={entry} onChange={handleRCChange} />
+        ) : (
           <>
-            <Field label="Selective Logic" help="How secondary keys interact with primary keys: AND ANY (any secondary matches), AND ALL (all must match), NOT ANY (blocks if any secondary matches), NOT ALL (blocks only if all match).">
-              <select
-                value={entry.selectiveLogic}
-                onChange={(e) => handleChange('selectiveLogic', Number(e.target.value) as SelectiveLogic)}
-                className={inputClass}
-              >
-                <option value={0}>AND ANY (primary + any secondary)</option>
-                <option value={1}>AND ALL (primary + all secondary)</option>
-                <option value={2}>NOT ANY (primary + none of secondary)</option>
-                <option value={3}>NOT ALL (primary, not all secondary)</option>
-              </select>
+            <Field
+              label="Insertion Strategy"
+              help="Controls how this entry activates. Constant = always active; Normal = keyword-triggered; Vectorized = semantic similarity search."
+            >
+              <div className="flex rounded border border-ctp-surface1 overflow-hidden">
+                {(['constant', 'normal', 'vectorized'] as InsertionStrategy[]).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => handleStrategyChange(s)}
+                    className={`flex-1 px-2 py-1 text-xs capitalize transition-colors ${strategy === s ? strategyActiveClass[s] : strategyInactiveClass}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </Field>
-            <Field label="Secondary Keys (Optional Filter)" help="Additional keywords evaluated after a primary key match. Activation depends on the Selective Logic setting.">
+            <label className="flex items-center gap-2 text-xs text-ctp-subtext0">
+              <Toggle checked={entry.selective} onChange={(val) => handleChange('selective', val)} />
+              Selective (requires secondary key match)
+              <HelpTooltip text="When checked, the entry only activates if secondary keys also match according to the Selective Logic rule." />
+            </label>
+            <Field label="Keys" help="Primary trigger keywords. When any key appears in the scan window, this entry may activate. Supports plain text or /regex/ patterns.">
               <KeywordInput
-                variant="secondary"
-                value={entry.secondaryKeys}
-                onChange={handleSecondaryKeysChange}
-                placeholder="secondary, secondary…"
+                value={entry.keys}
+                onChange={(v) => handleChange('keys', v)}
+                placeholder="keyword, keyword…"
               />
             </Field>
+            {entry.selective && (
+              <>
+                <Field label="Selective Logic" help="How secondary keys interact with primary keys: AND ANY (any secondary matches), AND ALL (all must match), NOT ANY (blocks if any secondary matches), NOT ALL (blocks only if all match).">
+                  <select
+                    value={entry.selectiveLogic}
+                    onChange={(e) => handleChange('selectiveLogic', Number(e.target.value) as SelectiveLogic)}
+                    className={inputClass}
+                  >
+                    <option value={0}>AND ANY (primary + any secondary)</option>
+                    <option value={1}>AND ALL (primary + all secondary)</option>
+                    <option value={2}>NOT ANY (primary + none of secondary)</option>
+                    <option value={3}>NOT ALL (primary, not all secondary)</option>
+                  </select>
+                </Field>
+                <Field label="Secondary Keys (Optional Filter)" help="Additional keywords evaluated after a primary key match. Activation depends on the Selective Logic setting.">
+                  <KeywordInput
+                    variant="secondary"
+                    value={entry.secondaryKeys}
+                    onChange={handleSecondaryKeysChange}
+                    placeholder="secondary, secondary…"
+                  />
+                </Field>
+              </>
+            )}
           </>
         )}
       </FieldGroup>
@@ -894,16 +861,13 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const categories = useMemo(() => {
-    const rcTriggersCategory = {
-      key: 'RC Triggers',
-      label: 'RC Triggers',
-      content: rcTriggersContent,
-    }
     const allCategories: Array<{ key: string; label: string; content: React.ReactNode }> = [
     {
       key: 'Activation',
       label: 'Activation',
-      content: (
+      content: isRoleCall ? (
+        <RCActivationSection entry={entry} onChange={handleRCChange} />
+      ) : (
         <>
           <Field
             label="Insertion Strategy"
@@ -1357,10 +1321,9 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
         ),
       },
     ] : []),
-    ...(isRoleCall ? [rcTriggersCategory] : []),
     ]
     return allCategories
-  }, [entry, strategy, handleChange, handleSecondaryKeysChange, handleStrategyChange, handleTriggerToggle, isRoleCall, isSillyTavern, isPlatform, handleRoleCallPositionChange, rcTriggersContent])
+  }, [entry, strategy, handleChange, handleSecondaryKeysChange, handleStrategyChange, handleTriggerToggle, isRoleCall, isSillyTavern, isPlatform, handleRoleCallPositionChange, handleRCChange])
 
   if (layout === 'quadrant') {
     return (
