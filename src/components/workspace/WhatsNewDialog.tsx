@@ -41,13 +41,22 @@ export function WhatsNewDialog({ open, lastSeenDate, onClose }: WhatsNewDialogPr
                       </span>
                     )}
                   </div>
-                  <ul className="space-y-1 pl-3">
-                    {entry.changes.map((change, i) => (
-                      <li key={i} className="text-xs text-ctp-text list-disc list-inside">
-                        {change}
-                      </li>
+                  <div className="space-y-3">
+                    {entry.sections.map((section) => (
+                      <div key={section.label}>
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-ctp-subtext0 mb-1">
+                          {section.label}
+                        </p>
+                        <ul className="space-y-1 pl-3">
+                          {section.items.map((item, i) => (
+                            <li key={i} className="text-xs text-ctp-text list-disc list-inside">
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )
             })}
