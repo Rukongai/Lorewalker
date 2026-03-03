@@ -1,6 +1,6 @@
 import type { WorkingEntry, KeywordMatch, KeywordMatchOptions } from '@/types'
 
-function isRegexKey(key: string): boolean {
+export function isRegexKey(key: string): boolean {
   return key.startsWith('/') && key.length > 2
 }
 

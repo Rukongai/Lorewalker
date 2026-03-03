@@ -1,10 +1,6 @@
 import type { WorkingEntry, BookMeta, ActivationResult, KeywordStat } from '@/types'
 import { simulate } from './simulator-service'
-
-// Mirrors isRegexKey from keyword-matching.ts (not exported there)
-function isRegexKey(key: string): boolean {
-  return key.startsWith('/') && key.length > 2
-}
+import { isRegexKey } from './simulator/keyword-matching'
 
 /**
  * Builds a deduplicated keyword inventory from all entries.
