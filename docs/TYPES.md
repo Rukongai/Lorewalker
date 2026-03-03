@@ -610,6 +610,8 @@ interface GraphDisplayDefaults {
   connectionVisibility: 'all' | 'selected' | 'none';
   showBlockedEdges: boolean;
   edgeStyle: 'bezier' | 'straight' | 'smoothstep';
+  graphLayoutMode: 'default' | 'skeleton' | 'clustered';
+  graphDimEdges: boolean;
 }
 ```
 
@@ -824,9 +826,11 @@ Data shape for the `EntryNode` React Flow custom node.
 interface EntryNodeData {
   entry: WorkingEntry;
   isCyclic: boolean;
-  isDimmed: boolean;           // True when graph search is active and this node doesn't match
-  activationStatus?: 'activated-constant' | 'activated-keyword' | 'activated-recursion' | 'skipped';
+  isDimmed?: boolean;           // True when graph search is active and this node doesn't match
+  severity: FindingSeverity | null;  // Worst finding severity for this entry (null = no findings)
+  activationStatus?: 'activated-constant' | 'activated-keyword' | 'activated-recursion' | 'skipped' | null;
   edgeDirection: 'LR' | 'TB';
+  onSetCategory?: (entryId: string, category: string | undefined) => void;
   [key: string]: unknown;  // React Flow requires open indexer on node data
 }
 ```
