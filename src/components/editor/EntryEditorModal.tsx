@@ -5,8 +5,8 @@ import { useWorkspaceStore } from '@/stores/workspace-store'
 import { useDerivedState, EMPTY_STORE } from '@/hooks/useDerivedState'
 import { documentStoreRegistry } from '@/stores/document-store-registry'
 import { EntryEditor } from './EntryEditor'
-import { ActivationLinks } from './ActivationLinks'
-import { ModalFindingsPane } from '@/components/analysis/ModalFindingsPane'
+import { ActivationLinks, ActivationLinksHeader } from './ActivationLinks'
+import { ModalFindingsPane, ModalFindingsPaneHeader } from '@/components/analysis/ModalFindingsPane'
 
 interface EntryEditorModalProps {
   entryId: string
@@ -107,6 +107,12 @@ export function EntryEditorModal({ entryId, onClose }: EntryEditorModalProps) {
             entryId={currentEntryId}
             layout="quadrant"
             onNavigate={navigate}
+            renderBottomLeftHeader={() => (
+              <ActivationLinksHeader entryId={currentEntryId} graph={graph} />
+            )}
+            renderBottomRightHeader={() => (
+              <ModalFindingsPaneHeader tabId={activeTabId} />
+            )}
             renderBottomLeft={() => (
               <ActivationLinks
                 entryId={currentEntryId}

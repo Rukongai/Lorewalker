@@ -114,6 +114,8 @@ interface EntryEditorProps {
   entryId: string
   layout?: 'single' | 'wide' | 'quadrant'
   onNavigate?: (entryId: string) => void
+  renderBottomLeftHeader?: () => React.ReactNode
+  renderBottomRightHeader?: () => React.ReactNode
   renderBottomLeft?: () => React.ReactNode
   renderBottomRight?: () => React.ReactNode
 }
@@ -183,37 +185,54 @@ function QuadrantLayout({
   nameField,
   contentField,
   fieldGroups,
+  renderBottomLeftHeader,
+  renderBottomRightHeader,
   renderBottomLeft,
   renderBottomRight,
 }: {
   nameField: React.ReactNode
   contentField: React.ReactNode
   fieldGroups: React.ReactNode
+  renderBottomLeftHeader?: () => React.ReactNode
+  renderBottomRightHeader?: () => React.ReactNode
   renderBottomLeft?: () => React.ReactNode
   renderBottomRight?: () => React.ReactNode
 }) {
   return (
-    <div className="flex h-full">
-      {/* Left column: 60% wide, top 40% / bottom 60% */}
-      <div className="flex flex-col border-r border-ctp-surface1" style={{ width: '60%' }}>
-        {/* Top-left: name + content */}
-        <div className="overflow-y-auto p-3 space-y-3 border-b border-ctp-surface1" style={{ flex: '40 1 0' }}>
+    <div className="flex flex-col h-full">
+      {/* Top row: left 60% name+content / right 40% field groups */}
+      <div className="flex overflow-hidden border-b border-ctp-surface1" style={{ flex: '40 1 0' }}>
+        <div className="border-r border-ctp-surface1 overflow-y-auto p-3 space-y-3" style={{ width: '60%' }}>
           {nameField}
           {contentField}
         </div>
-        {/* Bottom-left: connections pane (injected by modal) */}
-        <div className="overflow-hidden" style={{ flex: '60 1 0' }}>
-          {renderBottomLeft?.()}
-        </div>
-      </div>
-      {/* Right column: 40% wide, top 60% / bottom 40% */}
-      <div className="flex flex-col" style={{ width: '40%' }}>
-        {/* Top-right: category pane or field groups */}
-        <div className="overflow-hidden border-b border-ctp-surface1" style={{ flex: '40 1 0' }}>
+        <div className="overflow-hidden" style={{ width: '40%' }}>
           {fieldGroups}
         </div>
-        {/* Bottom-right: findings pane (injected by modal) */}
-        <div className="overflow-hidden" style={{ flex: '60 1 0' }}>
+      </div>
+
+      {/* Bottom section: 4-cell CSS Grid — headers share a row, so heights are equal */}
+      <div
+        className="overflow-hidden"
+        style={{
+          flex: '60 1 0',
+          display: 'grid',
+          gridTemplateColumns: '3fr 2fr',
+          gridTemplateRows: 'auto 1fr',
+        }}
+      >
+        {/* Header cells — same grid row = same height automatically */}
+        <div className="border-b border-r border-ctp-surface1 overflow-hidden">
+          {renderBottomLeftHeader?.()}
+        </div>
+        <div className="border-b border-ctp-surface1 overflow-hidden">
+          {renderBottomRightHeader?.()}
+        </div>
+        {/* Content cells */}
+        <div className="overflow-hidden border-r border-ctp-surface1">
+          {renderBottomLeft?.()}
+        </div>
+        <div className="overflow-hidden">
           {renderBottomRight?.()}
         </div>
       </div>
@@ -221,7 +240,7 @@ function QuadrantLayout({
   )
 }
 
-export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBottomLeft, renderBottomRight }: EntryEditorProps) {
+export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBottomLeftHeader, renderBottomRightHeader, renderBottomLeft, renderBottomRight }: EntryEditorProps) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const realStore = activeTabId ? documentStoreRegistry.get(activeTabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
@@ -1220,6 +1239,8 @@ export function EntryEditor({ entryId, layout = 'single', onNavigate, renderBott
             onSelect={handleCategorySelect}
           />
         }
+        renderBottomLeftHeader={renderBottomLeftHeader}
+        renderBottomRightHeader={renderBottomRightHeader}
         renderBottomLeft={renderBottomLeft}
         renderBottomRight={renderBottomRight}
       />

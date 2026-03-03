@@ -21,14 +21,38 @@ function healthBarColor(score: number): string {
   return 'bg-ctp-red'
 }
 
+interface ModalFindingsPaneHeaderProps {
+  tabId: string | null
+}
+
+export function ModalFindingsPaneHeader({ tabId }: ModalFindingsPaneHeaderProps) {
+  const realStore = tabId ? documentStoreRegistry.get(tabId) : undefined
+  const activeStore = realStore ?? EMPTY_STORE
+  const healthScore = activeStore((s) => s.healthScore)
+  const score = healthScore.overall
+
+  return (
+    <div className="px-3 py-2">
+      <div className="flex items-center gap-2 mb-1">
+        <span className={`text-sm font-bold ${healthColor(score)}`}>{score}</span>
+        <span className="text-[10px] text-ctp-overlay1 uppercase tracking-wider">Overall Health</span>
+      </div>
+      <div className="h-1.5 bg-ctp-surface1 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${healthBarColor(score)}`}
+          style={{ width: `${score}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
 export function ModalFindingsPane({ tabId, entryId }: ModalFindingsPaneProps) {
   const realStore = tabId ? documentStoreRegistry.get(tabId) : undefined
   const activeStore = realStore ?? EMPTY_STORE
   const findings = activeStore((s) => s.findings)
-  const healthScore = activeStore((s) => s.healthScore)
 
   const entryFindings = findings.filter((f) => f.entryIds.includes(entryId))
-  const score = healthScore.overall
 
   function handleSelectEntry(id: string) {
     realStore?.getState().selectEntry(id)
@@ -36,20 +60,6 @@ export function ModalFindingsPane({ tabId, entryId }: ModalFindingsPaneProps) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden text-sm">
-      {/* Health score row */}
-      <div className="px-3 py-2 border-b border-ctp-surface1 shrink-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className={`text-sm font-bold ${healthColor(score)}`}>{score}</span>
-          <span className="text-[10px] text-ctp-overlay1 uppercase tracking-wider">Overall Health</span>
-        </div>
-        <div className="h-1.5 bg-ctp-surface1 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all ${healthBarColor(score)}`}
-            style={{ width: `${score}%` }}
-          />
-        </div>
-      </div>
-
       {/* Issues section */}
       <div className="px-3 py-1.5 border-b border-ctp-surface0 shrink-0">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-ctp-overlay1">
