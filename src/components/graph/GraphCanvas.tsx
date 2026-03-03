@@ -31,6 +31,9 @@ import type { FindingSeverity } from '@/types'
 const nodeTypes = { entryNode: EntryNode }
 const edgeTypes = { recursionEdge: RecursionEdge }
 
+const SEVERITY_RANK: Record<FindingSeverity, number> = { error: 2, warning: 1, suggestion: 0 }
+const LAYOUT_CYCLE = ['default', 'skeleton', 'clustered'] as const
+
 const VISIBILITY_CYCLE: ConnectionVisibility[] = ['all', 'selected', 'none']
 
 interface GraphCanvasInnerProps {
@@ -73,7 +76,6 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
   const [pendingConnect, setPendingConnect] = useState<{ sourceId: string; targetId: string } | null>(null)
 
   // Compute worst severity per entry for health dots
-  const SEVERITY_RANK: Record<FindingSeverity, number> = { error: 2, warning: 1, suggestion: 0 }
   const entryWorstSeverity = useMemo(() => {
     const map = new Map<string, FindingSeverity>()
     for (const finding of findings) {
@@ -85,7 +87,6 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
       }
     }
     return map
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [findings])
 
   // Compute activation status map from lastResult
@@ -170,7 +171,9 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
         savedVisibilityRef.current = null
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- connectionVisibility intentionally omitted:
+  // this effect saves/restores visibility only when connectionsMode toggles. Adding
+  // connectionVisibility as a dep would cause a save/restore loop on every visibility change.
   }, [connectionsMode])
 
   // Activated entry IDs set for edge highlighting
@@ -368,10 +371,9 @@ function GraphCanvasInner({ tabId, onNodeDoubleClick, onAddEntry, isModalOpen }:
     setContextMenu(null)
   }, [store])
 
-  const LAYOUT_CYCLE = ['default', 'skeleton', 'clustered'] as const
   const handleCycleLayoutMode = useCallback(() => {
     setLayoutMode((m) => LAYOUT_CYCLE[(LAYOUT_CYCLE.indexOf(m) + 1) % LAYOUT_CYCLE.length])
-  }, [])  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleAutoLayout = useCallback(() => {
     setIsLayouting(true)

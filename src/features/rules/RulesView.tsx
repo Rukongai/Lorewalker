@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Plus, Edit2, Trash2, Copy } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { INCOMPATIBLE_RULE_IDS } from '@/services/analysis/copy-compatibility'
@@ -61,23 +61,24 @@ export function RulesView({ tabId }: RulesViewProps) {
   const updateDocumentRule = activeStore((s) => s.updateDocumentRule)
   const addDocumentRule = activeStore((s) => s.addDocumentRule)
 
-  // Build unified list
-  const allRows: RuleRow[] = []
-
-  if (filter === 'all' || filter === 'default') {
-    for (const rule of defaultRubric.rules) {
-      allRows.push({ kind: 'default', rule })
+  // Build unified list — memoized to avoid rebuilding on unrelated re-renders
+  const allRows = useMemo((): RuleRow[] => {
+    const rows: RuleRow[] = []
+    if (filter === 'all' || filter === 'default') {
+      for (const rule of defaultRubric.rules) {
+        rows.push({ kind: 'default', rule })
+      }
     }
-  }
-
-  if (filter === 'all' || filter === 'custom') {
-    for (const rule of wsCustomRules) {
-      allRows.push({ kind: 'custom', rule, scope: 'workspace' })
+    if (filter === 'all' || filter === 'custom') {
+      for (const rule of wsCustomRules) {
+        rows.push({ kind: 'custom', rule, scope: 'workspace' })
+      }
+      for (const rule of ruleOverrides.customRules) {
+        rows.push({ kind: 'custom', rule, scope: 'document' })
+      }
     }
-    for (const rule of ruleOverrides.customRules) {
-      allRows.push({ kind: 'custom', rule, scope: 'document' })
-    }
-  }
+    return rows
+  }, [filter, wsCustomRules, ruleOverrides.customRules])
 
   // Find selected row
   const selectedRow = allRows.find((r) => {
