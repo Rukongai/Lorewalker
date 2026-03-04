@@ -311,6 +311,14 @@ function ProvidersContent() {
 
   async function handleSetActive(id: string) {
     useWorkspaceStore.getState().setActiveLlmProviderId(id)
+    const { tabs, activeTabId, theme } = useWorkspaceStore.getState()
+    await storage.saveWorkspace({
+      tabs,
+      activeTabId,
+      theme,
+      panelLayout: { leftPanelWidth: 256, rightPanelWidth: 320, leftCollapsed: false, rightCollapsed: false, rightPanelTab: 'entry', leftPanelTab: 'entries' },
+      activeLlmProviderId: id,
+    }).catch(() => { /* non-fatal */ })
   }
 
   async function handleTest(id: string) {

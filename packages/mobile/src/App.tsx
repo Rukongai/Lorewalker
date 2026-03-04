@@ -67,7 +67,27 @@ export default function App() {
 
 async function hydrate() {
   try {
+    // Always load providers — independent of workspace state
+    const providers = await storage.loadProviders()
+    for (const p of providers) {
+      const inst =
+        p.type === 'anthropic'
+          ? new AnthropicProvider(p.id, p.name, { ...p.config, apiKey: p.apiKey })
+          : new OpenAICompatibleProvider(p.id, p.name, { ...p.config, apiKey: p.apiKey })
+      llmService.registerProvider(inst)
+    }
+
     const workspace = await storage.loadWorkspace()
+
+    // Restore active provider: prefer saved choice, fall back to first
+    const savedActiveId = workspace?.activeLlmProviderId
+    const registeredIds = new Set(providers.map((p) => p.id))
+    const activeId =
+      savedActiveId && registeredIds.has(savedActiveId)
+        ? savedActiveId
+        : providers[0]?.id
+    if (activeId) useWorkspaceStore.getState().setActiveLlmProviderId(activeId)
+
     if (!workspace) return
 
     const { tabs, activeTabId } = workspace as { tabs?: Array<{ id: string; name: string; fileMeta: unknown }>; activeTabId?: string | null }
@@ -93,20 +113,6 @@ async function hydrate() {
     // Restore active tab
     if (activeTabId) {
       useWorkspaceStore.getState().switchTab(activeTabId)
-    }
-
-    // Restore LLM providers
-    const providers = await storage.loadProviders()
-    for (const p of providers) {
-      const inst =
-        p.type === 'anthropic'
-          ? new AnthropicProvider(p.id, p.name, { ...p.config, apiKey: p.apiKey })
-          : new OpenAICompatibleProvider(p.id, p.name, { ...p.config, apiKey: p.apiKey })
-      llmService.registerProvider(inst)
-    }
-    // Auto-select first provider so Deep Analysis button appears on startup
-    if (providers.length > 0) {
-      useWorkspaceStore.getState().setActiveLlmProviderId(providers[0].id)
     }
   } catch {
     // Hydration failure is non-fatal — start fresh

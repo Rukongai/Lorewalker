@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { Feather } from '@expo/vector-icons'
 import { useWorkspaceStore, documentStoreRegistry } from '@lorewalker/core'
-import type { WorkingEntry } from '@lorewalker/core'
+import type { WorkingEntry, LorebookFormat } from '@lorewalker/core'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import type { EntriesStackParamList } from './AppNavigator'
 import { EditorView } from '../../features/editor'
@@ -32,7 +32,7 @@ export function EntryScreen({ route, navigation }: Props) {
   const [entry, setEntry] = useState<WorkingEntry | undefined>(() =>
     store ? store.getState().entries.find((e) => e.id === entryId) : undefined,
   )
-  const [activeFormat, setActiveFormat] = useState<string>(() =>
+  const [activeFormat, setActiveFormat] = useState<LorebookFormat>(() =>
     store ? store.getState().activeFormat : 'unknown',
   )
   const [allEntries, setAllEntries] = useState<WorkingEntry[]>(() =>

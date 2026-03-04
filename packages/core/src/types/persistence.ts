@@ -10,6 +10,7 @@ export interface PersistedWorkspace {
   theme: ThemeId;
   panelLayout: PanelLayout;
   lastSeenChangelogDate?: string;
+  activeLlmProviderId?: string | null;
 }
 
 export interface PersistedDocument {
