@@ -6,6 +6,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import type { EntriesStackParamList } from './AppNavigator'
 import { EditorView } from '../../features/editor'
 import { EntryHealthView } from '../../features/health'
+import { EntryInsightsView } from '../../features/insights'
 
 type Props = NativeStackScreenProps<EntriesStackParamList, 'Entry'>
 
@@ -89,9 +90,7 @@ export function EntryScreen({ route, navigation }: Props) {
           <EntryHealthView entryId={entryId} />
         )}
         {activeTab === 'insights' && (
-          <View style={styles.placeholder}>
-            <Text style={styles.placeholderText}>Insights — coming soon</Text>
-          </View>
+          <EntryInsightsView entryId={entryId} />
         )}
       </View>
     </View>
@@ -131,15 +130,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-  },
-  placeholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  placeholderText: {
-    color: '#6c7086',
-    fontSize: 14,
   },
   empty: {
     flex: 1,
