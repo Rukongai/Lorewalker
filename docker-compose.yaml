@@ -1,6 +1,6 @@
 services:
   web:
-    build: .
+    image: ghcr.io/rukongai/lorewalker:latest
     ports:
       - "8080:80"
     restart: unless-stopped
