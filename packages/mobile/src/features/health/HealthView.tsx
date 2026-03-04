@@ -71,6 +71,7 @@ export function LorebookHealthView({ topInset = 0, bottomInset = 0 }: { topInset
   const bookMeta = activeStore((s) => s.bookMeta)
   const [llmFindings, setLlmFindings] = useState<Finding[]>([])
   const [analyzing, setAnalyzing] = useState(false)
+  const [analysisMessage, setAnalysisMessage] = useState<string | null>(null)
 
   if (!store) {
     return (
@@ -83,13 +84,16 @@ export function LorebookHealthView({ topInset = 0, bottomInset = 0 }: { topInset
   async function handleDeepAnalysis() {
     if (!activeLlmProviderId) return
     setAnalyzing(true)
+    setAnalysisMessage(null)
     try {
       const graph = buildGraph(entries)
       const ctx = { entries, bookMeta, graph, llmService }
       const results = await runLLMRules(ctx, defaultRubric)
       setLlmFindings(results)
+      setAnalysisMessage(results.length > 0 ? `Found ${results.length} new insight${results.length === 1 ? '' : 's'}` : 'No new issues found')
     } catch (err) {
       console.warn('[HealthView] Deep analysis failed:', err)
+      setAnalysisMessage('Analysis failed')
     } finally {
       setAnalyzing(false)
     }
@@ -106,16 +110,21 @@ export function LorebookHealthView({ topInset = 0, bottomInset = 0 }: { topInset
         size="lg"
       />
       {activeLlmProviderId && (
-        <Pressable
-          onPress={() => void handleDeepAnalysis()}
-          disabled={analyzing}
-          style={({ pressed }) => [styles.deepBtn, pressed && styles.deepBtnPressed]}
-        >
-          {analyzing
-            ? <ActivityIndicator size="small" color={T.accent} />
-            : <Text style={styles.deepBtnText}>Deep Analysis (AI)</Text>
-          }
-        </Pressable>
+        <>
+          <Pressable
+            onPress={() => void handleDeepAnalysis()}
+            disabled={analyzing}
+            style={({ pressed }) => [styles.deepBtn, pressed && styles.deepBtnPressed]}
+          >
+            {analyzing
+              ? <ActivityIndicator size="small" color={T.accent} />
+              : <Text style={styles.deepBtnText}>Deep Analysis (AI)</Text>
+            }
+          </Pressable>
+          {analysisMessage && (
+            <Text style={styles.analysisMessage}>{analysisMessage}</Text>
+          )}
+        </>
       )}
       <View style={styles.divider} />
       <FindingsList findings={allFindings} />
@@ -180,4 +189,5 @@ const styles = StyleSheet.create({
   },
   deepBtnPressed: { backgroundColor: T.muted },
   deepBtnText: { color: T.accent, fontSize: 14, fontWeight: '600' },
+  analysisMessage: { color: T.textMuted, fontSize: 12, textAlign: 'center', marginTop: 6 },
 })

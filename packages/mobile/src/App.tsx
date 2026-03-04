@@ -104,6 +104,10 @@ async function hydrate() {
           : new OpenAICompatibleProvider(p.id, p.name, { ...p.config, apiKey: p.apiKey })
       llmService.registerProvider(inst)
     }
+    // Auto-select first provider so Deep Analysis button appears on startup
+    if (providers.length > 0) {
+      useWorkspaceStore.getState().setActiveLlmProviderId(providers[0].id)
+    }
   } catch {
     // Hydration failure is non-fatal — start fresh
   }
