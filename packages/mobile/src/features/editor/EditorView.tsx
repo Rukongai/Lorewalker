@@ -1,5 +1,7 @@
-import { View, Text, TextInput, ScrollView, StyleSheet } from 'react-native'
+import { useState } from 'react'
+import { View, Text, TextInput, ScrollView, Pressable, ActivityIndicator, StyleSheet } from 'react-native'
 import { EmptyState } from '../../components/EmptyState'
+import { useWorkspaceStore, categorizeEntry, llmService } from '@lorewalker/core'
 import type { WorkingEntry, BookMeta, LorebookFormat } from '@lorewalker/core'
 import { T } from '../../theme/tokens'
 import { FieldGroup, Field, inputStyle } from './primitives'
@@ -39,6 +41,8 @@ export function EditorView({
   bookMeta,
   onBookMetaChange,
 }: EditorViewProps) {
+  const activeLlmProviderId = useWorkspaceStore((s) => s.activeLlmProviderId)
+  const [categorizing, setCategorizing] = useState(false)
   const isRoleCall = activeFormat === 'rolecall'
   const isSillyTavern = activeFormat !== 'rolecall' && activeFormat !== 'ccv3'
   const isPlatform = isRoleCall || isSillyTavern
@@ -46,6 +50,19 @@ export function EditorView({
   if (scope === 'entry') {
     if (!entry || !onEntryChange) {
       return <EmptyState icon="edit-2" title="Select an Entry" subtitle="Choose an entry from the list to edit." />
+    }
+
+    async function handleCategorize() {
+      if (!activeLlmProviderId || !entry || !onEntryChange) return
+      setCategorizing(true)
+      try {
+        const category = await categorizeEntry(entry, llmService, activeLlmProviderId)
+        onEntryChange({ userCategory: category })
+      } catch (err) {
+        console.warn('[EditorView] Categorize failed:', err)
+      } finally {
+        setCategorizing(false)
+      }
     }
 
     return (
@@ -74,10 +91,26 @@ export function EditorView({
             </Field>
           )}
 
-          {/* Category (read-only — LLM categorization is Phase 6) */}
-          {entry.userCategory && (
-            <Text style={styles.categoryText}>Category: {entry.userCategory}</Text>
-          )}
+          {/* Category */}
+          <View style={styles.categoryRow}>
+            {entry.userCategory ? (
+              <Text style={styles.categoryText}>Category: {entry.userCategory}</Text>
+            ) : (
+              <Text style={styles.categoryText}>No category</Text>
+            )}
+            {activeLlmProviderId && (
+              <Pressable
+                onPress={() => void handleCategorize()}
+                disabled={categorizing}
+                style={({ pressed }) => [styles.categorizeBtn, pressed && styles.categorizeBtnPressed]}
+              >
+                {categorizing
+                  ? <ActivityIndicator size="small" color={T.accent} />
+                  : <Text style={styles.categorizeBtnText}>Categorize</Text>
+                }
+              </Pressable>
+            )}
+          </View>
 
           {/* Content */}
           <Field label={`Content (${entry.tokenCount} tokens)`}>
@@ -231,11 +264,28 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     paddingBottom: 4,
   },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
   categoryText: {
     color: T.textMuted,
     fontSize: 12,
     fontStyle: 'italic',
+    flex: 1,
   },
+  categorizeBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    backgroundColor: T.overlay,
+    borderRadius: 6,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  categorizeBtnPressed: { backgroundColor: T.muted },
+  categorizeBtnText: { color: T.accent, fontSize: 12, fontWeight: '600' },
   kwSection: { gap: 4, flexDirection: 'column' },
   kwLabel: { color: T.textMuted, fontSize: 10 },
   textArea: { minHeight: 80 },
