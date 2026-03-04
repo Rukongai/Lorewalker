@@ -83,6 +83,44 @@ export const CHANGELOG: ChangelogEntry[] = [
           "What's New dialog added — you're reading it!",
         ],
       },
+      {
+        label: 'Workspace Redesign',
+        items: [
+          'The tools modal has been replaced by two dedicated workspace overlays — the Lorebook Workspace (health, rules, insights) and the Entry Workspace (edit, insights)',
+          'Each workspace opens as a large full-screen overlay, keeping the graph and entry list visible in the background',
+        ],
+      },
+      {
+        label: 'Sidebar',
+        items: [
+          'The right-side panel has been redesigned with four unified tabs: Edit, Health, Simulator, and Keywords',
+          '"Analysis" has been renamed to "Health" throughout the sidebar and workspace',
+          'Keywords tab is now read-only — browse keywords and keyword reach without accidentally editing',
+          'Keyword editing has moved into the Edit tab, alongside the rest of entry field editing',
+          'Simulator tab now includes a "Simulate this entry" button for quick per-entry activation testing',
+        ],
+      },
+      {
+        label: 'Insights',
+        items: [
+          'New Insights tab in both workspaces',
+          'Entry Workspace Insights: keyword reach percentage table and simulate-this-entry panel',
+          'Lorebook Workspace Insights: full lorebook simulator and bulk LLM categorization',
+        ],
+      },
+      {
+        label: 'Settings',
+        items: [
+          'Settings dialog navigation items now show icons alongside section labels',
+          'Active section is highlighted with a left-edge accent indicator',
+        ],
+      },
+      {
+        label: 'Performance',
+        items: [
+          'Entry list is now virtualized — lorebooks with hundreds of entries scroll smoothly without rendering every row',
+        ],
+      },
     ],
   },
   // older entries below as history builds up
