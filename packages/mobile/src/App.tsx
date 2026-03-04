@@ -1,3 +1,4 @@
+import 'react-native-get-random-values'
 import { useEffect, useState } from 'react'
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native'
 import { useFonts } from 'expo-font'
@@ -6,7 +7,13 @@ import { JetBrainsMono_400Regular, JetBrainsMono_500Medium } from '@expo-google-
 import { Feather } from '@expo/vector-icons'
 import { NavigationContainer } from '@react-navigation/native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { useWorkspaceStore, createDocumentStore, documentStoreRegistry } from '@lorewalker/core'
+import {
+  useWorkspaceStore,
+  documentStoreRegistry,
+  llmService,
+  AnthropicProvider,
+  OpenAICompatibleProvider,
+} from '@lorewalker/core'
 import type { PersistedDocument } from '@lorewalker/core'
 import { AsyncStorageAdapter } from './storage/async-storage-adapter'
 import { AppNavigator } from './layouts/mobile/AppNavigator'
@@ -72,13 +79,12 @@ async function hydrate() {
       if (!persisted) continue
 
       const doc = persisted as PersistedDocument
-      const store = createDocumentStore({
+      documentStoreRegistry.create(tab.id, {
         entries: doc.entries,
         bookMeta: doc.bookMeta,
         initialFormat: doc.activeFormat,
         ruleOverrides: doc.ruleOverrides,
       })
-      documentStoreRegistry.set(tab.id, store)
 
       const fileMeta = doc.fileMeta
       useWorkspaceStore.getState().openTab(tab.id, tab.name, fileMeta)
@@ -87,6 +93,16 @@ async function hydrate() {
     // Restore active tab
     if (activeTabId) {
       useWorkspaceStore.getState().switchTab(activeTabId)
+    }
+
+    // Restore LLM providers
+    const providers = await storage.loadProviders()
+    for (const p of providers) {
+      const inst =
+        p.type === 'anthropic'
+          ? new AnthropicProvider(p.id, p.name, { ...p.config, apiKey: p.apiKey })
+          : new OpenAICompatibleProvider(p.id, p.name, { ...p.config, apiKey: p.apiKey })
+      llmService.registerProvider(inst)
     }
   } catch {
     // Hydration failure is non-fatal — start fresh
