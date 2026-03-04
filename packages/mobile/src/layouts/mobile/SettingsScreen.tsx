@@ -20,45 +20,72 @@ import {
   OpenAICompatibleProvider,
   generateId,
 } from '@lorewalker/core'
-import type { PersistedProvider, LLMProviderType, BookMeta } from '@lorewalker/core'
+import type { PersistedProvider, LLMProviderType, BookMeta, DocumentStore } from '@lorewalker/core'
 import type { TabParamList } from './AppNavigator'
 import { ImportScreen } from './ImportScreen'
 import { AsyncStorageAdapter } from '../../storage/async-storage-adapter'
-import { PillTabBar } from '../../components/PillTabBar'
+import { Feather } from '@expo/vector-icons'
 
 type Props = BottomTabScreenProps<TabParamList, 'Settings'>
-type SettingsTabId = 'book' | 'providers' | 'import'
-
-const TABS: { id: SettingsTabId; label: string }[] = [
-  { id: 'book', label: 'Book' },
-  { id: 'providers', label: 'Providers' },
-  { id: 'import', label: 'Import' },
-]
 
 const storage = new AsyncStorageAdapter()
+
+// ─── Collapsible Section ────────────────────────────────────────────────────
+
+function CollapsibleSection({
+  icon,
+  label,
+  children,
+  defaultExpanded = false,
+}: {
+  icon: string
+  label: string
+  children: React.ReactNode
+  defaultExpanded?: boolean
+}) {
+  const [expanded, setExpanded] = useState(defaultExpanded)
+  return (
+    <View style={styles.collapsibleSection}>
+      <Pressable
+        onPress={() => setExpanded((e) => !e)}
+        style={({ pressed }) => [styles.collapsibleHeader, pressed && styles.collapsibleHeaderPressed]}
+      >
+        <Feather name={icon as any} size={15} color={T.accent} />
+        <Text style={styles.collapsibleLabel}>{label}</Text>
+        <Feather name={expanded ? 'chevron-up' : 'chevron-down'} size={15} color={T.textMuted} />
+      </Pressable>
+      {expanded && <View style={styles.collapsibleBody}>{children}</View>}
+    </View>
+  )
+}
 
 // ─── Book Tab ──────────────────────────────────────────────────────────────
 
 function BookTab() {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const store = activeTabId ? documentStoreRegistry.get(activeTabId) : null
-  const bookMeta = store?.getState().bookMeta
 
-  if (!store || !bookMeta) {
+  if (!store) {
     return (
       <View style={styles.emptyCenter}>
         <Text style={styles.emptyText}>No lorebook loaded</Text>
-        <Text style={styles.emptySubtext}>Import a lorebook from the Import tab</Text>
+        <Text style={styles.emptySubtext}>Import a lorebook from the Import section</Text>
       </View>
     )
   }
 
+  return <BookContent store={store} />
+}
+
+function BookContent({ store }: { store: DocumentStore }) {
+  const bookMeta = store((s) => s.bookMeta)
+
   function update(patch: Partial<BookMeta>) {
-    store?.getState().updateBookMeta(patch)
+    store.getState().updateBookMeta(patch)
   }
 
   return (
-    <ScrollView style={styles.tabScroll} contentContainerStyle={styles.tabContent}>
+    <View style={styles.bookContent}>
       <Section label="Identity">
         <FieldText label="Name" value={bookMeta.name} onChangeText={(v) => update({ name: v })} />
         <FieldText
@@ -85,7 +112,7 @@ function BookTab() {
         <FieldToggle label="Use Group Scoring" value={bookMeta.useGroupScoring} onChange={(v) => update({ useGroupScoring: v })} />
         <FieldToggle label="Alert on Overflow" value={bookMeta.alertOnOverflow} onChange={(v) => update({ alertOnOverflow: v })} />
       </Section>
-    </ScrollView>
+    </View>
   )
 }
 
@@ -208,7 +235,7 @@ function emptyForm(type: LLMProviderType = 'openai-compatible'): ProviderFormSta
   } as ProviderFormState
 }
 
-function ProvidersTab() {
+function ProvidersContent() {
   const activeProviderId = useWorkspaceStore((s) => s.activeLlmProviderId)
   const [providers, setProviders] = useState<PersistedProvider[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -296,7 +323,7 @@ function ProvidersTab() {
   }
 
   return (
-    <ScrollView style={styles.tabScroll} contentContainerStyle={styles.tabContent}>
+    <View style={styles.providersContent}>
       {providers.length === 0 && !showForm && (
         <Text style={styles.emptySubtext}>No providers configured. Add one below.</Text>
       )}
@@ -402,7 +429,7 @@ function ProvidersTab() {
           <Text style={styles.addBtnText}>+ Add Provider</Text>
         </Pressable>
       )}
-    </ScrollView>
+    </View>
   )
 }
 
@@ -442,45 +469,58 @@ function FormField({
 // ─── Main SettingsScreen ────────────────────────────────────────────────────
 
 export function SettingsScreen({ navigation }: Props) {
-  const [activeTab, setActiveTab] = useState<SettingsTabId>('book')
   const insets = useSafeAreaInsets()
 
   return (
-    <View style={styles.container}>
-      <View style={[styles.tabBar, { paddingTop: insets.top + 8 }]}>
-        <PillTabBar tabs={TABS} active={activeTab} onSelect={setActiveTab} />
-      </View>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 12 }]}
+    >
+      <CollapsibleSection icon="book-open" label="Book" defaultExpanded={false}>
+        <BookTab />
+      </CollapsibleSection>
 
-      <View style={styles.content}>
-        {activeTab === 'book' && <BookTab />}
-        {activeTab === 'providers' && <ProvidersTab />}
-        {activeTab === 'import' && (
-          <ScrollView style={styles.tabScroll} contentContainerStyle={styles.tabContent}>
-            <ImportScreen onImportSuccess={() => navigation.navigate('Entries')} />
-          </ScrollView>
-        )}
-      </View>
-    </View>
+      <CollapsibleSection icon="server" label="Providers" defaultExpanded={false}>
+        <ProvidersContent />
+      </CollapsibleSection>
+
+      <CollapsibleSection icon="upload" label="Import" defaultExpanded={false}>
+        <ImportScreen onImportSuccess={() => navigation.navigate('Entries')} />
+      </CollapsibleSection>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: T.bg },
-  tabBar: {
-    flexDirection: 'row',
+  scrollContent: { padding: 12, gap: 12, paddingBottom: 40 },
+
+  // Collapsible section
+  collapsibleSection: {
     backgroundColor: T.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: T.overlay,
-    paddingHorizontal: 12,
-    paddingBottom: 8,
-    gap: 6,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: T.overlay,
   },
-  content: { flex: 1 },
-  tabScroll: { flex: 1, backgroundColor: T.bg },
-  tabContent: { padding: 16, gap: 16 },
-  emptyCenter: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  collapsibleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  collapsibleHeaderPressed: { backgroundColor: T.overlay },
+  collapsibleLabel: { flex: 1, color: T.textPrimary, fontSize: 14, fontWeight: '600' },
+  collapsibleBody: { padding: 12, gap: 12, borderTopWidth: 1, borderTopColor: T.overlay },
+
+  // Empty state
+  emptyCenter: { alignItems: 'center', padding: 24 },
   emptyText: { color: T.textPrimary, fontSize: 16, marginBottom: 8 },
   emptySubtext: { color: T.textMuted, fontSize: 13, marginBottom: 16 },
+
+  // Book content
+  bookContent: { gap: 12 },
 
   // Section (Book tab)
   section: { gap: 0 },
@@ -530,7 +570,8 @@ const styles = StyleSheet.create({
   },
   fieldInputNumber: { maxWidth: 80 },
 
-  // Providers tab
+  // Providers content
+  providersContent: { gap: 12 },
   providerCard: {
     backgroundColor: T.surface,
     borderRadius: 10,
