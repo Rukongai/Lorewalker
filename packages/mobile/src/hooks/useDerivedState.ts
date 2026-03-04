@@ -4,16 +4,8 @@ import {
   runDeterministic,
   computeHealthScore,
   defaultRubric,
+  buildGraph,
 } from '@lorewalker/core'
-import type { RecursionGraph } from '@lorewalker/core'
-
-// Mobile has no graph view — skip graph building (elkjs is browser-only).
-// Recursion-graph-dependent rules will produce no findings; all other rules run normally.
-const EMPTY_GRAPH: RecursionGraph = {
-  edges: new Map(),
-  reverseEdges: new Map(),
-  edgeMeta: new Map(),
-}
 
 export function useDerivedState(tabId: string | null): void {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -26,7 +18,8 @@ export function useDerivedState(tabId: string | null): void {
     async function runAnalysis() {
       try {
         const s = store!.getState()
-        const ctx = { entries: s.entries, bookMeta: s.bookMeta, graph: EMPTY_GRAPH }
+        const graph = buildGraph(s.entries)
+        const ctx = { entries: s.entries, bookMeta: s.bookMeta, graph }
         const findings = await runDeterministic(ctx, defaultRubric)
         const healthScore = computeHealthScore(findings, defaultRubric)
         store!.setState({ findings, healthScore })
