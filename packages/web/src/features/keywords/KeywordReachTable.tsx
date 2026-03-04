@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { WorkingEntry, RecursionGraph } from '@/types'
-import { getReachableEntries } from '@lorewalker/core'
+import { getReachableEntries } from '@lorewalker/core/services/graph-service'
 
 export interface KeywordReachTableProps {
   entryId: string

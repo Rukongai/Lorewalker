@@ -4,7 +4,7 @@ import { Tooltip } from '@/components/ui/Tooltip'
 import { EditorState, StateEffect, StateField, RangeSetBuilder } from '@codemirror/state'
 import { EditorView, Decoration, type DecorationSet } from '@codemirror/view'
 import type { RecursionGraph } from '@/types'
-import { findCycles } from '@lorewalker/core'
+import { findCycles } from '@lorewalker/core/services/graph-service'
 import { useWorkspaceStore } from '@/stores/workspace-store'
 
 type KeywordMeta = Map<string, { count: number; isCycle: boolean }>

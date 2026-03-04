@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react'
 import {
   documentStoreRegistry,
-  buildGraph,
   runDeterministic,
   computeHealthScore,
   defaultRubric,
 } from '@lorewalker/core'
 import type { RecursionGraph } from '@lorewalker/core'
 
+// Mobile has no graph view — skip graph building (elkjs is browser-only).
+// Recursion-graph-dependent rules will produce no findings; all other rules run normally.
 const EMPTY_GRAPH: RecursionGraph = {
   edges: new Map(),
   reverseEdges: new Map(),
@@ -24,7 +25,7 @@ export function useDerivedState(tabId: string | null): void {
 
     function runAnalysis() {
       const s = store!.getState()
-      const graph = s.entries.length > 0 ? buildGraph(s.entries) : EMPTY_GRAPH
+      const graph = EMPTY_GRAPH
       const ctx = { entries: s.entries, bookMeta: s.bookMeta, graph }
       const findings = runDeterministic(ctx, defaultRubric)
       const healthScore = computeHealthScore(findings, defaultRubric)

@@ -14,7 +14,8 @@ import {
   GroupFields, ScanOverrideFields, MatchSourceFields, CharFilterFields,
   TriggersFields, AdvancedFields,
 } from '@/features/editor'
-import { categorizeEntry, llmService, computeHealthScore, defaultRubric, getReachableEntries } from '@lorewalker/core'
+import { categorizeEntry, llmService, computeHealthScore, defaultRubric } from '@lorewalker/core'
+import { getReachableEntries } from '@lorewalker/core/services/graph-service'
 import {
   buildConnectionRows, ConnectionsList, HealthScoreCard, FindingsList,
 } from '@/features/health'

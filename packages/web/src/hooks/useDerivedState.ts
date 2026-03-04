@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { filterRulesByFormat, buildGraph, incrementalUpdate, computeLayout, runDeterministic, computeHealthScore, defaultRubric, customRuleToRule } from '@lorewalker/core'
+import { filterRulesByFormat, runDeterministic, computeHealthScore, defaultRubric, customRuleToRule } from '@lorewalker/core'
+import { buildGraph, incrementalUpdate } from '@lorewalker/core/services/graph-service'
+import { computeLayout } from '@lorewalker/core/services/graph-layout'
 import type { RecursionGraph, WorkingEntry, KeywordMatchOptions, Finding, HealthScore, Rubric } from '@/types'
 import { createDocumentStore, type DocumentStore } from '@/stores/document-store'
 import { documentStoreRegistry } from '@/stores/document-store-registry'

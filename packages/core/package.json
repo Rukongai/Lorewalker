@@ -14,6 +14,7 @@
     "./lib/entry-type": "./src/lib/entry-type.ts",
     "./services/transform-service": "./src/services/transform-service.ts",
     "./services/graph-service": "./src/services/graph-service.ts",
+    "./services/graph-layout": "./src/services/graph-layout.ts",
     "./services/simulator-service": "./src/services/simulator-service.ts",
     "./services/keyword-analysis-service": "./src/services/keyword-analysis-service.ts",
     "./services/categorize-service": "./src/services/categorize-service.ts",

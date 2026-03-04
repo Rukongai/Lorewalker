@@ -11,20 +11,9 @@ export { FIXED_CATEGORIES, isFixedCategory, getEntryIcon } from './lib/entry-typ
 // Services
 export { inflate, deflate, inflateFromRawST, inflateFromRoleCall, deflateToRoleCall } from './services/transform-service'
 export type { InflateResult, RawSTBook, RawRoleCallBook, RawSTEntry } from './services/transform-service'
-export {
-  buildGraph,
-  incrementalUpdate,
-  findCycles,
-  findOrphans,
-  findDeadLinks,
-  findIslands,
-  findLongestChain,
-  computeLayout,
-  getReachableEntries,
-  buildLayoutSkeleton,
-  detectKeywordCommunities,
-  computeChainDepths,
-} from './services/graph-service'
+// graph-layout.ts (computeLayout) is browser-only (depends on elkjs) and is NOT exported here.
+// All other GraphService exports are safe for all platforms.
+export { buildGraph, findCycles, findOrphans, findDeadLinks, incrementalUpdate, findIslands, computeChainDepths, findLongestChain, getReachableEntries, buildLayoutSkeleton, detectKeywordCommunities } from './services/graph-service'
 export { simulate, simulateConversation } from './services/simulator-service'
 export { buildKeywordInventory, simulateKeyword } from './services/keyword-analysis-service'
 export { categorizeEntry, categorizeAll } from './services/categorize-service'
