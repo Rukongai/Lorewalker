@@ -1,14 +1,7 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { LorebookKeywordsView } from '../../features/keywords'
 
 export function KeywordsScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Keywords — coming soon</Text>
-    </View>
-  )
+  const insets = useSafeAreaInsets()
+  return <LorebookKeywordsView topInset={insets.top} bottomInset={insets.bottom} />
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1e1e2e' },
-  text: { color: '#cdd6f4', fontSize: 16 },
-})

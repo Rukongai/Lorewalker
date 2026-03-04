@@ -127,7 +127,7 @@ function KeywordRow({ stat, expanded, onToggle, entryMap, onSimulate, simResult,
   )
 }
 
-export function LorebookKeywordsView() {
+export function LorebookKeywordsView({ topInset = 0, bottomInset = 0 }: { topInset?: number; bottomInset?: number }) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const store = activeTabId ? documentStoreRegistry.get(activeTabId) : null
   const entries = store?.getState().entries ?? []
@@ -174,7 +174,7 @@ export function LorebookKeywordsView() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchRow}>
+      <View style={[styles.searchRow, { paddingTop: 14 + topInset }]}>
         <TextInput
           style={styles.searchInput}
           value={search}
@@ -191,7 +191,7 @@ export function LorebookKeywordsView() {
       <FlatList
         data={filtered}
         keyExtractor={rowKey}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 24 + bottomInset }]}
         renderItem={({ item }) => {
           const key = rowKey(item)
           return (

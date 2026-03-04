@@ -1,14 +1,7 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { LorebookSimulatorView } from '../../features/simulator'
 
 export function SimulatorScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Simulator — coming soon</Text>
-    </View>
-  )
+  const insets = useSafeAreaInsets()
+  return <LorebookSimulatorView topInset={insets.top} bottomInset={insets.bottom} />
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1e1e2e' },
-  text: { color: '#cdd6f4', fontSize: 16 },
-})

@@ -113,7 +113,7 @@ function ToggleField({
   )
 }
 
-export function LorebookSimulatorView() {
+export function LorebookSimulatorView({ topInset = 0, bottomInset = 0 }: { topInset?: number; bottomInset?: number }) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const store = activeTabId ? documentStoreRegistry.get(activeTabId) : null
   const entries = store?.getState().entries ?? []
@@ -165,7 +165,7 @@ export function LorebookSimulatorView() {
   const skipped = result?.skippedEntries.filter((se) => se.reason !== 'disabled') ?? []
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingTop: 16 + topInset, paddingBottom: 16 + bottomInset }]} keyboardShouldPersistTaps="handled">
       {/* Message Input */}
       <Text style={styles.sectionHeader}>Message</Text>
       <TextInput
