@@ -7,6 +7,7 @@ import { LorebookSettingsPanel } from './LorebookSettingsPanel'
 import { ProviderSettingsPanel } from './ProviderSettingsPanel'
 import { LlmToolsPanel } from './LlmToolsPanel'
 import type { GraphLayoutSettings, GraphDisplayDefaults, EditorDefaults, EntriesListDefaults } from '@/types'
+import { Settings2, Network, FileEdit, List, BookOpen, Plug, Wrench } from 'lucide-react'
 
 const inputClass =
   'bg-ctp-surface0 border border-ctp-surface1 rounded px-2 py-1 text-xs text-ctp-subtext1 outline-none focus:border-ctp-accent transition-colors'
@@ -440,20 +441,36 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         {/* Body */}
         <div className="flex flex-1 overflow-hidden">
           {/* Left: category list */}
-          <div className="shrink-0 border-r border-ctp-surface0 p-2 overflow-y-auto" style={{ width: leftWidth }}>
-            {(['general', 'graph', 'editor', 'entries', 'lorebook', 'providers', 'llm-tools'] as const).map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`w-full text-left px-2 py-1.5 rounded text-xs font-medium ${
-                  activeCategory === cat
-                    ? 'text-ctp-accent bg-ctp-surface0'
-                    : 'text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0/50'
-                } transition-colors`}
-              >
-                {cat === 'general' ? 'General' : cat === 'graph' ? 'Workspace Settings' : cat === 'editor' ? 'Editor' : cat === 'entries' ? 'Entries' : cat === 'lorebook' ? 'Lorebook' : cat === 'providers' ? 'Providers' : 'LLM Tools'}
-              </button>
-            ))}
+          <div className="shrink-0 border-r border-ctp-surface0 py-2 overflow-y-auto" style={{ width: leftWidth }}>
+            {([
+              { id: 'general',   label: 'General',    Icon: Settings2 },
+              { id: 'graph',     label: 'Workspace',  Icon: Network   },
+              { id: 'editor',    label: 'Editor',     Icon: FileEdit  },
+              { id: 'entries',   label: 'Entries',    Icon: List      },
+              { id: 'lorebook',  label: 'Lorebook',   Icon: BookOpen  },
+              { id: 'providers', label: 'Providers',  Icon: Plug      },
+              { id: 'llm-tools', label: 'LLM Tools',  Icon: Wrench    },
+            ] as const).map(({ id, label, Icon }) => {
+              const isActive = activeCategory === id
+              return (
+                <button
+                  key={id}
+                  onClick={() => setActiveCategory(id)}
+                  className={[
+                    'relative w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium transition-all duration-150',
+                    isActive
+                      ? 'text-ctp-accent bg-ctp-surface0'
+                      : 'text-ctp-overlay1 hover:text-ctp-subtext1 hover:bg-ctp-surface0/40',
+                  ].join(' ')}
+                >
+                  {isActive && (
+                    <span className="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-ctp-accent" />
+                  )}
+                  <Icon size={13} className="shrink-0 opacity-80" />
+                  <span>{label}</span>
+                </button>
+              )
+            })}
           </div>
 
           {/* Drag divider */}
