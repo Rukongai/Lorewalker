@@ -7,7 +7,9 @@ import {
   Pressable,
   StyleSheet,
 } from 'react-native'
+import { Feather } from '@expo/vector-icons'
 import { T } from '../../theme/tokens'
+import { EmptyState } from '../../components/EmptyState'
 import {
   useWorkspaceStore,
   documentStoreRegistry,
@@ -66,10 +68,15 @@ function KeywordRow({ stat, expanded, onToggle, entryMap, onSimulate, simResult,
           <Text style={styles.entryCount}>{stat.entryIds.length} entries</Text>
           {isOverlap && (
             <View style={styles.overlapBadge}>
-              <Text style={styles.overlapBadgeText}>⚠ overlap</Text>
+              <Feather name="alert-triangle" size={11} color={T.warning} style={styles.overlapIcon} />
+              <Text style={styles.overlapBadgeText}>overlap</Text>
             </View>
           )}
-          <Text style={styles.expandCaret}>{expanded ? '▲' : '▼'}</Text>
+          <Feather
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={14}
+            color={T.textMuted}
+          />
         </View>
       </Pressable>
 
@@ -160,12 +167,7 @@ export function LorebookKeywordsView() {
   }
 
   if (!store) {
-    return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyText}>No lorebook loaded</Text>
-        <Text style={styles.emptySubtext}>Import a lorebook from Settings → Import</Text>
-      </View>
-    )
+    return <EmptyState icon="tag" title="No Lorebook Loaded" subtitle="Import a lorebook from Settings → Import" />
   }
 
   const rowKey = (stat: KeywordStat) => `${stat.keyword}:${stat.isSecondary ? '2' : '1'}`
@@ -205,7 +207,7 @@ export function LorebookKeywordsView() {
           )
         }}
         ListEmptyComponent={
-          <Text style={styles.emptyState}>No keywords found.</Text>
+          <EmptyState icon="search" title="No Keywords Found" subtitle={search ? `No keywords matching "${search}"` : undefined} />
         }
       />
     </View>
@@ -244,6 +246,7 @@ const styles = StyleSheet.create({
     backgroundColor: T.surface,
     borderRadius: 8,
     overflow: 'hidden',
+    ...T.shadows.card,
   },
   keywordHeader: {
     flexDirection: 'row',
@@ -271,13 +274,16 @@ const styles = StyleSheet.create({
   keywordMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   entryCount: { color: T.textMuted, fontSize: 12 },
   overlapBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     backgroundColor: 'rgba(249,226,175,0.13)',
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
+  overlapIcon: {},
   overlapBadgeText: { color: T.warning, fontSize: 11 },
-  expandCaret: { color: T.textMuted, fontSize: 11 },
   expandedContent: {
     borderTopWidth: 1,
     borderTopColor: T.overlay,

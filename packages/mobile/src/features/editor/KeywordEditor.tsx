@@ -43,7 +43,7 @@ export function KeywordEditor({
     onChange(value.filter((_, i) => i !== index))
   }
 
-  const pillBg = variant === 'primary' ? '#1e3a5f' : '#2a1f3d'
+  const pillBg = variant === 'primary' ? T.selectiveBg : T.accentBg
   const pillBorder = variant === 'primary' ? T.selective : T.accent
   const pillText = variant === 'primary' ? T.selective : T.accent
 

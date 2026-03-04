@@ -1,6 +1,8 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { useEffect, useRef } from 'react'
+import { View, Text, StyleSheet, Animated } from 'react-native'
 import type { HealthScore, RuleCategory } from '@lorewalker/core'
 import { T } from '../../theme/tokens'
+import { FontFamily } from '../../theme/typography'
 
 const CATEGORIES: RuleCategory[] = ['structure', 'config', 'keywords', 'recursion', 'budget', 'content']
 
@@ -8,6 +10,34 @@ function scoreColor(score: number): string {
   if (score < 60) return T.error
   if (score < 80) return T.warning
   return T.success
+}
+
+interface AnimatedBarProps {
+  score: number
+  color: string
+}
+
+function AnimatedBar({ score, color }: AnimatedBarProps) {
+  const animVal = useRef(new Animated.Value(0)).current
+
+  useEffect(() => {
+    Animated.timing(animVal, {
+      toValue: score / 100,
+      duration: 600,
+      useNativeDriver: false,
+    }).start()
+  }, [score, animVal])
+
+  const width = animVal.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  })
+
+  return (
+    <View style={styles.barTrack}>
+      <Animated.View style={[styles.barFill, { width, backgroundColor: color }]} />
+    </View>
+  )
 }
 
 interface HealthScoreCardProps {
@@ -19,10 +49,26 @@ interface HealthScoreCardProps {
 
 export function HealthScoreCard({ score, summary, categories, size = 'sm' }: HealthScoreCardProps) {
   const color = scoreColor(score)
+  const scoreAnimVal = useRef(new Animated.Value(0)).current
+  const displayScore = useRef(0)
+
+  useEffect(() => {
+    Animated.timing(scoreAnimVal, {
+      toValue: score,
+      duration: 600,
+      useNativeDriver: false,
+    }).start()
+
+    const id = scoreAnimVal.addListener(({ value }) => {
+      displayScore.current = Math.round(value)
+    })
+    return () => scoreAnimVal.removeListener(id)
+  }, [score, scoreAnimVal])
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, T.shadows.card]}>
       <View style={styles.row}>
-        <Text style={[styles.score, { color, fontSize: size === 'lg' ? 40 : 28 }]}>
+        <Text style={[styles.score, { color, fontSize: size === 'lg' ? 40 : 28, fontFamily: FontFamily.mono }]}>
           {score}
         </Text>
         {summary && (
@@ -41,10 +87,8 @@ export function HealthScoreCard({ score, summary, categories, size = 'sm' }: Hea
             return (
               <View key={cat} style={styles.catRow}>
                 <Text style={styles.catLabel}>{cat}</Text>
-                <View style={styles.barTrack}>
-                  <View style={[styles.barFill, { width: `${catScore.score}%`, backgroundColor: barColor }]} />
-                </View>
-                <Text style={styles.catScore}>{catScore.score}</Text>
+                <AnimatedBar score={catScore.score} color={barColor} />
+                <Text style={[styles.catScore, { fontFamily: FontFamily.mono }]}>{catScore.score}</Text>
               </View>
             )
           })}
@@ -55,7 +99,7 @@ export function HealthScoreCard({ score, summary, categories, size = 'sm' }: Hea
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 8 },
+  container: { gap: 8, backgroundColor: T.surface, borderRadius: 8, padding: 12 },
   row: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
   score: { fontWeight: '700', fontVariant: ['tabular-nums'] },
   summary: { flex: 1, color: T.textSecondary, fontSize: 12, lineHeight: 16 },

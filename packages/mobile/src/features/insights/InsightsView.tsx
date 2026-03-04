@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native'
 import { T } from '../../theme/tokens'
+import { EmptyState } from '../../components/EmptyState'
 import {
   useWorkspaceStore,
   documentStoreRegistry,
@@ -161,11 +162,7 @@ export function EntryInsightsView({ entryId }: EntryInsightsViewProps) {
   }
 
   if (!store || !entry) {
-    return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyText}>No lorebook loaded</Text>
-      </View>
-    )
+    return <EmptyState icon="bar-chart-2" title="No Lorebook Loaded" />
   }
 
   return (

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
+import { Feather } from '@expo/vector-icons'
 import type { Finding, FindingSeverity, RuleCategory } from '@lorewalker/core'
 import { T } from '../../theme/tokens'
 
@@ -12,10 +13,11 @@ function severityColor(severity: FindingSeverity): string {
   return T.info
 }
 
-function severitySymbol(severity: FindingSeverity): string {
-  if (severity === 'error') return '●'
-  if (severity === 'warning') return '▲'
-  return '○'
+function SeverityIcon({ severity }: { severity: FindingSeverity }) {
+  const color = severityColor(severity)
+  if (severity === 'error') return <Feather name="alert-circle" size={12} color={color} />
+  if (severity === 'warning') return <Feather name="alert-triangle" size={12} color={color} />
+  return <Feather name="info" size={12} color={color} />
 }
 
 interface FindingsListProps {
@@ -92,9 +94,9 @@ export function FindingsList({ findings, onSelectEntry }: FindingsListProps) {
                       if (f.entryIds.length > 0 && onSelectEntry) onSelectEntry(f.entryIds[0])
                     }}
                   >
-                    <Text style={[styles.severityIcon, { color: severityColor(f.severity) }]}>
-                      {severitySymbol(f.severity)}
-                    </Text>
+                    <View style={styles.severityIcon}>
+                      <SeverityIcon severity={f.severity} />
+                    </View>
                     <Text style={styles.findingMessage} numberOfLines={2}>{f.message}</Text>
                   </Pressable>
                 ))}
@@ -119,6 +121,6 @@ const styles = StyleSheet.create({
   catTitle: { flex: 1, fontSize: 10, fontWeight: '700', color: T.textSecondary, letterSpacing: 1 },
   catCount: { fontSize: 10, color: T.textMuted },
   findingRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: T.bg },
-  severityIcon: { fontSize: 10, marginTop: 2 },
+  severityIcon: { marginTop: 2 },
   findingMessage: { flex: 1, fontSize: 12, color: T.textPrimary, lineHeight: 17 },
 })

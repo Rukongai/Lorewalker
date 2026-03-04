@@ -2,6 +2,7 @@ import { View, TextInput, StyleSheet } from 'react-native'
 import type { WorkingEntry } from '@lorewalker/core'
 import { Field, inputStyle } from '../primitives'
 import { Picker } from './Picker'
+import { T } from '../../../theme/tokens'
 
 const TRISTATE_OPTIONS = [
   { label: 'Default (book setting)', value: '' },
@@ -24,7 +25,7 @@ export function ScanOverrideFields({ entry, onChange }: Props) {
           onChangeText={(v) => onChange({ scanDepth: v === '' ? null : Number(v) || 0 })}
           keyboardType="numeric"
           placeholder="Default"
-          placeholderTextColor="#585b70"
+          placeholderTextColor={T.textSubtle}
           selectTextOnFocus
         />
       </Field>

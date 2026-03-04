@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: T.muted,
   },
-  pickerOptionActive: { backgroundColor: '#1e3a5f', borderColor: T.selective },
+  pickerOptionActive: { backgroundColor: T.selectiveBg, borderColor: T.selective },
   pickerText: { color: T.textMuted, fontSize: 12 },
   pickerTextActive: { color: T.selective, fontWeight: '600' },
 })

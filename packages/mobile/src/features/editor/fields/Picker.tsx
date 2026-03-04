@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Pressable, Modal, FlatList, StyleSheet } from 'react-native'
+import { T } from '../../../theme/tokens'
 
 interface PickerOption<T> {
   label: string
@@ -57,20 +58,20 @@ const styles = StyleSheet.create({
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#313244',
+    backgroundColor: T.overlay,
     borderWidth: 1,
-    borderColor: '#45475a',
+    borderColor: T.muted,
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
   triggerText: {
     flex: 1,
-    color: '#cdd6f4',
+    color: T.textPrimary,
     fontSize: 13,
   },
   arrow: {
-    color: '#6c7086',
+    color: T.textMuted,
     fontSize: 11,
   },
   backdrop: {
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#1e1e2e',
+    backgroundColor: T.bg,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     maxHeight: 320,
@@ -89,17 +90,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#313244',
+    borderBottomColor: T.overlay,
   },
   optionActive: {
-    backgroundColor: '#1e3a5f',
+    backgroundColor: T.selectiveBg,
   },
   optionText: {
-    color: '#cdd6f4',
+    color: T.textPrimary,
     fontSize: 14,
   },
   optionTextActive: {
-    color: '#89b4fa',
+    color: T.selective,
     fontWeight: '600',
   },
 })

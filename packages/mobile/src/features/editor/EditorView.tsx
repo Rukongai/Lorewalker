@@ -1,4 +1,5 @@
 import { View, Text, TextInput, ScrollView, StyleSheet } from 'react-native'
+import { EmptyState } from '../../components/EmptyState'
 import type { WorkingEntry, BookMeta, LorebookFormat } from '@lorewalker/core'
 import { T } from '../../theme/tokens'
 import { FieldGroup, Field, inputStyle } from './primitives'
@@ -44,11 +45,7 @@ export function EditorView({
 
   if (scope === 'entry') {
     if (!entry || !onEntryChange) {
-      return (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>Select an entry to edit</Text>
-        </View>
-      )
+      return <EmptyState icon="edit-2" title="Select an Entry" subtitle="Choose an entry from the list to edit." />
     }
 
     return (
@@ -192,11 +189,7 @@ export function EditorView({
 
   // Lorebook scope
   if (!bookMeta || !onBookMetaChange) {
-    return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyText}>No book open</Text>
-      </View>
-    )
+    return <EmptyState icon="book-open" title="No Book Open" />
   }
 
   return (
@@ -208,7 +201,7 @@ export function EditorView({
             value={bookMeta.name}
             onChangeText={(v) => onBookMetaChange('name', v)}
             placeholder="Lorebook name"
-            placeholderTextColor="#585b70"
+            placeholderTextColor={T.textSubtle}
           />
         </Field>
         <Field label="Description">
@@ -219,7 +212,7 @@ export function EditorView({
             multiline
             textAlignVertical="top"
             placeholder="Lorebook description"
-            placeholderTextColor="#585b70"
+            placeholderTextColor={T.textSubtle}
           />
         </Field>
       </FieldGroup>
@@ -231,8 +224,6 @@ export function EditorView({
 const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { flexGrow: 1 },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: T.textMuted, fontSize: 13 },
   topSection: {
     paddingHorizontal: 12,
     paddingTop: 12,

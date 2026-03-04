@@ -5,6 +5,7 @@ import type { WorkingEntry } from '@lorewalker/core'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import type { EntriesStackParamList } from './AppNavigator'
 import { T } from '../../theme/tokens'
+import { EmptyState } from '../../components/EmptyState'
 
 type Props = NativeStackScreenProps<EntriesStackParamList, 'EntryList'>
 
@@ -108,12 +109,7 @@ export function EntryListScreen({ navigation }: Props) {
   }
 
   if (!activeTabId) {
-    return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyTitle}>No Lorebook Loaded</Text>
-        <Text style={styles.emptySub}>Go to Settings to import a lorebook file.</Text>
-      </View>
-    )
+    return <EmptyState icon="book-open" title="No Lorebook Loaded" subtitle="Go to Settings to import a lorebook file." />
   }
 
   return (

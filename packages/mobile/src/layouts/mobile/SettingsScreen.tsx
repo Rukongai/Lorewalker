@@ -24,6 +24,7 @@ import type { PersistedProvider, LLMProviderType, BookMeta } from '@lorewalker/c
 import type { TabParamList } from './AppNavigator'
 import { ImportScreen } from './ImportScreen'
 import { AsyncStorageAdapter } from '../../storage/async-storage-adapter'
+import { PillTabBar } from '../../components/PillTabBar'
 
 type Props = BottomTabScreenProps<TabParamList, 'Settings'>
 type SettingsTabId = 'book' | 'providers' | 'import'
@@ -447,17 +448,7 @@ export function SettingsScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <View style={[styles.tabBar, { paddingTop: insets.top + 8 }]}>
-        {TABS.map((tab) => (
-          <Pressable
-            key={tab.id}
-            onPress={() => setActiveTab(tab.id)}
-            style={[styles.tab, activeTab === tab.id && styles.tabActive]}
-          >
-            <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive]}>
-              {tab.label}
-            </Text>
-          </Pressable>
-        ))}
+        <PillTabBar tabs={TABS} active={activeTab} onSelect={setActiveTab} />
       </View>
 
       <View style={styles.content}>
@@ -484,15 +475,6 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     gap: 6,
   },
-  tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: T.overlay,
-  },
-  tabActive: { backgroundColor: T.muted },
-  tabText: { color: T.textMuted, fontSize: 13, fontWeight: '500' },
-  tabTextActive: { color: T.textPrimary },
   content: { flex: 1 },
   tabScroll: { flex: 1, backgroundColor: T.bg },
   tabContent: { padding: 16, gap: 16 },
@@ -556,6 +538,7 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 1,
     borderColor: T.overlay,
+    ...T.shadows.card,
   },
   providerCardActive: { borderColor: T.accent },
   providerHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },

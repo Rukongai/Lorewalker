@@ -1,6 +1,7 @@
 import { View, TextInput, StyleSheet } from 'react-native'
 import type { WorkingEntry } from '@lorewalker/core'
 import { Field, inputStyle } from '../primitives'
+import { T } from '../../../theme/tokens'
 
 interface Props {
   entry: WorkingEntry
@@ -16,7 +17,7 @@ export function AdvancedFields({ entry, onChange }: Props) {
           value={entry.automationId}
           onChangeText={(v) => onChange({ automationId: v })}
           placeholder="Automation ID"
-          placeholderTextColor="#585b70"
+          placeholderTextColor={T.textSubtle}
         />
       </Field>
       <Field label="Display Index">
@@ -26,7 +27,7 @@ export function AdvancedFields({ entry, onChange }: Props) {
           onChangeText={(v) => onChange({ displayIndex: v === '' ? null : Number(v) || 0 })}
           keyboardType="numeric"
           placeholder="—"
-          placeholderTextColor="#585b70"
+          placeholderTextColor={T.textSubtle}
           selectTextOnFocus
         />
       </Field>

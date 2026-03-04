@@ -22,6 +22,9 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#1e1e2e"
       }
-    }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

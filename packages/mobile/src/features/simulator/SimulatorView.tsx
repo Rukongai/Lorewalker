@@ -6,14 +6,23 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from 'react-native'
+import { Feather } from '@expo/vector-icons'
 import { T } from '../../theme/tokens'
+import { EmptyState } from '../../components/EmptyState'
 import {
   useWorkspaceStore,
   documentStoreRegistry,
   simulate,
 } from '@lorewalker/core'
 import type { ActivationResult, ActivatedEntry, SkippedEntry } from '@lorewalker/core'
+
+if (Platform.OS === 'android') {
+  UIManager.setLayoutAnimationEnabledExperimental?.(true)
+}
 
 interface SimSettings {
   scanDepth: number
@@ -145,12 +154,7 @@ export function LorebookSimulatorView() {
   }
 
   if (!store) {
-    return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyText}>No lorebook loaded</Text>
-        <Text style={styles.emptySubtext}>Import a lorebook from Settings → Import</Text>
-      </View>
-    )
+    return <EmptyState icon="play-circle" title="No Lorebook Loaded" subtitle="Import a lorebook from Settings → Import" />
   }
 
   const entryMap = new Map(entries.map((e) => [e.id, e]))
@@ -185,16 +189,25 @@ export function LorebookSimulatorView() {
 
       {/* Settings Toggle */}
       <Pressable
-        onPress={() => setSettingsOpen((v) => !v)}
+        onPress={() => {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+          setSettingsOpen((v) => !v)
+        }}
         style={styles.settingsToggle}
       >
+        <Feather
+          name={settingsOpen ? 'chevron-up' : 'sliders'}
+          size={14}
+          color={T.textSecondary}
+          style={styles.settingsIcon}
+        />
         <Text style={styles.settingsToggleText}>
-          {settingsOpen ? '▲ Hide Settings' : '▼ Settings'}
+          {settingsOpen ? 'Hide Settings' : 'Settings'}
         </Text>
       </Pressable>
 
       {settingsOpen && (
-        <View style={styles.settingsPanel}>
+        <View style={[styles.settingsPanel, T.shadows.card]}>
           <NumberField
             label="Scan Depth"
             value={effectiveSettings.scanDepth}
@@ -347,7 +360,8 @@ const styles = StyleSheet.create({
   },
   runButtonPressed: { backgroundColor: T.accentAlt },
   runButtonText: { color: T.black, fontSize: 15, fontWeight: '700' },
-  settingsToggle: { alignSelf: 'flex-start', paddingVertical: 6, marginBottom: 4 },
+  settingsToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingVertical: 6, marginBottom: 4 },
+  settingsIcon: {},
   settingsToggleText: { color: T.textSecondary, fontSize: 13 },
   settingsPanel: {
     backgroundColor: T.surface,

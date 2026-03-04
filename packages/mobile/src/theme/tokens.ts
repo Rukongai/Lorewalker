@@ -19,6 +19,7 @@ export const T = {
   constant:  '#a6e3a1',  // green
   selective: '#89b4fa',  // blue
   keyword:   '#f9e2af',  // yellow
+  teal:      '#94e2d5',  // RC badge color
 
   // Semantic
   success:   '#a6e3a1',
@@ -28,4 +29,27 @@ export const T = {
   peach:     '#fab387',  // probability-failed
   badgeDark: '#11111b',  // dark text on colored badges
   black:     '#1e1e2e',  // text on type badge backgrounds
+
+  // Keyword pill backgrounds
+  selectiveBg:  '#0e2740',  // dark bg behind primary keyword pills
+  accentBg:     '#1a1230',  // dark bg behind secondary keyword pills
+  selectiveChip: '#0e2a45', // keyword chip bg in ConnectionsList
+
+  // Elevation shadows
+  shadows: {
+    card: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.3,
+      shadowRadius: 3,
+      elevation: 3,
+    },
+    surface: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.5,
+      shadowRadius: 6,
+      elevation: 6,
+    },
+  },
 } as const

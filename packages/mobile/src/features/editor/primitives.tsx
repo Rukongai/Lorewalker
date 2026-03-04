@@ -1,6 +1,11 @@
 import { useState } from 'react'
-import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { View, Text, Pressable, StyleSheet, LayoutAnimation, Platform, UIManager } from 'react-native'
+import { Feather } from '@expo/vector-icons'
 import { T } from '../../theme/tokens'
+
+if (Platform.OS === 'android') {
+  UIManager.setLayoutAnimationEnabledExperimental?.(true)
+}
 
 export function FieldGroup({
   label,
@@ -18,8 +23,19 @@ export function FieldGroup({
   const [open, setOpen] = useState(!defaultCollapsed)
   return (
     <View style={styles.group}>
-      <Pressable onPress={() => setOpen((o) => !o)} style={styles.groupHeader}>
-        <Text style={styles.chevron}>{open ? '▾' : '▸'}</Text>
+      <Pressable
+        onPress={() => {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+          setOpen((o) => !o)
+        }}
+        style={styles.groupHeader}
+      >
+        <Feather
+          name={open ? 'chevron-down' : 'chevron-right'}
+          size={14}
+          color={T.textMuted}
+          style={styles.chevronIcon}
+        />
         <Text style={styles.groupLabel}>{label}</Text>
         {stOnly && <Text style={styles.stBadge}>ST</Text>}
         {rcOnly && <Text style={styles.rcBadge}>RC</Text>}
@@ -60,10 +76,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     gap: 6,
   },
-  chevron: {
-    color: T.textMuted,
-    fontSize: 11,
-    width: 12,
+  chevronIcon: {
+    width: 14,
   },
   groupLabel: {
     flex: 1,
@@ -74,7 +88,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   stBadge: {
-    color: '#f9e2af',
+    color: T.keyword,
     fontSize: 9,
     fontWeight: '700',
     backgroundColor: 'rgba(249,226,175,0.15)',
@@ -85,7 +99,7 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   rcBadge: {
-    color: '#94e2d5',
+    color: T.teal,
     fontSize: 9,
     fontWeight: '700',
     backgroundColor: 'rgba(148,226,213,0.15)',

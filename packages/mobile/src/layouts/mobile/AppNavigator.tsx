@@ -1,5 +1,6 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { Feather } from '@expo/vector-icons'
 import { EntryListScreen } from './EntryListScreen'
 import { EntryScreen } from './EntryScreen'
 import { HealthScreen } from './HealthScreen'
@@ -62,11 +63,41 @@ export function AppNavigator() {
         tabBarLabelStyle: { fontSize: 11 },
       }}
     >
-      <Tab.Screen name="Entries" component={EntriesStackNavigator} />
-      <Tab.Screen name="Health" component={HealthScreen} />
-      <Tab.Screen name="Simulator" component={SimulatorScreen} />
-      <Tab.Screen name="Keywords" component={KeywordsScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen
+        name="Entries"
+        component={EntriesStackNavigator}
+        options={{
+          tabBarIcon: ({ color, size }) => <Feather name="book-open" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Health"
+        component={HealthScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Feather name="activity" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Simulator"
+        component={SimulatorScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Feather name="play-circle" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Keywords"
+        component={KeywordsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Feather name="tag" size={size} color={color} />,
+        }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <Feather name="settings" size={size} color={color} />,
+        }}
+      />
     </Tab.Navigator>
   )
 }

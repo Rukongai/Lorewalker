@@ -2,6 +2,7 @@ import { View, TextInput, Switch, Text, StyleSheet } from 'react-native'
 import type { WorkingEntry } from '@lorewalker/core'
 import { Field, inputStyle } from '../primitives'
 import { Picker } from './Picker'
+import { T } from '../../../theme/tokens'
 
 interface Props {
   entry: WorkingEntry
@@ -24,7 +25,7 @@ export function GroupFields({ entry, isSillyTavern, onChange }: Props) {
           value={entry.group}
           onChangeText={(v) => onChange({ group: v })}
           placeholder="Group name"
-          placeholderTextColor="#585b70"
+          placeholderTextColor={T.textSubtle}
         />
       </Field>
       <Field label="Group Weight">
@@ -51,8 +52,8 @@ export function GroupFields({ entry, isSillyTavern, onChange }: Props) {
             <Switch
               value={entry.groupOverride}
               onValueChange={(val) => onChange({ groupOverride: val })}
-              trackColor={{ false: '#313244', true: '#89b4fa' }}
-              thumbColor="#cdd6f4"
+              trackColor={{ false: T.overlay, true: T.selective }}
+              thumbColor={T.textPrimary}
             />
             <Text style={styles.switchLabel}>Prioritize Inclusion</Text>
           </View>
@@ -65,5 +66,5 @@ export function GroupFields({ entry, isSillyTavern, onChange }: Props) {
 const styles = StyleSheet.create({
   container: { gap: 8, flexDirection: 'column' },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  switchLabel: { color: '#a6adc8', fontSize: 13, flex: 1 },
+  switchLabel: { color: T.textSecondary, fontSize: 13, flex: 1 },
 })

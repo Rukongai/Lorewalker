@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { Feather } from '@expo/vector-icons'
 import { useWorkspaceStore, documentStoreRegistry } from '@lorewalker/core'
 import type { WorkingEntry } from '@lorewalker/core'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
@@ -8,6 +9,7 @@ import { EditorView } from '../../features/editor'
 import { EntryHealthView } from '../../features/health'
 import { EntryInsightsView } from '../../features/insights'
 import { T } from '../../theme/tokens'
+import { PillTabBar } from '../../components/PillTabBar'
 
 type Props = NativeStackScreenProps<EntriesStackParamList, 'Entry'>
 
@@ -104,27 +106,17 @@ export function EntryScreen({ route, navigation }: Props) {
           disabled={!hasPrev}
           style={[styles.navBtn, !hasPrev && styles.navBtnDisabled]}
         >
-          <Text style={[styles.navBtnText, !hasPrev && styles.navBtnTextDisabled]}>←</Text>
+          <Feather name="chevron-left" size={18} color={hasPrev ? T.textPrimary : T.textMuted} />
         </Pressable>
 
-        {TABS.map((tab) => (
-          <Pressable
-            key={tab.id}
-            onPress={() => setActiveTab(tab.id)}
-            style={[styles.tab, activeTab === tab.id && styles.tabActive]}
-          >
-            <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive]}>
-              {tab.label}
-            </Text>
-          </Pressable>
-        ))}
+        <PillTabBar tabs={TABS} active={activeTab} onSelect={setActiveTab} />
 
         <Pressable
           onPress={() => navigateToEntry(entryIndex + 1)}
           disabled={!hasNext}
           style={[styles.navBtn, !hasNext && styles.navBtnDisabled]}
         >
-          <Text style={[styles.navBtnText, !hasNext && styles.navBtnTextDisabled]}>→</Text>
+          <Feather name="chevron-right" size={18} color={hasNext ? T.textPrimary : T.textMuted} />
         </Pressable>
       </View>
 
@@ -174,32 +166,6 @@ const styles = StyleSheet.create({
   },
   navBtnDisabled: {
     opacity: 0.3,
-  },
-  navBtnText: {
-    color: T.textPrimary,
-    fontSize: 16,
-  },
-  navBtnTextDisabled: {
-    color: T.textMuted,
-  },
-  tab: {
-    flex: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: T.overlay,
-    alignItems: 'center',
-  },
-  tabActive: {
-    backgroundColor: T.muted,
-  },
-  tabText: {
-    color: T.textMuted,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  tabTextActive: {
-    color: T.textPrimary,
   },
   content: {
     flex: 1,

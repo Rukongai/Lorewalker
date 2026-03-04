@@ -1,6 +1,7 @@
 import { View, Text, TextInput, Switch, Pressable, StyleSheet } from 'react-native'
 import type { RoleCallKeyword } from '@lorewalker/core'
 import { inputStyle } from '../../primitives'
+import { T } from '../../../../theme/tokens'
 
 interface Props {
   keywords: RoleCallKeyword[]
@@ -55,7 +56,7 @@ function KeywordRow({
           value={keyword.keyword}
           onChangeText={(v) => onChange({ keyword: v })}
           placeholder="keyword"
-          placeholderTextColor="#585b70"
+          placeholderTextColor={T.textSubtle}
         />
         <Pressable onPress={onRemove} style={rowStyles.removeBtn} hitSlop={8}>
           <Text style={rowStyles.removeText}>✕</Text>
@@ -89,8 +90,8 @@ function KeywordRow({
           <Switch
             value={keyword.isRegex}
             onValueChange={(val) => onChange({ isRegex: val })}
-            trackColor={{ false: '#313244', true: '#89b4fa' }}
-            thumbColor="#cdd6f4"
+            trackColor={{ false: T.overlay, true: T.selective }}
+            thumbColor={T.textPrimary}
           />
         </View>
       </View>
@@ -101,26 +102,26 @@ function KeywordRow({
 const styles = StyleSheet.create({
   container: { gap: 8, flexDirection: 'column' },
   addBtn: { paddingVertical: 6 },
-  addText: { color: '#89b4fa', fontSize: 13 },
+  addText: { color: T.selective, fontSize: 13 },
 })
 
 const rowStyles = StyleSheet.create({
   container: {
     gap: 6,
     flexDirection: 'column',
-    backgroundColor: '#181825',
+    backgroundColor: T.surface,
     borderRadius: 8,
     padding: 10,
     borderWidth: 1,
-    borderColor: '#313244',
+    borderColor: T.overlay,
   },
   main: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   keywordInput: { flex: 1 },
   removeBtn: { padding: 4 },
-  removeText: { color: '#f38ba8', fontSize: 14 },
+  removeText: { color: T.error, fontSize: 14 },
   numbers: { flexDirection: 'row', gap: 8, alignItems: 'flex-end' },
   numField: { flex: 1, gap: 4, flexDirection: 'column' },
-  numLabel: { color: '#6c7086', fontSize: 10 },
+  numLabel: { color: T.textMuted, fontSize: 10 },
   numInput: { textAlign: 'center' },
   switchField: { alignItems: 'center', gap: 4, flexDirection: 'column' },
 })

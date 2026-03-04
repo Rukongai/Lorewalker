@@ -2,6 +2,7 @@ import { View, TextInput, StyleSheet } from 'react-native'
 import type { WorkingEntry, EntryPosition, RoleCallPosition } from '@lorewalker/core'
 import { Field, inputStyle } from '../primitives'
 import { Picker } from './Picker'
+import { T } from '../../../theme/tokens'
 
 const POSITION_OPTIONS: { label: string; value: EntryPosition }[] = [
   { label: '0 — Before Char Defs', value: 0 },
@@ -103,7 +104,7 @@ export function PriorityFields({ entry, isRoleCall, onChange }: Props) {
             value={entry.outletName}
             onChangeText={(v) => onChange({ outletName: v })}
             placeholder="Outlet name"
-            placeholderTextColor="#585b70"
+            placeholderTextColor={T.textSubtle}
           />
         </Field>
       )}

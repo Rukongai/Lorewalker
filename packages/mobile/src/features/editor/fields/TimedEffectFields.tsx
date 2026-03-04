@@ -36,7 +36,7 @@ export function TimedEffectFields({ entry, isSillyTavern, onChange }: Props) {
               onChangeText={(v) => onChange({ delay: v === '' ? null : Number(v) || 0 })}
               keyboardType="numeric"
               placeholder="Global default"
-              placeholderTextColor="#585b70"
+              placeholderTextColor={T.textSubtle}
               selectTextOnFocus
             />
           </Field>
@@ -51,7 +51,7 @@ export function TimedEffectFields({ entry, isSillyTavern, onChange }: Props) {
               onChangeText={(v) => onChange({ cooldown: v === '' ? null : Number(v) || 0 })}
               keyboardType="numeric"
               placeholder="Global default"
-              placeholderTextColor="#585b70"
+              placeholderTextColor={T.textSubtle}
               selectTextOnFocus
             />
           </Field>
@@ -64,7 +64,7 @@ export function TimedEffectFields({ entry, isSillyTavern, onChange }: Props) {
               onChangeText={(v) => onChange({ sticky: v === '' ? null : Number(v) || 0 })}
               keyboardType="numeric"
               placeholder="Global default"
-              placeholderTextColor="#585b70"
+              placeholderTextColor={T.textSubtle}
               selectTextOnFocus
             />
           </Field>
@@ -76,7 +76,7 @@ export function TimedEffectFields({ entry, isSillyTavern, onChange }: Props) {
             value={entry.useProbability}
             onValueChange={(val) => onChange({ useProbability: val })}
             trackColor={{ false: T.overlay, true: T.selective }}
-            thumbColor="#cdd6f4"
+            thumbColor={T.textPrimary}
           />
           <Text style={styles.switchLabel}>Enable Trigger %</Text>
         </View>
