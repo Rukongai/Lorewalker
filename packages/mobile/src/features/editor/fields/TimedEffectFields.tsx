@@ -1,6 +1,7 @@
 import { View, TextInput, Switch, Text, StyleSheet } from 'react-native'
 import type { WorkingEntry } from '@lorewalker/core'
 import { Field, inputStyle } from '../primitives'
+import { T } from '../../../theme/tokens'
 
 interface Props {
   entry: WorkingEntry
@@ -74,7 +75,7 @@ export function TimedEffectFields({ entry, isSillyTavern, onChange }: Props) {
           <Switch
             value={entry.useProbability}
             onValueChange={(val) => onChange({ useProbability: val })}
-            trackColor={{ false: '#313244', true: '#89b4fa' }}
+            trackColor={{ false: T.overlay, true: T.selective }}
             thumbColor="#cdd6f4"
           />
           <Text style={styles.switchLabel}>Enable Trigger %</Text>
@@ -89,5 +90,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8 },
   half: { flex: 1 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  switchLabel: { color: '#a6adc8', fontSize: 13, flex: 1 },
+  switchLabel: { color: T.textSecondary, fontSize: 13, flex: 1 },
 })

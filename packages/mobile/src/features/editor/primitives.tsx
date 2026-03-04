@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { T } from '../../theme/tokens'
 
 export function FieldGroup({
   label,
@@ -38,14 +39,14 @@ export function Field({ label, children }: { label: string; children: React.Reac
 }
 
 export const inputStyle: object = {
-  backgroundColor: '#313244',
+  backgroundColor: T.overlay,
   borderWidth: 1,
-  borderColor: '#45475a',
+  borderColor: T.muted,
   borderRadius: 6,
   paddingHorizontal: 10,
   paddingVertical: 8,
   fontSize: 13,
-  color: '#cdd6f4',
+  color: T.textPrimary,
 }
 
 const styles = StyleSheet.create({
@@ -60,13 +61,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   chevron: {
-    color: '#6c7086',
+    color: T.textMuted,
     fontSize: 11,
     width: 12,
   },
   groupLabel: {
     flex: 1,
-    color: '#a6adc8',
+    color: T.textSecondary,
     fontSize: 11,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   fieldLabel: {
-    color: '#a6adc8',
+    color: T.textSecondary,
     fontSize: 11,
   },
 })

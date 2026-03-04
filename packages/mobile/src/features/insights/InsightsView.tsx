@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native'
+import { T } from '../../theme/tokens'
 import {
   useWorkspaceStore,
   documentStoreRegistry,
@@ -107,14 +108,14 @@ function computeKeywordReachRows(
 }
 
 function reachColor(val: number): string {
-  if (val > 80) return '#f38ba8'
-  if (val > 50) return '#f9e2af'
-  return '#cdd6f4'
+  if (val > 80) return T.error
+  if (val > 50) return T.warning
+  return T.textPrimary
 }
 
 function CellValue({ val }: { val: number | null }) {
   if (val === null) {
-    return <Text style={[styles.cell, { color: '#6c7086' }]}>–</Text>
+    return <Text style={[styles.cell, { color: T.textMuted }]}>–</Text>
   }
   return <Text style={[styles.cell, { color: reachColor(val) }]}>{val}%</Text>
 }
@@ -242,38 +243,38 @@ export function EntryInsightsView({ entryId }: EntryInsightsViewProps) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: '#1e1e2e' },
+  scroll: { flex: 1, backgroundColor: T.bg },
   content: { padding: 16, gap: 0 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: '#6c7086', fontSize: 14 },
-  emptyState: { color: '#6c7086', fontSize: 13, paddingVertical: 8 },
+  emptyText: { color: T.textMuted, fontSize: 14 },
+  emptyState: { color: T.textMuted, fontSize: 13, paddingVertical: 8 },
   sectionHeader: {
-    color: '#a6adc8',
+    color: T.textSecondary,
     fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
     marginBottom: 10,
   },
-  divider: { height: 1, backgroundColor: '#313244', marginVertical: 16 },
+  divider: { height: 1, backgroundColor: T.overlay, marginVertical: 16 },
   table: { gap: 2 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 3 },
-  headerText: { color: '#6c7086', fontSize: 11, fontWeight: '600' },
-  keywordCell: { flex: 1, color: '#cdd6f4', fontSize: 12, paddingRight: 8 },
+  headerText: { color: T.textMuted, fontSize: 11, fontWeight: '600' },
+  keywordCell: { flex: 1, color: T.textPrimary, fontSize: 12, paddingRight: 8 },
   cell: { width: 48, textAlign: 'right', fontSize: 12 },
   simulateButton: {
     alignSelf: 'flex-start',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: '#313244',
+    backgroundColor: T.overlay,
     borderRadius: 8,
     marginBottom: 12,
   },
-  simulateButtonPressed: { backgroundColor: '#45475a' },
-  simulateButtonText: { color: '#cdd6f4', fontSize: 13, fontWeight: '500' },
+  simulateButtonPressed: { backgroundColor: T.muted },
+  simulateButtonText: { color: T.textPrimary, fontSize: 13, fontWeight: '500' },
   results: { gap: 6 },
   countBadge: {
-    color: '#a6e3a1',
+    color: T.success,
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 4,
@@ -281,13 +282,13 @@ const styles = StyleSheet.create({
   resultRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#181825',
+    backgroundColor: T.surface,
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 8,
     gap: 8,
   },
-  resultName: { flex: 1, color: '#cdd6f4', fontSize: 13 },
-  resultKeywords: { color: '#89b4fa', fontSize: 11, maxWidth: 120 },
-  resultTokens: { color: '#6c7086', fontSize: 11, minWidth: 40, textAlign: 'right' },
+  resultName: { flex: 1, color: T.textPrimary, fontSize: 13 },
+  resultKeywords: { color: T.selective, fontSize: 11, maxWidth: 120 },
+  resultTokens: { color: T.textMuted, fontSize: 11, minWidth: 40, textAlign: 'right' },
 })

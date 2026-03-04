@@ -1,12 +1,13 @@
 import { View, Text, StyleSheet } from 'react-native'
 import type { HealthScore, RuleCategory } from '@lorewalker/core'
+import { T } from '../../theme/tokens'
 
 const CATEGORIES: RuleCategory[] = ['structure', 'config', 'keywords', 'recursion', 'budget', 'content']
 
 function scoreColor(score: number): string {
-  if (score < 60) return '#f38ba8' // ctp-red
-  if (score < 80) return '#f9e2af' // ctp-yellow
-  return '#a6e3a1' // ctp-green
+  if (score < 60) return T.error
+  if (score < 80) return T.warning
+  return T.success
 }
 
 interface HealthScoreCardProps {
@@ -57,11 +58,11 @@ const styles = StyleSheet.create({
   container: { gap: 8 },
   row: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
   score: { fontWeight: '700', fontVariant: ['tabular-nums'] },
-  summary: { flex: 1, color: '#a6adc8', fontSize: 12, lineHeight: 16 },
+  summary: { flex: 1, color: T.textSecondary, fontSize: 12, lineHeight: 16 },
   categories: { gap: 4 },
   catRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  catLabel: { width: 64, fontSize: 10, color: '#7f849c', textTransform: 'capitalize' },
-  barTrack: { flex: 1, height: 4, borderRadius: 2, backgroundColor: '#45475a', overflow: 'hidden' },
+  catLabel: { width: 64, fontSize: 10, color: T.textMuted, textTransform: 'capitalize' },
+  barTrack: { flex: 1, height: 4, borderRadius: 2, backgroundColor: T.muted, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 2 },
-  catScore: { width: 24, fontSize: 10, color: '#7f849c', textAlign: 'right', fontVariant: ['tabular-nums'] },
+  catScore: { width: 24, fontSize: 10, color: T.textMuted, textAlign: 'right', fontVariant: ['tabular-nums'] },
 })

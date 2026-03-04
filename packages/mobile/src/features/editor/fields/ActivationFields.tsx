@@ -2,6 +2,7 @@ import { View, Text, Pressable, Switch, StyleSheet } from 'react-native'
 import type { WorkingEntry, SelectiveLogic } from '@lorewalker/core'
 import { Field } from '../primitives'
 import { KeywordEditor } from '../KeywordEditor'
+import { T } from '../../../theme/tokens'
 
 type InsertionStrategy = 'constant' | 'normal' | 'vectorized'
 
@@ -27,9 +28,9 @@ export function ActivationFields({ entry, onChange }: Props) {
 
   const strategies: InsertionStrategy[] = ['constant', 'normal', 'vectorized']
   const strategyColors: Record<InsertionStrategy, string> = {
-    constant: '#cba6f7',
-    normal: '#89b4fa',
-    vectorized: '#74c7ec',
+    constant: T.accent,
+    normal: T.selective,
+    vectorized: '#74c7ec',  // sky blue — unique, not in T
   }
 
   return (
@@ -62,8 +63,8 @@ export function ActivationFields({ entry, onChange }: Props) {
         <Switch
           value={entry.selective}
           onValueChange={(val) => onChange({ selective: val })}
-          trackColor={{ false: '#313244', true: '#89b4fa' }}
-          thumbColor="#cdd6f4"
+          trackColor={{ false: T.overlay, true: T.selective }}
+          thumbColor={T.textPrimary}
         />
         <Text style={styles.switchLabel}>Selective (requires secondary key match)</Text>
       </View>
@@ -105,8 +106,8 @@ export function ActivationFields({ entry, onChange }: Props) {
         <Switch
           value={entry.enabled}
           onValueChange={(val) => onChange({ enabled: val })}
-          trackColor={{ false: '#313244', true: '#a6e3a1' }}
-          thumbColor="#cdd6f4"
+          trackColor={{ false: T.overlay, true: T.success }}
+          thumbColor={T.textPrimary}
         />
         <Text style={styles.switchLabel}>Enabled</Text>
       </View>
@@ -116,28 +117,28 @@ export function ActivationFields({ entry, onChange }: Props) {
 
 const styles = StyleSheet.create({
   container: { gap: 8, flexDirection: 'column' },
-  segmentRow: { flexDirection: 'row', borderWidth: 1, borderColor: '#45475a', borderRadius: 6, overflow: 'hidden' },
+  segmentRow: { flexDirection: 'row', borderWidth: 1, borderColor: T.muted, borderRadius: 6, overflow: 'hidden' },
   segmentBtn: {
     flex: 1,
     paddingVertical: 8,
     alignItems: 'center',
-    backgroundColor: '#313244',
+    backgroundColor: T.overlay,
     borderWidth: 0,
   },
   segmentText: { fontSize: 12 },
-  segmentTextInactive: { color: '#6c7086' },
+  segmentTextInactive: { color: T.textMuted },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  switchLabel: { color: '#a6adc8', fontSize: 13, flex: 1 },
+  switchLabel: { color: T.textSecondary, fontSize: 13, flex: 1 },
   pickerWrap: { gap: 4, flexDirection: 'column' },
   pickerOption: {
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 6,
-    backgroundColor: '#313244',
+    backgroundColor: T.overlay,
     borderWidth: 1,
-    borderColor: '#45475a',
+    borderColor: T.muted,
   },
-  pickerOptionActive: { backgroundColor: '#1e3a5f', borderColor: '#89b4fa' },
-  pickerText: { color: '#6c7086', fontSize: 12 },
-  pickerTextActive: { color: '#89b4fa', fontWeight: '600' },
+  pickerOptionActive: { backgroundColor: '#1e3a5f', borderColor: T.selective },
+  pickerText: { color: T.textMuted, fontSize: 12 },
+  pickerTextActive: { color: T.selective, fontWeight: '600' },
 })

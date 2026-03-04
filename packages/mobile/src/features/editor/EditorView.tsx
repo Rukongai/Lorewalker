@@ -1,5 +1,6 @@
 import { View, Text, TextInput, ScrollView, StyleSheet } from 'react-native'
 import type { WorkingEntry, BookMeta, LorebookFormat } from '@lorewalker/core'
+import { T } from '../../theme/tokens'
 import { FieldGroup, Field, inputStyle } from './primitives'
 import { ContentField } from './ContentField'
 import { KeywordEditor } from './KeywordEditor'
@@ -60,7 +61,7 @@ export function EditorView({
               value={entry.name}
               onChangeText={(v) => onEntryChange({ name: v })}
               placeholder="Entry name"
-              placeholderTextColor="#585b70"
+              placeholderTextColor={T.textSubtle}
             />
           </Field>
 
@@ -71,7 +72,7 @@ export function EditorView({
                 value={entry.rolecallComment ?? ''}
                 onChangeText={(v) => onEntryChange({ rolecallComment: v || undefined })}
                 placeholder="Optional notes…"
-                placeholderTextColor="#585b70"
+                placeholderTextColor={T.textSubtle}
               />
             </Field>
           )}
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { flexGrow: 1 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: '#6c7086', fontSize: 13 },
+  emptyText: { color: T.textMuted, fontSize: 13 },
   topSection: {
     paddingHorizontal: 12,
     paddingTop: 12,
@@ -240,12 +241,12 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   categoryText: {
-    color: '#6c7086',
+    color: T.textMuted,
     fontSize: 12,
     fontStyle: 'italic',
   },
   kwSection: { gap: 4, flexDirection: 'column' },
-  kwLabel: { color: '#6c7086', fontSize: 10 },
+  kwLabel: { color: T.textMuted, fontSize: 10 },
   textArea: { minHeight: 80 },
   bottomPad: { height: 40 },
 })

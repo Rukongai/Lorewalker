@@ -23,23 +23,26 @@ export function useDerivedState(tabId: string | null): void {
     const store = documentStoreRegistry.get(tabId)
     if (!store) return
 
-    function runAnalysis() {
-      const s = store!.getState()
-      const graph = EMPTY_GRAPH
-      const ctx = { entries: s.entries, bookMeta: s.bookMeta, graph }
-      const findings = runDeterministic(ctx, defaultRubric)
-      const healthScore = computeHealthScore(findings, defaultRubric)
-      store!.setState((prev) => ({ ...prev, findings, healthScore }))
+    async function runAnalysis() {
+      try {
+        const s = store!.getState()
+        const ctx = { entries: s.entries, bookMeta: s.bookMeta, graph: EMPTY_GRAPH }
+        const findings = await runDeterministic(ctx, defaultRubric)
+        const healthScore = computeHealthScore(findings, defaultRubric)
+        store!.setState({ findings, healthScore })
+      } catch (err) {
+        console.warn('[useDerivedState] Analysis failed:', err)
+      }
     }
 
     // Run immediately on mount
-    runAnalysis()
+    void runAnalysis()
 
     // Subscribe to entries/bookMeta changes
     const unsubscribe = store.subscribe((state, prev) => {
       if (state.entries !== prev.entries || state.bookMeta !== prev.bookMeta) {
         if (timerRef.current) clearTimeout(timerRef.current)
-        timerRef.current = setTimeout(runAnalysis, 150)
+        timerRef.current = setTimeout(() => void runAnalysis(), 150)
       }
     })
 

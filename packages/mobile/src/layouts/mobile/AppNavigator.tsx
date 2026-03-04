@@ -6,12 +6,13 @@ import { HealthScreen } from './HealthScreen'
 import { SimulatorScreen } from './SimulatorScreen'
 import { KeywordsScreen } from './KeywordsScreen'
 import { SettingsScreen } from './SettingsScreen'
+import { T } from '../../theme/tokens'
 
 // --- Type definitions ---
 
 export type EntriesStackParamList = {
   EntryList: undefined
-  Entry: { entryId: string }
+  Entry: { entryId: string; entryIndex: number }
 }
 
 export type TabParamList = {
@@ -31,8 +32,8 @@ function EntriesStackNavigator() {
   return (
     <EntriesStack.Navigator
       screenOptions={{
-        headerStyle: { backgroundColor: '#181825' },
-        headerTintColor: '#cdd6f4',
+        headerStyle: { backgroundColor: T.surface },
+        headerTintColor: T.textPrimary,
         headerTitleStyle: { fontWeight: '600' },
       }}
     >
@@ -55,9 +56,9 @@ export function AppNavigator() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { backgroundColor: '#181825', borderTopColor: '#313244' },
-        tabBarActiveTintColor: '#cba6f7',
-        tabBarInactiveTintColor: '#6c7086',
+        tabBarStyle: { backgroundColor: T.surface, borderTopColor: T.overlay },
+        tabBarActiveTintColor: T.accent,
+        tabBarInactiveTintColor: T.textMuted,
         tabBarLabelStyle: { fontSize: 11 },
       }}
     >

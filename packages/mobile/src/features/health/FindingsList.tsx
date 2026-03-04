@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native'
 import type { Finding, FindingSeverity, RuleCategory } from '@lorewalker/core'
+import { T } from '../../theme/tokens'
 
 const CATEGORIES: RuleCategory[] = ['structure', 'config', 'keywords', 'recursion', 'budget', 'content']
 const SEVERITY_ORDER: Record<FindingSeverity, number> = { error: 0, warning: 1, suggestion: 2 }
 
 function severityColor(severity: FindingSeverity): string {
-  if (severity === 'error') return '#f38ba8'
-  if (severity === 'warning') return '#f9e2af'
-  return '#89b4fa'
+  if (severity === 'error') return T.error
+  if (severity === 'warning') return T.warning
+  return T.info
 }
 
 function severitySymbol(severity: FindingSeverity): string {
@@ -108,16 +109,16 @@ export function FindingsList({ findings, onSelectEntry }: FindingsListProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#313244' },
-  chip: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, backgroundColor: '#313244' },
-  chipActive: { backgroundColor: '#cba6f7' },
-  chipText: { fontSize: 11, color: '#6c7086' },
-  chipTextActive: { color: '#1e1e2e', fontWeight: '600' },
-  empty: { textAlign: 'center', color: '#6c7086', fontSize: 13, paddingVertical: 24 },
-  catHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#181825', borderBottomWidth: 1, borderBottomColor: '#313244' },
-  catTitle: { flex: 1, fontSize: 10, fontWeight: '700', color: '#a6adc8', letterSpacing: 1 },
-  catCount: { fontSize: 10, color: '#6c7086' },
-  findingRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#1e1e2e' },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: T.overlay },
+  chip: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, backgroundColor: T.overlay },
+  chipActive: { backgroundColor: T.accent },
+  chipText: { fontSize: 11, color: T.textMuted },
+  chipTextActive: { color: T.black, fontWeight: '600' },
+  empty: { textAlign: 'center', color: T.textMuted, fontSize: 13, paddingVertical: 24 },
+  catHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, backgroundColor: T.surface, borderBottomWidth: 1, borderBottomColor: T.overlay },
+  catTitle: { flex: 1, fontSize: 10, fontWeight: '700', color: T.textSecondary, letterSpacing: 1 },
+  catCount: { fontSize: 10, color: T.textMuted },
+  findingRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: T.bg },
   severityIcon: { fontSize: 10, marginTop: 2 },
-  findingMessage: { flex: 1, fontSize: 12, color: '#cdd6f4', lineHeight: 17 },
+  findingMessage: { flex: 1, fontSize: 12, color: T.textPrimary, lineHeight: 17 },
 })

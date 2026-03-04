@@ -1,4 +1,5 @@
 import { View, TextInput, Text, StyleSheet } from 'react-native'
+import { T } from '../../theme/tokens'
 
 interface ContentFieldProps {
   value: string
@@ -16,7 +17,7 @@ export function ContentField({ value, onChange, preventRecursion = false }: Cont
         multiline
         textAlignVertical="top"
         placeholder="Entry content…"
-        placeholderTextColor="#585b70"
+        placeholderTextColor={T.textSubtle}
         editable={!preventRecursion}
       />
       <View style={styles.footer}>
@@ -35,14 +36,14 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   input: {
-    backgroundColor: '#313244',
+    backgroundColor: T.overlay,
     borderWidth: 1,
-    borderColor: '#45475a',
+    borderColor: T.muted,
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 8,
     fontSize: 13,
-    color: '#cdd6f4',
+    color: T.textPrimary,
     minHeight: 120,
   },
   inputDisabled: {
@@ -54,13 +55,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   charCount: {
-    color: '#6c7086',
+    color: T.textMuted,
     fontSize: 11,
     textAlign: 'right',
     flex: 1,
   },
   warningText: {
-    color: '#f38ba8',
+    color: T.error,
     fontSize: 11,
   },
 })

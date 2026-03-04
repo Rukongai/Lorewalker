@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react'
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet } from 'react-native'
+import { useState, useEffect, useMemo, memo } from 'react'
+import { View, Text, FlatList, TextInput, TouchableOpacity, RefreshControl, StyleSheet } from 'react-native'
 import { useWorkspaceStore, documentStoreRegistry } from '@lorewalker/core'
 import type { WorkingEntry } from '@lorewalker/core'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import type { EntriesStackParamList } from './AppNavigator'
+import { T } from '../../theme/tokens'
 
 type Props = NativeStackScreenProps<EntriesStackParamList, 'EntryList'>
 
@@ -15,10 +16,10 @@ const TYPE_BADGE: Record<string, string> = {
 }
 
 const BADGE_COLOR: Record<string, string> = {
-  constant: '#a6e3a1',
-  selective: '#89b4fa',
-  keyword: '#f9e2af',
-  disabled: '#6c7086',
+  constant: T.constant,
+  selective: T.selective,
+  keyword: T.keyword,
+  disabled: T.textMuted,
 }
 
 function getEntryType(entry: WorkingEntry): string {
@@ -28,7 +29,7 @@ function getEntryType(entry: WorkingEntry): string {
   return 'keyword'
 }
 
-function EntryRow({
+const EntryRow = memo(function EntryRow({
   entry,
   onPress,
 }: {
@@ -36,7 +37,7 @@ function EntryRow({
   onPress: () => void
 }) {
   const type = getEntryType(entry)
-  const badgeColor = BADGE_COLOR[type] ?? '#6c7086'
+  const badgeColor = BADGE_COLOR[type] ?? T.textMuted
   const badgeLabel = TYPE_BADGE[type] ?? '?'
 
   return (
@@ -57,17 +58,34 @@ function EntryRow({
       {!entry.enabled && <Text style={styles.disabledTag}>off</Text>}
     </TouchableOpacity>
   )
-}
+})
 
 export function EntryListScreen({ navigation }: Props) {
   const activeTabId = useWorkspaceStore((s) => s.activeTabId)
   const [query, setQuery] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
 
-  const entries = useMemo<WorkingEntry[]>(() => {
+  // Reactively subscribe to the document store so edits reflect in the list
+  const [entries, setEntries] = useState<WorkingEntry[]>(() => {
     if (!activeTabId) return []
     const store = documentStoreRegistry.get(activeTabId)
-    if (!store) return []
-    return store.getState().entries
+    return store ? store.getState().entries : []
+  })
+
+  useEffect(() => {
+    if (!activeTabId) {
+      setEntries([])
+      return
+    }
+    const store = documentStoreRegistry.get(activeTabId)
+    if (!store) {
+      setEntries([])
+      return
+    }
+    // Sync immediately in case store changed since useState initializer ran
+    setEntries(store.getState().entries)
+    // Subscribe so list re-renders reactively when entries are mutated
+    return store.subscribe((state) => setEntries(state.entries))
   }, [activeTabId])
 
   const filtered = useMemo(() => {
@@ -79,6 +97,15 @@ export function EntryListScreen({ navigation }: Props) {
         e.keys.some((k) => k.toLowerCase().includes(q)),
     )
   }, [entries, query])
+
+  function handleRefresh() {
+    setRefreshing(true)
+    if (activeTabId) {
+      const store = documentStoreRegistry.get(activeTabId)
+      if (store) setEntries(store.getState().entries)
+    }
+    setRefreshing(false)
+  }
 
   if (!activeTabId) {
     return (
@@ -94,38 +121,48 @@ export function EntryListScreen({ navigation }: Props) {
       <TextInput
         style={styles.search}
         placeholder="Search entries or keywords…"
-        placeholderTextColor="#585b70"
+        placeholderTextColor={T.textSubtle}
         value={query}
         onChangeText={setQuery}
       />
       <Text style={styles.count}>{filtered.length} entries</Text>
       <FlatList
         data={filtered}
-        keyExtractor={(item) => item.uid}
-        renderItem={({ item }) => (
+        keyExtractor={(item) => item.id}
+        renderItem={({ item, index }) => (
           <EntryRow
             entry={item}
-            onPress={() => navigation.push('Entry', { entryId: item.uid })}
+            onPress={() => navigation.push('Entry', { entryId: item.id, entryIndex: index })}
           />
         )}
         contentContainerStyle={styles.list}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={15}
+        windowSize={10}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={T.accent}
+          />
+        }
       />
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1e1e2e' },
+  container: { flex: 1, backgroundColor: T.bg },
   search: {
     margin: 12,
-    backgroundColor: '#313244',
+    backgroundColor: T.overlay,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    color: '#cdd6f4',
+    color: T.textPrimary,
     fontSize: 15,
   },
-  count: { color: '#6c7086', fontSize: 12, marginHorizontal: 12, marginBottom: 4 },
+  count: { color: T.textMuted, fontSize: 12, marginHorizontal: 12, marginBottom: 4 },
   list: { paddingBottom: 16 },
   row: {
     flexDirection: 'row',
@@ -133,7 +170,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#313244',
+    borderBottomColor: T.overlay,
     gap: 10,
   },
   badge: {
@@ -143,19 +180,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  badgeText: { fontSize: 11, fontWeight: '700', color: '#1e1e2e' },
+  badgeText: { fontSize: 11, fontWeight: '700', color: T.black },
   rowContent: { flex: 1 },
-  entryName: { color: '#cdd6f4', fontSize: 15, fontWeight: '500' },
-  keywords: { color: '#6c7086', fontSize: 12, marginTop: 2 },
+  entryName: { color: T.textPrimary, fontSize: 15, fontWeight: '500' },
+  keywords: { color: T.textMuted, fontSize: 12, marginTop: 2 },
   disabledTag: {
-    color: '#6c7086',
+    color: T.textMuted,
     fontSize: 11,
-    backgroundColor: '#313244',
+    backgroundColor: T.overlay,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1e1e2e', padding: 32 },
-  emptyTitle: { color: '#cdd6f4', fontSize: 18, fontWeight: '600', marginBottom: 8 },
-  emptySub: { color: '#6c7086', fontSize: 14, textAlign: 'center' },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: T.bg, padding: 32 },
+  emptyTitle: { color: T.textPrimary, fontSize: 18, fontWeight: '600', marginBottom: 8 },
+  emptySub: { color: T.textMuted, fontSize: 14, textAlign: 'center' },
 })

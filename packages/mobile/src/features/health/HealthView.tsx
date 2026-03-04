@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { View, Text, ScrollView, StyleSheet } from 'react-native'
+import { T } from '../../theme/tokens'
 import {
   useWorkspaceStore,
   documentStoreRegistry,
@@ -112,10 +113,10 @@ export function EntryHealthView({ entryId }: EntryHealthViewProps) {
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: { flex: 1, backgroundColor: '#1e1e2e' },
+  scrollContainer: { flex: 1, backgroundColor: T.bg },
   content: { padding: 16, gap: 0 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: '#6c7086', fontSize: 14 },
-  divider: { height: 1, backgroundColor: '#313244', marginVertical: 12 },
+  emptyText: { color: T.textMuted, fontSize: 14 },
+  divider: { height: 1, backgroundColor: T.overlay, marginVertical: 12 },
   connectionsContainer: { height: 200 },
 })

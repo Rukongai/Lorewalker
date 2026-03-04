@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet } from 'react-native'
+import { T } from '../../theme/tokens'
 
 interface KeywordEditorProps {
   value: string[]
@@ -43,8 +44,8 @@ export function KeywordEditor({
   }
 
   const pillBg = variant === 'primary' ? '#1e3a5f' : '#2a1f3d'
-  const pillBorder = variant === 'primary' ? '#89b4fa' : '#cba6f7'
-  const pillText = variant === 'primary' ? '#89b4fa' : '#cba6f7'
+  const pillBorder = variant === 'primary' ? T.selective : T.accent
+  const pillText = variant === 'primary' ? T.selective : T.accent
 
   return (
     <Pressable style={styles.container} onPress={() => inputRef.current?.focus()}>
@@ -69,7 +70,7 @@ export function KeywordEditor({
             onChangeText={handleChangeText}
             onSubmitEditing={handleSubmitEditing}
             placeholder={value.length === 0 ? placeholder : undefined}
-            placeholderTextColor="#585b70"
+            placeholderTextColor={T.textSubtle}
             returnKeyType="done"
             blurOnSubmit={false}
           />
@@ -81,9 +82,9 @@ export function KeywordEditor({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#313244',
+    backgroundColor: T.overlay,
     borderWidth: 1,
-    borderColor: '#45475a',
+    borderColor: T.muted,
     borderRadius: 6,
     minHeight: 38,
     paddingHorizontal: 8,
@@ -121,7 +122,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   input: {
-    color: '#cdd6f4',
+    color: T.textPrimary,
     fontSize: 13,
     minWidth: 80,
     flex: 1,

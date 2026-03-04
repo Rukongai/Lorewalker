@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native'
+import { T } from '../../theme/tokens'
 import * as DocumentPicker from 'expo-document-picker'
-import * as FileSystem from 'expo-file-system'
+import { File as FSFile } from 'expo-file-system'
 import { parseLorebook } from '@character-foundry/character-foundry/loader'
-import { inflate, generateId, createDocumentStore, documentStoreRegistry, useWorkspaceStore } from '@lorewalker/core'
+import { inflate, generateId, documentStoreRegistry, useWorkspaceStore } from '@lorewalker/core'
 import type { FileMeta } from '@lorewalker/core'
 
 interface ImportScreenProps {
@@ -37,18 +38,13 @@ export function ImportScreen({ onImportSuccess }: ImportScreenProps) {
       const uri = asset.uri
       const isPng = asset.name?.toLowerCase().endsWith('.png') || asset.mimeType === 'image/png'
 
+      const file = new FSFile(uri)
       let buffer: Uint8Array
       if (isPng) {
-        const b64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 })
-        const binary = atob(b64)
-        buffer = new Uint8Array(binary.length)
-        for (let i = 0; i < binary.length; i++) {
-          buffer[i] = binary.charCodeAt(i)
-        }
+        buffer = await file.bytes()
       } else {
-        const text = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.UTF8 })
-        const encoder = new TextEncoder()
-        buffer = encoder.encode(text)
+        const text = await file.text()
+        buffer = new TextEncoder().encode(text)
       }
 
       const { book, lorebookFormat } = parseLorebook(buffer)
@@ -63,14 +59,12 @@ export function ImportScreen({ onImportSuccess }: ImportScreenProps) {
         sourceType: isPng ? 'embedded-in-card' : 'standalone',
       }
 
-      const store = createDocumentStore({
+      const tabId = generateId()
+      documentStoreRegistry.create(tabId, {
         entries,
         bookMeta: { ...bookMeta, name: displayName },
         initialFormat: lorebookFormat,
       })
-
-      const tabId = generateId()
-      documentStoreRegistry.set(tabId, store)
       useWorkspaceStore.getState().openTab(tabId, displayName, fileMeta)
 
       onImportSuccess?.()
@@ -89,7 +83,7 @@ export function ImportScreen({ onImportSuccess }: ImportScreenProps) {
       <Text style={styles.sub}>Supports .json SillyTavern lorebooks and .png character cards</Text>
       <TouchableOpacity style={styles.button} onPress={handleImport} disabled={loading}>
         {loading ? (
-          <ActivityIndicator color="#1e1e2e" />
+          <ActivityIndicator color={T.black} />
         ) : (
           <Text style={styles.buttonText}>Choose File</Text>
         )}
@@ -101,15 +95,15 @@ export function ImportScreen({ onImportSuccess }: ImportScreenProps) {
 
 const styles = StyleSheet.create({
   container: { gap: 12 },
-  label: { color: '#cdd6f4', fontSize: 17, fontWeight: '600' },
-  sub: { color: '#6c7086', fontSize: 13 },
+  label: { color: T.textPrimary, fontSize: 17, fontWeight: '600' },
+  sub: { color: T.textMuted, fontSize: 13 },
   button: {
-    backgroundColor: '#cba6f7',
+    backgroundColor: T.accent,
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 24,
     alignItems: 'center',
   },
-  buttonText: { color: '#1e1e2e', fontSize: 16, fontWeight: '700' },
-  error: { color: '#f38ba8', fontSize: 13 },
+  buttonText: { color: T.black, fontSize: 16, fontWeight: '700' },
+  error: { color: T.error, fontSize: 13 },
 })
