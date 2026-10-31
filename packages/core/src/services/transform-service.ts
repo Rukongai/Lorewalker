@@ -5,9 +5,9 @@
  * Dependencies: @character-foundry/character-foundry (countTokens), uuid
  */
 
-import { countTokens } from '@character-foundry/character-foundry/tokenizers'
 import type { CCv3CharacterBook } from '@character-foundry/character-foundry/loader'
 import { generateId } from '../lib/uuid'
+import { safeCountTokens } from '../lib/token-count'
 import type {
   WorkingEntry,
   BookMeta,
@@ -504,18 +504,6 @@ export function deflate(entries: WorkingEntry[], bookMeta: BookMeta): CCv3Charac
   }
 
   return book
-}
-
-/**
- * Counts tokens in content, falling back to simple estimate if library throws.
- */
-function safeCountTokens(text: string): number {
-  try {
-    return countTokens(text)
-  } catch {
-    // Fallback: ~4 chars per token
-    return Math.ceil(text.length / 4)
-  }
 }
 
 /**
