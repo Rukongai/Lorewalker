@@ -3,6 +3,7 @@ import { immer } from 'zustand/middleware/immer'
 import { temporal } from 'zundo'
 import { generateId } from '../lib/uuid'
 import { debounce } from '../lib/debounce'
+import { safeCountTokens } from '../lib/token-count'
 import type { WorkingEntry, BookMeta, SimulatorState, SimulationSettings, Finding, HealthScore, SimMessage, ActivationResult, ConversationStep, CustomRule, DocumentRuleOverrides, CardPayload, LorebookFormat } from '../types'
 
 // --- Selection state ---
@@ -152,7 +153,7 @@ function makeDefaultEntry(partial: Partial<WorkingEntry> = {}): WorkingEntry {
     delayUntilRecursion: partial.delayUntilRecursion ?? 0,
     triggers: partial.triggers ?? [],
     characterFilter: partial.characterFilter ?? { isExclude: false, names: [], tags: [] },
-    tokenCount: partial.tokenCount ?? 0,
+    tokenCount: partial.tokenCount ?? safeCountTokens(partial.content ?? ''),
     extensions: partial.extensions ?? {},
   }
 }
@@ -219,6 +220,7 @@ export function createDocumentStore(init: DocumentStoreInit) {
             const entry = state.entries.find((e) => e.id === id)
             if (!entry) return
             Object.assign(entry, changes)
+            if (changes.content !== undefined) entry.tokenCount = safeCountTokens(entry.content)
           })
         },
 
@@ -258,7 +260,9 @@ export function createDocumentStore(init: DocumentStoreInit) {
           set((state) => {
             for (const [id, changes] of updates) {
               const entry = state.entries.find((e) => e.id === id)
-              if (entry) Object.assign(entry, changes)
+              if (!entry) continue
+              Object.assign(entry, changes)
+              if (changes.content !== undefined) entry.tokenCount = safeCountTokens(entry.content)
             }
           })
         },
